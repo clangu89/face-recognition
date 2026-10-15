@@ -9,6 +9,7 @@
 const DB_SPREADSHEET_ID = "15iYZLwqkoWcw4yPBOy9TysfaKd0MfrmZR_JgDKl_VEE";
 const SHEET_PROFILES = "FaceProfiles";
 const SHEET_LOGS = "ScanLogs";
+const SHEET_USERS = "SystemUsers";
 const DRIVE_FOLDER_NAME = "FaceRecognition_Photos";
 const DB_SPREADSHEET_NAME = "AI_Face_Recognition_Database";
 
@@ -24,6 +25,8 @@ function doGet(e) {
       result = getFaceProfiles();
     } else if (action === "init") {
       result = initSheetAndFolder();
+    } else if (action === "getUsers") {
+      result = getSystemUsers();
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -108,7 +111,41 @@ function initSheetAndFolder() {
       logSheet.setFrozenRows(1);
     }
 
-    // 3. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
+    // 3. ตรวจสอบ Sheet ข้อมูลผู้ใช้งานระบบ (SystemUsers)
+    var userSheet = ss.getSheetByName(SHEET_USERS);
+    if (!userSheet) {
+      userSheet = ss.insertSheet(SHEET_USERS);
+      userSheet.appendRow([
+        "User_ID", 
+        "Username", 
+        "Password_Hash", 
+        "Full_Name", 
+        "Role", 
+        "Status", 
+        "Created_At", 
+        "Last_Login_At"
+      ]);
+      userSheet.getRange(1, 1, 1, 8)
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
+      userSheet.setFrozenRows(1);
+
+      // สร้างบัญชี Admin เริ่มต้น (admin / admin1234)
+      var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+      userSheet.appendRow([
+        "USR_1",
+        "admin",
+        hashPassword("admin1234"),
+        "ผู้ดูแลระบบ (Admin)",
+        "admin",
+        "ACTIVE",
+        nowStr,
+        "-"
+      ]);
+    }
+
+    // 4. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
     getOrCreateDriveFolder();
 
     return {
@@ -333,7 +370,243 @@ function logScanEvent(name, status, confidence) {
 }
 
 /**
- * รองรับ POST Request จาก Frontend ภายนอก
+ * ฟังก์ชันเข้ารหัสรหัสผ่านด้วย SHA-256
+ */
+function hashPassword(password) {
+  var rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(password), Utilities.Charset.UTF_8);
+  var hex = "";
+  for (var i = 0; i < rawHash.length; i++) {
+    var byteVal = rawHash[i];
+    if (byteVal < 0) byteVal += 256;
+    var byteHex = byteVal.toString(16);
+    if (byteHex.length === 1) byteHex = "0" + byteHex;
+    hex += byteHex;
+  }
+  return hex;
+}
+
+/**
+ * เข้าสู่ระบบด้วย Username และ Password
+ */
+function loginUser(username, password) {
+  try {
+    if (!username || !password) {
+      return { success: false, message: "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน" };
+    }
+    initSheetAndFolder();
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    if (!sheet) return { success: false, message: "ไม่พบตารางข้อมูลผู้ใช้งาน" };
+
+    var data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: false, message: "ไม่มีข้อมูลผู้ใช้งานในระบบ" };
+
+    var inputHash = hashPassword(password);
+    var cleanUser = String(username).trim().toLowerCase();
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var rowUser = String(row[1]).trim().toLowerCase();
+      var rowHash = String(row[2]).trim();
+      var rowStatus = String(row[5]).trim().toUpperCase();
+
+      if (rowUser === cleanUser) {
+        if (rowStatus !== "ACTIVE") {
+          return { success: false, message: "บัญชีผู้ใช้นี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ" };
+        }
+        if (rowHash === inputHash) {
+          var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+          sheet.getRange(i + 1, 8).setValue(nowStr);
+
+          return {
+            success: true,
+            message: "เข้าสู่ระบบสำเร็จ",
+            user: {
+              id: String(row[0]),
+              username: String(row[1]),
+              fullName: String(row[3]),
+              role: String(row[4]).toLowerCase(),
+              status: rowStatus
+            }
+          };
+        } else {
+          return { success: false, message: "รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง" };
+        }
+      }
+    }
+
+    return { success: false, message: "ไม่พบบัญชีผู้ใช้นี้ในระบบ" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * ดึงรายชื่อผู้ใช้งานระบบทั้งหมด (ไม่ส่ง Password Hash เพื่อความปลอดภัย)
+ */
+function getSystemUsers() {
+  try {
+    initSheetAndFolder();
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    if (!sheet) return { success: true, users: [] };
+
+    var data = sheet.getDataRange().getValues();
+    var users = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0] && !row[1]) continue;
+      users.push({
+        id: String(row[0]),
+        username: String(row[1]),
+        fullName: String(row[3]),
+        role: String(row[4]).toLowerCase(),
+        status: String(row[5]).toUpperCase(),
+        createdAt: String(row[6] || "-"),
+        lastLogin: String(row[7] || "-")
+      });
+    }
+    return { success: true, users: users };
+  } catch (error) {
+    return { success: false, message: error.toString(), users: [] };
+  }
+}
+
+/**
+ * สร้างผู้ใช้งานระบบใหม่
+ */
+function createSystemUser(userData) {
+  try {
+    if (!userData || !userData.username || !userData.password) {
+      return { success: false, message: "กรุณาระบุชื่อผู้ใช้และรหัสผ่าน" };
+    }
+    var cleanUser = String(userData.username).trim().toLowerCase();
+    if (cleanUser.length < 3) {
+      return { success: false, message: "ชื่อผู้ใช้ต้องมีความยาวอย่างน้อย 3 ตัวอักษร" };
+    }
+    if (String(userData.password).length < 4) {
+      return { success: false, message: "รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร" };
+    }
+
+    initSheetAndFolder();
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][1]).trim().toLowerCase() === cleanUser) {
+        return { success: false, message: "ชื่อผู้ใช้นี้มีในระบบแล้ว กรุณาใช้ชื่ออื่น" };
+      }
+    }
+
+    var newId = "USR_" + (data.length + Date.now().toString().slice(-4));
+    var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+    var fullName = String(userData.fullName || cleanUser).trim();
+    var role = String(userData.role || "operator").trim().toLowerCase();
+    var status = String(userData.status || "ACTIVE").trim().toUpperCase();
+
+    sheet.appendRow([
+      newId,
+      cleanUser,
+      hashPassword(userData.password),
+      fullName,
+      role,
+      status,
+      nowStr,
+      "-"
+    ]);
+
+    return {
+      success: true,
+      message: "สร้างผู้ใช้งาน " + cleanUser + " เรียบร้อยแล้ว",
+      user: {
+        id: newId,
+        username: cleanUser,
+        fullName: fullName,
+        role: role,
+        status: status
+      }
+    };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * แก้ไขข้อมูลผู้ใช้งาน หรือเปลี่ยนรหัสผ่าน
+ */
+function updateSystemUser(userData) {
+  try {
+    if (!userData || !userData.id) {
+      return { success: false, message: "ไม่พบรหัสผู้ใช้ที่ต้องการแก้ไข" };
+    }
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(userData.id)) {
+        var rowNum = i + 1;
+        if (userData.fullName) sheet.getRange(rowNum, 4).setValue(String(userData.fullName).trim());
+        if (userData.role) sheet.getRange(rowNum, 5).setValue(String(userData.role).trim().toLowerCase());
+        if (userData.status) sheet.getRange(rowNum, 6).setValue(String(userData.status).trim().toUpperCase());
+        if (userData.password && String(userData.password).trim().length > 0) {
+          if (String(userData.password).length < 4) {
+            return { success: false, message: "รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 4 ตัวอักษร" };
+          }
+          sheet.getRange(rowNum, 3).setValue(hashPassword(userData.password));
+        }
+
+        return { success: true, message: "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว" };
+      }
+    }
+
+    return { success: false, message: "ไม่พบผู้ใช้ในระบบ" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * ลบผู้ใช้งานระบบ (ป้องกันการลบ Admin คนสุดท้าย)
+ */
+function deleteSystemUser(userId) {
+  try {
+    if (!userId) return { success: false, message: "ไม่พบรหัสผู้ใช้" };
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_USERS);
+    var data = sheet.getDataRange().getValues();
+
+    var adminCount = 0;
+    var targetIndex = -1;
+    var targetRole = "";
+
+    for (var i = 1; i < data.length; i++) {
+      var role = String(data[i][4]).trim().toLowerCase();
+      if (role === "admin") adminCount++;
+      if (String(data[i][0]) === String(userId)) {
+        targetIndex = i;
+        targetRole = role;
+      }
+    }
+
+    if (targetIndex === -1) {
+      return { success: false, message: "ไม่พบผู้ใช้ที่ต้องการลบ" };
+    }
+
+    if (targetRole === "admin" && adminCount <= 1) {
+      return { success: false, message: "ไม่อนุญาตให้ลบผู้ดูแลระบบคนสุดท้ายของระบบ" };
+    }
+
+    sheet.deleteRow(targetIndex + 1);
+    return { success: true, message: "ลบผู้ใช้งานเรียบร้อยแล้ว" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * รองรับ POST Request จาก Frontend ภายนอก (GitHub Pages)
  */
 function doPost(e) {
   try {
@@ -344,7 +617,17 @@ function doPost(e) {
     var action = (e.parameter && e.parameter.action) || data.action;
     var result = { success: false, message: "Invalid action" };
 
-    if (action === "saveProfile") {
+    if (action === "login") {
+      result = loginUser(data.username, data.password);
+    } else if (action === "getUsers") {
+      result = getSystemUsers();
+    } else if (action === "createUser") {
+      result = createSystemUser(data.userData || data);
+    } else if (action === "updateUser") {
+      result = updateSystemUser(data.userData || data);
+    } else if (action === "deleteUser") {
+      result = deleteSystemUser(data.id || (e.parameter && e.parameter.id));
+    } else if (action === "saveProfile") {
       result = saveFaceProfile(data.payload || data);
     } else if (action === "deleteProfile") {
       result = deleteFaceProfile(data.id || (e.parameter && e.parameter.id));
@@ -361,4 +644,5 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
+
 

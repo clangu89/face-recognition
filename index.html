@@ -161,6 +161,12 @@
           <span>รายชื่อในระบบ</span>
           <span id="profileCountBadge" class="ml-1.5 px-2 py-0.5 rounded-full text-xs bg-slate-800 text-blue-400 font-semibold border border-blue-500/30">0 คน</span>
         </button>
+        <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>จัดการผู้ใช้งาน</span>
+        </button>
       </div>
 
       <!-- Voice Control & Testing Buttons -->
@@ -407,7 +413,160 @@
 
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- TAB 4: User Management Pane (Admin Only) -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_users" class="hidden space-y-4">
+      
+      <!-- User Management Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>จัดการผู้ใช้งานระบบ (User Management)</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-500/40">เฉพาะผู้ดูแลระบบ</span>
+          </h2>
+          <p class="text-xs text-slate-400">กำหนดสิทธิ์และสร้างบัญชีผู้ใช้งานสำหรับล็อกอินเข้าใช้งานระบบ</p>
+        </div>
+
+        <button onclick="openUserModal()" class="px-4 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2 text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+          <span>เพิ่มผู้ใช้งานใหม่</span>
+        </button>
+      </div>
+
+      <!-- User Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-medium">ผู้ใช้งานทั้งหมด</div>
+            <div id="statTotalUsers" class="text-2xl font-bold text-white mt-1">0</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+            👥
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-medium">ผู้ดูแลระบบ (Admin)</div>
+            <div id="statAdminUsers" class="text-2xl font-bold text-purple-400 mt-1">0</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+            🛡️
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-slate-400 font-medium">เจ้าหน้าที่ (Operator)</div>
+            <div id="statOperatorUsers" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            👤
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Table Container -->
+      <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-900/90 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="px-5 py-3.5">ชื่อผู้ใช้ (Username)</th>
+                <th class="px-5 py-3.5">ชื่อ-นามสกุล</th>
+                <th class="px-5 py-3.5">สิทธิ์การใช้งาน</th>
+                <th class="px-5 py-3.5">สถานะ</th>
+                <th class="px-5 py-3.5">เข้าสู่ระบบล่าสุด</th>
+                <th class="px-5 py-3.5 text-right">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-slate-800/80 text-slate-200">
+              <tr>
+                <td colspan="6" class="px-5 py-8 text-center text-slate-500">กำลังโหลดข้อมูลผู้ใช้งาน...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+
   </main>
+
+  </div> <!-- End of #mainAppView -->
+
+  <!-- ========================================================================= -->
+  <!-- USER MODAL (Add / Edit System User) -->
+  <!-- ========================================================================= -->
+  <div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="w-full max-w-lg glass-card rounded-3xl p-6 border border-slate-700 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+        <h3 id="userModalTitle" class="text-lg font-bold text-white">เพิ่มผู้ใช้งานใหม่</h3>
+        <button onclick="closeUserModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <form id="userForm" onsubmit="saveUserForm(event)" class="space-y-4">
+        <input type="hidden" id="userFormId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อผู้ใช้ (Username) *</label>
+            <input type="text" id="userFormUsername" required placeholder="เช่น staff_01" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อ-นามสกุล (Full Name) *</label>
+            <input type="text" id="userFormFullName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">สิทธิ์การใช้งาน (Role) *</label>
+            <select id="userFormRole" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+              <option value="operator">เจ้าหน้าที่ (Operator)</option>
+              <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">สถานะ (Status) *</label>
+            <select id="userFormStatus" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+              <option value="ACTIVE">ใช้งานได้ (ACTIVE)</option>
+              <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">
+            <span id="userFormPasswordLabel">รหัสผ่าน (Password) *</span>
+            <span id="userFormPasswordHint" class="hidden text-[10px] text-slate-400 font-normal">(เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="userFormPassword" placeholder="ความยาวอย่างน้อย 4 ตัวอักษร" class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+            <button type="button" onclick="togglePasswordVisibility('userFormPassword', 'modalEyeBtn')" id="modalEyeBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeUserModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition">ยกเลิก</button>
+          <button type="submit" id="userModalSubmitBtn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Toast Notification Floating Box -->
   <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden toast-enter">
@@ -498,6 +657,8 @@
     const MODEL_URL_BACKUP = 'https://justadudewhohacks.github.io/face-api.js/models';
 
     const state = {
+      currentUser: null,
+      systemUsers: [],
       modelsLoaded: false,
       cameraStarted: false,
       currentTab: 'scanner',
@@ -1136,6 +1297,7 @@
         }
       });
       if (tabName === 'profiles') renderProfilesList();
+      if (tabName === 'users') loadSystemUsers();
     }
 
     function toggleSound() {
@@ -1188,6 +1350,399 @@
 
     
     // Expose all action functions explicitly to window for HTML onclick
+    
+    // --- Authentication & Session Management ---
+    function checkAuthSession() {
+      try {
+        var savedUser = sessionStorage.getItem('face_app_user') || localStorage.getItem('face_app_user');
+        if (savedUser) {
+          state.currentUser = JSON.parse(savedUser);
+          applyAuthenticatedUser(state.currentUser);
+          return true;
+        }
+      } catch (e) {}
+
+      // If no valid session, show login view
+      document.getElementById('loginView').classList.remove('hidden');
+      document.getElementById('mainAppView').classList.add('hidden');
+      return false;
+    }
+
+    function applyAuthenticatedUser(user) {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('mainAppView').classList.remove('hidden');
+
+      var nameEl = document.getElementById('headerUserName');
+      var roleEl = document.getElementById('headerUserRole');
+      if (nameEl) nameEl.textContent = user.fullName || user.username;
+      if (roleEl) {
+        roleEl.textContent = user.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'เจ้าหน้าที่ (Operator)';
+        roleEl.className = user.role === 'admin' ? 'text-[10px] text-purple-400 font-medium' : 'text-[10px] text-emerald-400 font-medium';
+      }
+
+      // Show/hide Admin User Management Tab
+      var userTabBtn = document.getElementById('tabBtn_users');
+      if (userTabBtn) {
+        if (user.role === 'admin') {
+          userTabBtn.classList.remove('hidden');
+        } else {
+          userTabBtn.classList.add('hidden');
+          if (state.currentTab === 'users') switchTab('scanner');
+        }
+      }
+    }
+
+    function handleLoginSubmit(event) {
+      if (event) event.preventDefault();
+      var userEl = document.getElementById('loginUsername');
+      var passEl = document.getElementById('loginPassword');
+      var errBox = document.getElementById('loginErrorAlert');
+      var errText = document.getElementById('loginErrorText');
+      var btn = document.getElementById('loginSubmitBtn');
+
+      var username = userEl.value.trim();
+      var password = passEl.value;
+      if (!username || !password) return;
+
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังเข้าสู่ระบบ...';
+
+      var handleSuccess = function(response) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+
+        if (response && response.success && response.user) {
+          state.currentUser = response.user;
+          try {
+            sessionStorage.setItem('face_app_user', JSON.stringify(response.user));
+          } catch(e) {}
+
+          applyAuthenticatedUser(response.user);
+          showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ ' + response.user.fullName, 'success');
+          logStatus('[AUTH] เข้าสู่ระบบสำเร็จ: ' + response.user.username + ' (' + response.user.role + ')');
+
+          // เริ่มต้นการทำงานเบื้องหลังเมื่อล็อกอินสำเร็จ
+          initSpeech();
+          loadProfilesFromBackend();
+          ensureFaceApiLoaded().then(loadFaceModels).catch(function(err) {
+            logStatus('[ERROR] โมเดล AI: ' + (err ? err.message : err), true);
+          });
+        } else {
+          errText.textContent = response ? (response.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง') : 'เข้าสู่ระบบไม่สำเร็จ';
+          errBox.classList.remove('hidden');
+        }
+      };
+
+      var handleError = function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+        errText.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err ? err.message : err);
+        errBox.classList.remove('hidden');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleError)
+          .loginUser(username, password);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'login', username: username, password: password })
+        })
+          .then(function(r) { return r.json(); })
+          .then(handleSuccess)
+          .catch(handleError);
+      }
+    }
+
+    function logoutUser() {
+      if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+        stopCamera();
+        state.currentUser = null;
+        try {
+          sessionStorage.removeItem('face_app_user');
+          localStorage.removeItem('face_app_user');
+        } catch(e) {}
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginErrorAlert').classList.add('hidden');
+        document.getElementById('mainAppView').classList.add('hidden');
+        document.getElementById('loginView').classList.remove('hidden');
+        logStatus('[AUTH] ออกจากระบบเรียบร้อย');
+      }
+    }
+
+    function togglePasswordVisibility(inputId, btnId) {
+      var input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+      } else {
+        input.type = 'password';
+      }
+    }
+
+    // --- User Management Controller ---
+    function loadSystemUsers() {
+      var tbody = document.getElementById('usersTableBody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">กำลังโหลดข้อมูลผู้ใช้งาน...</td></tr>';
+
+      var handleSuccess = function(response) {
+        if (response && response.success) {
+          state.systemUsers = response.users || [];
+          renderSystemUsersTable();
+        } else {
+          showToast('ไม่สามารถดึงข้อมูลผู้ใช้งาน: ' + (response ? response.message : ''), 'error');
+        }
+      };
+
+      var handleError = function(err) {
+        showToast('เชื่อมต่อล้มเหลว: ' + (err ? err.message : err), 'error');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleError)
+          .getSystemUsers();
+      } else {
+        fetch(GAS_API_URL + '?action=getUsers', { redirect: 'follow' })
+          .then(function(r) { return r.json(); })
+          .then(handleSuccess)
+          .catch(handleError);
+      }
+    }
+
+    function renderSystemUsersTable() {
+      var tbody = document.getElementById('usersTableBody');
+      if (!tbody) return;
+
+      var users = state.systemUsers || [];
+      var adminCount = 0;
+      var opCount = 0;
+      users.forEach(function(u) {
+        if (u.role === 'admin') adminCount++;
+        else opCount++;
+      });
+
+      var statTotal = document.getElementById('statTotalUsers');
+      var statAdmin = document.getElementById('statAdminUsers');
+      var statOp = document.getElementById('statOperatorUsers');
+      if (statTotal) statTotal.textContent = users.length;
+      if (statAdmin) statAdmin.textContent = adminCount;
+      if (statOp) statOp.textContent = opCount;
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">ยังไม่มีผู้ใช้งานในระบบ</td></tr>';
+        return;
+      }
+
+      var htmlRows = '';
+      users.forEach(function(u) {
+        var roleBadge = u.role === 'admin'
+          ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-900/60 text-purple-300 border border-purple-500/40">ผู้ดูแลระบบ</span>'
+          : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">เจ้าหน้าที่</span>';
+
+        var statusBadge = u.status === 'ACTIVE'
+          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ใช้งานได้</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">ระงับ</span>';
+
+        var safeUser = (u.username || '').replace(/"/g, '&quot;');
+        var safeName = (u.fullName || '').replace(/"/g, '&quot;');
+
+        htmlRows += '<tr class="hover:bg-slate-900/40 transition">' +
+          '<td class="px-5 py-4 font-mono font-bold text-white flex items-center space-x-2">' +
+          '<span class="w-7 h-7 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center text-xs font-bold">' + safeUser.charAt(0).toUpperCase() + '</span>' +
+          '<span>' + safeUser + '</span></td>' +
+          '<td class="px-5 py-4 text-slate-300">' + safeName + '</td>' +
+          '<td class="px-5 py-4">' + roleBadge + '</td>' +
+          '<td class="px-5 py-4">' + statusBadge + '</td>' +
+          '<td class="px-5 py-4 text-xs text-slate-400">' + (u.lastLogin || '-') + '</td>' +
+          '<td class="px-5 py-4 text-right space-x-1">' +
+          '<button onclick="openUserModal(\'' + u.id + '\')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition">แก้ไข</button>' +
+          '<button onclick="deleteUserAction(\'' + u.id + '\', \'' + safeUser + '\')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition">ลบ</button>' +
+          '</td></tr>';
+      });
+
+      tbody.innerHTML = htmlRows;
+    }
+
+    function openUserModal(userId) {
+      var modal = document.getElementById('userModal');
+      var title = document.getElementById('userModalTitle');
+      var idInput = document.getElementById('userFormId');
+      var userInput = document.getElementById('userFormUsername');
+      var nameInput = document.getElementById('userFormFullName');
+      var roleSelect = document.getElementById('userFormRole');
+      var statusSelect = document.getElementById('userFormStatus');
+      var passInput = document.getElementById('userFormPassword');
+      var passLabel = document.getElementById('userFormPasswordLabel');
+      var passHint = document.getElementById('userFormPasswordHint');
+
+      passInput.value = '';
+
+      if (userId) {
+        var user = (state.systemUsers || []).find(function(u) { return u.id === userId; });
+        if (!user) return;
+
+        title.textContent = 'แก้ไขข้อมูลผู้ใช้งาน: ' + user.username;
+        idInput.value = user.id;
+        userInput.value = user.username;
+        userInput.disabled = true;
+        nameInput.value = user.fullName || '';
+        roleSelect.value = user.role || 'operator';
+        statusSelect.value = user.status || 'ACTIVE';
+        passLabel.textContent = 'รหัสผ่านใหม่ (Password)';
+        passHint.classList.remove('hidden');
+        passInput.required = false;
+      } else {
+        title.textContent = 'เพิ่มผู้ใช้งานใหม่';
+        idInput.value = '';
+        userInput.value = '';
+        userInput.disabled = false;
+        nameInput.value = '';
+        roleSelect.value = 'operator';
+        statusSelect.value = 'ACTIVE';
+        passLabel.textContent = 'รหัสผ่าน (Password) *';
+        passHint.classList.add('hidden');
+        passInput.required = true;
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+      var modal = document.getElementById('userModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function saveUserForm(event) {
+      if (event) event.preventDefault();
+      var id = document.getElementById('userFormId').value;
+      var username = document.getElementById('userFormUsername').value.trim();
+      var fullName = document.getElementById('userFormFullName').value.trim();
+      var role = document.getElementById('userFormRole').value;
+      var status = document.getElementById('userFormStatus').value;
+      var password = document.getElementById('userFormPassword').value;
+      var submitBtn = document.getElementById('userModalSubmitBtn');
+
+      if (!username || !fullName) {
+        showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+        return;
+      }
+
+      if (!id && (!password || password.length < 4)) {
+        showToast('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร', 'warning');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'กำลังบันทึก...';
+
+      var payload = {
+        id: id,
+        username: username,
+        fullName: fullName,
+        role: role,
+        status: status,
+        password: password
+      };
+
+      var isEdit = !!id;
+      var actionName = isEdit ? 'updateUser' : 'createUser';
+
+      var handleSuccess = function(response) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'บันทึกข้อมูล';
+
+        if (response && response.success) {
+          showToast(response.message || 'บันทึกข้อมูลสำเร็จ', 'success');
+          closeUserModal();
+          loadSystemUsers();
+        } else {
+          showToast(response ? response.message : 'บันทึกไม่สำเร็จ', 'error');
+        }
+      };
+
+      var handleError = function(err) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'บันทึกข้อมูล';
+        showToast('เกิดข้อผิดพลาด: ' + (err ? err.message : err), 'error');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        if (isEdit) {
+          google.script.run
+            .withSuccessHandler(handleSuccess)
+            .withFailureHandler(handleError)
+            .updateSystemUser(payload);
+        } else {
+          google.script.run
+            .withSuccessHandler(handleSuccess)
+            .withFailureHandler(handleError)
+            .createSystemUser(payload);
+        }
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: actionName, userData: payload })
+        })
+          .then(function(r) { return r.json(); })
+          .then(handleSuccess)
+          .catch(handleError);
+      }
+    }
+
+    function deleteUserAction(userId, username) {
+      if (!confirm('คุณต้องการลบผู้ใช้งาน "' + username + '" ใช่หรือไม่?')) return;
+
+      var handleSuccess = function(response) {
+        if (response && response.success) {
+          showToast(response.message || 'ลบผู้ใช้เรียบร้อยแล้ว', 'success');
+          loadSystemUsers();
+        } else {
+          showToast(response ? response.message : 'ไม่สามารถลบผู้ใช้ได้', 'error');
+        }
+      };
+
+      var handleError = function(err) {
+        showToast('เกิดข้อผิดพลาด: ' + (err ? err.message : err), 'error');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleError)
+          .deleteSystemUser(userId);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'deleteUser', id: userId })
+        })
+          .then(function(r) { return r.json(); })
+          .then(handleSuccess)
+          .catch(handleError);
+      }
+    }
+
+
+    window.handleLoginSubmit = handleLoginSubmit;
+    window.logoutUser = logoutUser;
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.loadSystemUsers = loadSystemUsers;
+    window.openUserModal = openUserModal;
+    window.closeUserModal = closeUserModal;
+    window.saveUserForm = saveUserForm;
+    window.deleteUserAction = deleteUserAction;
+
     window.startCamera = startCamera;
     window.stopCamera = stopCamera;
     window.switchTab = switchTab;
