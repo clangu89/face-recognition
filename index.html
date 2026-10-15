@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบจดจำใบหน้าและทักทายด้วยเสียง (Face Recognition & Greeting)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <!-- 1. Early Boot Diagnostic Logger & Global Error Catcher (Must be first in <head>) -->
+  <script>
+    window._bootLogs = [];
+    window.logStatus = function(msg, isError) {
+      try {
+        var time = new Date().toLocaleTimeString('th-TH');
+        window._bootLogs.push({ time: time, msg: msg, isError: !!isError });
+        var list = document.getElementById('diagnosticLogList');
+        if (list) {
+          var item = document.createElement('div');
+          item.style.color = isError ? '#f87171' : '#34d399';
+          item.textContent = '[' + time + '] ' + msg;
+          list.appendChild(item);
+          list.scrollTop = list.scrollHeight;
+        }
+      } catch(e) {}
+      console.log('[FaceApp] ' + msg);
+    };
+
+    window.onerror = function(msg, url, line) {
+      window.logStatus('[ERROR] JS: ' + msg + ' (บรรทัด ' + line + ')', true);
+    };
+
+    window.addEventListener('unhandledrejection', function(e) {
+      window.logStatus('[ERROR] Async: ' + (e.reason ? (e.reason.message || e.reason) : e), true);
+    });
+
+    window.logStatus('[START] เริ่มต้นโหลดเอกสาร HTML...');
+  </script>
+
+  <!-- Preconnect to high-speed CDNs -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'Outfit', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Inline Stylesheet (Directly bundled) -->
+  <style>
+    @keyframes scanline {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 100%; opacity: 0.8; }
+    }
+    .scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0) 0%, rgba(59, 130, 246, 1) 50%, rgba(59, 130, 246, 0) 100%);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+      animation: scanline 2.5s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .toast-enter { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .toast-visible { transform: translateY(0); opacity: 1; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="glass-card sticky top-0 z-40 border-b border-slate-800/80 px-4 lg:px-8 py-3.5 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            AI Face Recognition & Greeting
+            <span class="text-[11px] font-normal px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">v3.0 Ultra-Fast</span>
+          </h1>
+          <p class="text-xs text-slate-400">ระบบตรวจสอบใบหน้าและทักทายด้วยเสียงภาษาไทยอัตโนมัติ</p>
+        </div>
+      </div>
+
+      <!-- Live Status Badges -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span id="modelStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-500/40">
+          ⏳ กำลังเตรียมโมเดล AI...
+        </span>
+        <span id="cameraStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+          ⚪ กล้องปิดอยู่
+        </span>
+        <span id="voiceStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+          ⏳ ตรวจสอบเสียงไทย...
+        </span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-4">
+
+    <!-- Diagnostic Log Console (Live status reporter) -->
+    <div id="diagnosticContainer" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs font-mono">
+      <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800">
+        <span class="text-slate-400 font-semibold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          สถานะการเชื่อมต่อระบบ (Diagnostic Log):
+        </span>
+        <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[10px] text-slate-500 hover:text-slate-300">ล้างข้อความ</button>
+      </div>
+      <div id="diagnosticLogList" class="space-y-1 max-h-24 overflow-y-auto pr-2"></div>
+    </div>
+
+    <!-- Tab Navigation & Sound Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
+      <div class="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
+        <button id="tabBtn_scanner" onclick="switchTab('scanner')" class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          <span>ตรวจจับและทักทาย</span>
+        </button>
+        <button id="tabBtn_register" onclick="switchTab('register')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+          </svg>
+          <span>ลงทะเบียนใบหน้า</span>
+        </button>
+        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>รายชื่อในระบบ</span>
+          <span id="profileCountBadge" class="ml-1.5 px-2 py-0.5 rounded-full text-xs bg-slate-800 text-blue-400 font-semibold border border-blue-500/30">0 คน</span>
+        </button>
+      </div>
+
+      <!-- Voice Control & Testing Buttons -->
+      <div class="flex items-center space-x-2">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3.5 py-2 rounded-xl glass-card text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 transition flex items-center space-x-2 shadow-sm">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+          </svg>
+          <span class="text-sm font-medium">เปิดเสียงพูด</span>
+        </button>
+
+        <div class="hidden sm:flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
+          <span class="text-xs text-slate-400 px-2 font-medium">ทดสอบเสียง:</span>
+          <button onclick="testGreetingSpeech('known')" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">
+            เสียงคนรู้จัก
+          </button>
+          <button onclick="testGreetingSpeech('unknown')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition">
+            เสียงลูกค้าทั่วไป
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: Face Recognition & Live Scanner Pane -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_scanner" class="space-y-4">
+      
+      <!-- Greeting Alert Banner -->
+      <div id="greetingBanner" class="hidden items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-900/90 via-indigo-900/90 to-purple-900/90 border border-blue-400/40 shadow-2xl backdrop-blur-md">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/30 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">
+            👋
+          </div>
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wider text-blue-300">ระบบทักทายด้วยเสียง</span>
+            <p id="greetingBannerText" class="text-lg font-bold text-white tracking-wide">
+              สวัสดีค่ะคุณ...
+            </p>
+          </div>
+        </div>
+        <span class="text-xs px-3 py-1 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/40">
+          ทักทายแล้ว
+        </span>
+      </div>
+
+      <!-- Main Video Viewport & Controls -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Camera Stream Frame (3 Cols) -->
+        <div class="lg:col-span-3">
+          <div class="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden bg-slate-900 border-2 border-slate-800 shadow-2xl flex items-center justify-center">
+            
+            <!-- Webcam Video Element -->
+            <video id="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+
+            <!-- Real-time Bounding Box Canvas -->
+            <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+            <!-- Animated Radar Scan Line -->
+            <div class="scan-line"></div>
+
+            <!-- Start Camera Overlay (When Camera is Stopped) -->
+            <div id="startCameraOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-6 text-center">
+              <div class="w-20 h-20 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4 text-blue-400">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-white mb-2">กล้อง Webcam พร้อมเปิดใช้งานทันที</h3>
+              <p class="text-sm text-slate-400 max-w-md mb-6">
+                กดปุ่มด้านล่างเพื่อเปิดกล้อง Webcam ได้ทันที โดยระบบจะสแกนใบหน้าให้อัตโนมัติเมื่อโมเดล AI พร้อม
+              </p>
+              <button id="startCameraBtn" onclick="startCamera()" class="px-6 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>เปิดกล้อง Webcam & เริ่มสแกน</span>
+              </button>
+            </div>
+
+            <!-- Stop Camera Floating Button -->
+            <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-semibold backdrop-blur-md border border-rose-500/50 shadow-lg transition flex items-center space-x-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+              <span>หยุดกล้อง</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Right Side: Rules Card -->
+        <div class="space-y-4">
+          <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
+            <h3 class="font-bold text-white text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+              เงื่อนไขการทำงานของระบบ
+            </h3>
+
+            <!-- Rule 1: Known Face -->
+            <div class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
+              <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>กรณีพบข้อมูลใบหน้าตรงกัน</span>
+              </div>
+              <p class="text-xs text-emerald-200">
+                ระบบจะตีกรอบสีเขียว ระบุชื่อ และเปล่งเสียงทักทาย: <span class="font-bold text-white">"สวัสดีค่ะคุณ [ชื่อ]"</span>
+              </p>
+            </div>
+
+            <!-- Rule 2: Unknown Face -->
+            <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/30 space-y-1">
+              <div class="flex items-center space-x-2 text-amber-400 font-semibold text-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>กรณีไม่พบข้อมูล (ลูกค้าทั่วไป)</span>
+              </div>
+              <p class="text-xs text-amber-200">
+                ระบบจะตีกรอบสีส้ม และเปล่งเสียงทักทาย: <span class="font-bold text-white">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+              </p>
+            </div>
+
+            <!-- Rule 3: Single Greet Logic -->
+            <div class="p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30 space-y-1">
+              <div class="flex items-center space-x-2 text-blue-400 font-semibold text-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>ระบบตัดการพูดซ้ำ (Anti-Spam)</span>
+              </div>
+              <p class="text-xs text-blue-200">
+                ระบบจะทักทายเพียง <span class="font-bold text-white">1 ครั้ง</span> เมื่อยืนอยู่หน้ากล้อง และจะรีเซ็ตเพื่อทักทายใหม่เมื่อ <span class="font-bold text-white">เดินออกจากรัศมีกล้องเกิน 3 วินาที</span>
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: Face Registration Pane -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_register" class="hidden space-y-6">
+      
+      <div class="max-w-3xl mx-auto glass-card rounded-2xl p-6 sm:p-8 border border-slate-800 space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white">ลงทะเบียนใบหน้าใหม่ (Face Registration)</h2>
+          <p class="text-sm text-slate-400 mt-1">
+            ถ่ายภาพใบหน้าหน้าตรงจากกล้อง เพื่อสกัดเวกเตอร์ข้อมูลคณิตศาสตร์ 128 มิติ และบันทึกรูปลง Google Drive
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          
+          <!-- Snapshot / Live Preview -->
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+              ภาพถ่ายใบหน้า
+            </label>
+            <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center">
+              <img id="regPreviewImage" class="hidden w-full h-full object-cover">
+              <canvas id="snapshotCanvas" class="hidden"></canvas>
+              
+              <div id="regEmptyHint" class="text-center p-4 text-slate-500">
+                <svg class="w-12 h-12 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                </svg>
+                <p class="text-xs">กดปุ่ม "ถ่ายภาพจากกล้อง" ด้านล่าง</p>
+              </div>
+            </div>
+
+            <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-2.5 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition flex items-center justify-center space-x-2 text-sm">
+              <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              </svg>
+              <span>📸 ถ่ายภาพใบหน้าจากกล้อง</span>
+            </button>
+            <p id="regCaptureStatus" class="text-xs text-center"></p>
+          </div>
+
+          <!-- Registration Form Input -->
+          <div class="space-y-4">
+            <div>
+              <label for="regNameInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                ชื่อ - นามสกุล หรือชื่อเรียก <span class="text-rose-400">*</span>
+              </label>
+              <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
+              <p class="text-xs text-slate-500 mt-1">ชื่อนี้จะถูกนำไปใช้ในเสียงทักทาย "สวัสดีค่ะคุณ [ชื่อ]"</p>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs text-slate-300">
+              <h4 class="font-semibold text-white">💡 คำแนะนำสำหรับการบันทึกใบหน้า:</h4>
+              <ul class="list-disc list-inside space-y-1 text-slate-400">
+                <li>อยู่ในบริเวณที่มีแสงสว่างเพียงพอ ไม่ย้อนแสง</li>
+                <li>มองตรงไปที่กล้องและถอดแว่นตาดำหรือหน้ากากอนามัย</li>
+                <li>ลงทะเบียนทีละ 1 ท่านเท่านั้น</li>
+              </ul>
+            </div>
+
+            <button id="saveProfileBtn" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white shadow-lg shadow-blue-600/30 transition text-sm flex items-center justify-center space-x-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+              </svg>
+              <span>💾 บันทึกข้อมูลใบหน้าลงระบบ</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: Registered Profiles List Pane -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_profiles" class="hidden space-y-4">
+      
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-bold text-white">รายชื่อที่ลงทะเบียนไว้ในระบบ</h2>
+          <p class="text-xs text-slate-400">ข้อมูลจัดเก็บใน Google Sheets และรูปภาพสำรองบน Google Drive</p>
+        </div>
+
+        <button onclick="loadProfilesFromBackend()" class="px-3 py-1.5 rounded-xl glass-card text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>รีเฟรชข้อมูล</span>
+        </button>
+      </div>
+
+      <!-- Profiles Grid Container -->
+      <div id="profilesListContainer" class="min-h-[250px]"></div>
+
+    </div>
+
+  </main>
+
+  <!-- Toast Notification Floating Box -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden toast-enter">
+    <div id="toastIcon"></div>
+    <span id="toastText" class="text-sm font-medium text-white"></span>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN JAVASCRIPT CONTROLLER (Runs Immediately & Non-Blocking) -->
+  <!-- ========================================================================= -->
+  <script>
+    // --- Flush any early boot logs into UI list ---
+    (function flushEarlyLogs() {
+      if (window._bootLogs && window._bootLogs.length > 0) {
+        var list = document.getElementById('diagnosticLogList');
+        if (list) {
+          window._bootLogs.forEach(function(item) {
+            var el = document.createElement('div');
+            el.style.color = item.isError ? '#f87171' : '#34d399';
+            el.textContent = '[' + item.time + '] ' + item.msg;
+            list.appendChild(el);
+          });
+        }
+      }
+    })();
+
+    // --- Dynamic Non-blocking Script Loader ---
+    function loadExternalScript(url, timeoutMs = 8000) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.async = true;
+        let timedOut = false;
+        const timer = setTimeout(() => {
+          timedOut = true;
+          reject(new Error('Timeout loading ' + url));
+        }, timeoutMs);
+
+        script.onload = () => {
+          if (!timedOut) {
+            clearTimeout(timer);
+            resolve(url);
+          }
+        };
+        script.onerror = () => {
+          if (!timedOut) {
+            clearTimeout(timer);
+            reject(new Error('Load failed for ' + url));
+          }
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function ensureFaceApiLoaded() {
+      if (typeof faceapi !== 'undefined') return true;
+
+      const cdnList = [
+        'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js',
+        'https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js'
+      ];
+
+      for (let i = 0; i < cdnList.length; i++) {
+        const cdn = cdnList[i];
+        try {
+          const host = new URL(cdn).hostname;
+          logStatus('[AI] กำลังดาวน์โหลดไลบรารี AI (' + host + ')...');
+          await loadExternalScript(cdn, 7000);
+
+          for (let wait = 0; wait < 30; wait++) {
+            if (typeof faceapi !== 'undefined') {
+              logStatus('[OK] เชื่อมต่อไลบรารี AI สำเร็จ (' + host + ')');
+              return true;
+            }
+            await new Promise(r => setTimeout(r, 100));
+          }
+        } catch (e) {
+          logStatus('[WARN] CDN (' + cdn + ') ไม่ตอบสนอง กำลังสลับแหล่งสำรอง...', true);
+        }
+      }
+
+      throw new Error('ไม่สามารถดาวน์โหลดไลบรารี face-api ได้');
+    }
+
+    // --- Model CDN Endpoints (High-speed Global CDN with edge servers in Thailand) ---
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzOO-mO-bMSzj_b_SPnwMLBiR7GIXViXFJmDVV_InuAAdMf6DmghpLEDXwYRf2inRTWZQ/exec';
+    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+    const MODEL_URL_BACKUP = 'https://justadudewhohacks.github.io/face-api.js/models';
+
+    const state = {
+      modelsLoaded: false,
+      cameraStarted: false,
+      currentTab: 'scanner',
+      profiles: [],
+      faceMatcher: null,
+      stream: null,
+      isDetecting: false,
+      soundEnabled: true,
+      thaiVoice: null,
+      trackedPersons: new Map(),
+      unknownTracker: { lastSeen: 0, hasGreeted: false },
+      EXIT_THRESHOLD_MS: 3000,
+      capturedDescriptor: null,
+      capturedImageBase64: null
+    };
+
+    // --- Voice & Speech Synthesis ---
+    function initSpeech() {
+      const voiceBadge = document.getElementById('voiceStatusBadge');
+      if (!('speechSynthesis' in window)) {
+        logStatus('[WARN] เบราว์เซอร์นี้ไม่มี SpeechSynthesis (ใช้ Web Audio แทน)', true);
+        if (voiceBadge) {
+          voiceBadge.innerHTML = '<span class="text-amber-400">●</span> ใช้เสียง Web Audio';
+          voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-900/60 text-amber-300 border border-amber-500/40';
+        }
+        return;
+      }
+
+      const detectVoices = () => {
+        try {
+          const voices = window.speechSynthesis.getVoices();
+          state.thaiVoice = voices.find(v => v.lang && v.lang.toLowerCase().includes('th')) || null;
+          
+          if (voiceBadge) {
+            if (state.thaiVoice) {
+              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> เสียงไทย: ' + state.thaiVoice.name;
+              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+              logStatus('[OK] ตรวจพบเสียงภาษาไทย: ' + state.thaiVoice.name);
+            } else if (voices.length > 0) {
+              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> เสียงระบบเบราว์เซอร์';
+              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+              logStatus('[OK] พร้อมใช้งานระบบเสียงสังเคราะห์');
+            } else {
+              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> ระบบเสียงพร้อม';
+              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+            }
+          }
+        } catch (e) {
+          logStatus('[WARN] Voice check: ' + (e ? e.message : e), true);
+        }
+      };
+
+      try {
+        window.speechSynthesis.onvoiceschanged = detectVoices;
+      } catch(e) {}
+      detectVoices();
+      setTimeout(detectVoices, 400);
+      setTimeout(detectVoices, 1200);
+    }
+
+    function speakText(text) {
+      if (!state.soundEnabled || !text) return;
+
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'th-TH';
+          utterance.rate = 0.95;
+          utterance.pitch = 1.05;
+          if (state.thaiVoice) utterance.voice = state.thaiVoice;
+          window.speechSynthesis.speak(utterance);
+        } catch(e) {
+          console.warn('Speech error:', e);
+        }
+      } else {
+        try {
+          const audio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(text));
+          audio.play().catch(e => console.warn(e));
+        } catch (e) {}
+      }
+
+      showGreetingBanner(text);
+    }
+
+    function showGreetingBanner(text) {
+      const banner = document.getElementById('greetingBanner');
+      const bannerText = document.getElementById('greetingBannerText');
+      if (banner && bannerText) {
+        bannerText.textContent = text;
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+        clearTimeout(banner._timer);
+        banner._timer = setTimeout(() => {
+          banner.classList.add('hidden');
+          banner.classList.remove('flex');
+        }, 5000);
+      }
+    }
+
+    // --- Face Models Loader (Ultra-fast from Edge CDN) ---
+    async function loadFaceModels() {
+      const modelBadge = document.getElementById('modelStatusBadge');
+      if (modelBadge) {
+        modelBadge.innerHTML = '<span class="text-blue-400">●</span> กำลังดาวน์โหลดโมเดล AI...';
+        modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-500/40';
+      }
+
+      logStatus('[AI] กำลังโหลดโมเดล AI น้ำหนักเบาจาก Edge CDN...');
+
+      async function fetchModels(baseUrl) {
+        logStatus('[AI] โหลด TinyFaceDetector (190 KB)...');
+        await faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl);
+
+        logStatus('[AI] โหลด FaceLandmark (350 KB)...');
+        await faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl);
+
+        logStatus('[AI] โหลด FaceRecognitionNet...');
+        await faceapi.nets.faceRecognitionNet.loadFromUri(baseUrl);
+      }
+
+      try {
+        await fetchModels(MODEL_URL);
+        state.modelsLoaded = true;
+        if (modelBadge) {
+          modelBadge.innerHTML = '<span class="text-emerald-400">●</span> โมเดล AI พร้อมใช้งาน';
+          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+        }
+        logStatus('[OK] โมเดล AI ทั้งหมดพร้อมทำงาน 100%');
+        showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
+      } catch (err) {
+        logStatus('[WARN] CDN หลักตอบสนองช้า กำลังลอง CDN สำรอง...', true);
+        try {
+          await fetchModels(MODEL_URL_BACKUP);
+          state.modelsLoaded = true;
+          if (modelBadge) {
+            modelBadge.innerHTML = '<span class="text-emerald-400">●</span> โมเดล AI พร้อมใช้งาน';
+            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+          }
+          logStatus('[OK] โมเดล AI โหลดสำเร็จจาก CDN สำรอง');
+          showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
+        } catch (err2) {
+          logStatus('[ERROR] ไม่สามารถโหลดโมเดล AI: ' + (err2 ? err2.message : err2), true);
+          if (modelBadge) {
+            modelBadge.innerHTML = '<span class="text-red-400">●</span> โหลดโมเดล AI ล้มเหลว';
+            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+          }
+        }
+      }
+    }
+
+    // --- Backend Profiles Sync (Instant Local Cache + Background Sync) ---
+    function loadProfilesFromBackend() {
+      // 1. อ่านข้อมูลจาก Local Cache ทันทีใน 0 ms
+      try {
+        const cachedRaw = localStorage.getItem('cached_face_profiles');
+        if (cachedRaw) {
+          const cachedProfiles = JSON.parse(cachedRaw);
+          if (Array.isArray(cachedProfiles) && cachedProfiles.length > 0) {
+            state.profiles = cachedProfiles;
+            updateFaceMatcher();
+            renderProfilesList();
+            document.getElementById('profileCountBadge').textContent = state.profiles.length + ' คน';
+            logStatus('[CACHE] โหลดข้อมูลใบหน้าจากแคชทันที (' + state.profiles.length + ' คน)');
+          }
+        }
+      } catch (e) {}
+
+      // 2. ซิงค์กับ Google Sheets ในพื้นหลัง
+      logStatus('[SYNC] กำลังซิงค์ข้อมูลกับ Google Sheets...');
+
+      var handleProfilesSuccess = function(response) {
+        if (response && response.success) {
+          state.profiles = response.profiles || [];
+          try {
+            localStorage.setItem('cached_face_profiles', JSON.stringify(state.profiles));
+          } catch (e) {}
+          updateFaceMatcher();
+          renderProfilesList();
+          document.getElementById('profileCountBadge').textContent = state.profiles.length + ' คน';
+          logStatus('[OK] ซิงค์ Google Sheets เรียบร้อยแล้ว (พบ ' + state.profiles.length + ' คน)');
+        } else {
+          logStatus('[WARN] ข้อมูลโปรไฟล์: ' + (response ? response.message : ''), true);
+        }
+      };
+
+      var handleProfilesError = function(err) {
+        logStatus('[WARN] ซิงค์กับ Google Sheets: ' + (err ? err.message : err), true);
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleProfilesSuccess)
+          .withFailureHandler(handleProfilesError)
+          .getFaceProfiles();
+      } else {
+        // Direct REST API (GitHub Pages / Standalone HTTPS)
+        fetch(GAS_API_URL + '?action=getProfiles', { redirect: 'follow' })
+          .then(function(r) { return r.json(); })
+          .then(handleProfilesSuccess)
+          .catch(handleProfilesError);
+      }
+    }
+
+    function updateFaceMatcher() {
+      if (!state.profiles || state.profiles.length === 0) {
+        state.faceMatcher = null;
+        return;
+      }
+      const labeledDescriptors = [];
+      state.profiles.forEach(p => {
+        if (p.descriptors && p.descriptors.length > 0) {
+          const floatArray = new Float32Array(p.descriptors);
+          labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(p.name, [floatArray]));
+        }
+      });
+      state.faceMatcher = labeledDescriptors.length > 0 ? new faceapi.FaceMatcher(labeledDescriptors, 0.55) : null;
+    }
+
+    // --- Camera & Real-time Recognition ---
+    async function startCamera() {
+      if (state.cameraStarted) return;
+      const video = document.getElementById('webcamVideo');
+      const cameraBadge = document.getElementById('cameraStatusBadge');
+
+      try {
+        logStatus('[CAMERA] กำลังขอสิทธิ์เปิดกล้องหน้า...');
+        
+        var stream = null;
+        try {
+          // แผน 1: ขอเปิดกล้องหน้าแบบกำหนดความละเอียดมาตรฐาน
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+          });
+        } catch (e1) {
+          try {
+            // แผน 2: ขอเปิดกล้องหน้าแบบไม่ระบุความละเอียด
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'user' },
+              audio: false
+            });
+          } catch (e2) {
+            // แผน 3: ขอเปิดกล้องใดๆ ที่มีในอุปกรณ์
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: false
+            });
+          }
+        }
+
+        state.stream = stream;
+        video.srcObject = state.stream;
+        await video.play();
+
+        state.cameraStarted = true;
+        cameraBadge.innerHTML = '<span class="text-emerald-400">●</span> กล้องทำงานอยู่';
+        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+        document.getElementById('startCameraOverlay').classList.add('hidden');
+        document.getElementById('stopCameraBtn').classList.remove('hidden');
+        logStatus('[OK] กล้อง Webcam เปิดใช้งานแล้ว เริ่มการสแกนใบหน้า');
+
+        startRecognitionLoop();
+      } catch (err) {
+        var errMsg = err ? (err.message || err.toString()) : 'Unknown error';
+        logStatus('[ERROR] ไม่สามารถเปิดกล้องได้: ' + errMsg, true);
+        if (err.name === 'NotAllowedError' || errMsg.indexOf('not allowed') !== -1 || errMsg.indexOf('denied') !== -1) {
+          logStatus('[แนะนำ] สิทธิ์กล้องถูกปิด: ไปที่ การตั้งค่า iPad > Chrome > เปิดสิทธิ์ "กล้อง" หรือแตะไอคอนการตั้งค่าหน้า URL', true);
+          showToast('กรุณาเปิดสิทธิ์กล้องใน "การตั้งค่า iPad > Chrome > กล้อง"', 'error');
+        } else {
+          showToast('ไม่สามารถเปิดกล้องได้: ' + errMsg, 'error');
+        }
+        cameraBadge.innerHTML = '<span class="text-red-400">●</span> กล้องไม่พร้อมใช้งาน';
+        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+      }
+    }
+
+    function stopCamera() {
+      if (state.stream) {
+        state.stream.getTracks().forEach(track => track.stop());
+        state.stream = null;
+      }
+      state.cameraStarted = false;
+      state.isDetecting = false;
+      document.getElementById('webcamVideo').srcObject = null;
+      const canvas = document.getElementById('overlayCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      document.getElementById('startCameraOverlay').classList.remove('hidden');
+      document.getElementById('stopCameraBtn').classList.add('hidden');
+      const cameraBadge = document.getElementById('cameraStatusBadge');
+      cameraBadge.innerHTML = '<span class="text-slate-400">●</span> กล้องปิดอยู่';
+      cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+      logStatus('[CAMERA] กล้อง Webcam ปิดการทำงานแล้ว');
+    }
+
+    async function startRecognitionLoop() {
+      if (state.isDetecting) return;
+      state.isDetecting = true;
+
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('overlayCanvas');
+      const displaySize = { width: video.videoWidth || 640, height: video.videoHeight || 480 };
+      canvas.width = displaySize.width;
+      canvas.height = displaySize.height;
+      if (typeof faceapi !== 'undefined' && faceapi.matchDimensions) {
+        faceapi.matchDimensions(canvas, displaySize);
+      }
+
+      const detectorOptions = typeof faceapi !== 'undefined' ? new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }) : null;
+
+      async function detectFrame() {
+        if (!state.cameraStarted || !state.isDetecting) return;
+
+        if (video.readyState >= 2 && state.modelsLoaded && state.currentTab === 'scanner') {
+          try {
+            const detections = await faceapi.detectAllFaces(video, detectorOptions)
+              .withFaceLandmarks()
+              .withFaceDescriptors();
+
+            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const now = Date.now();
+            let detectedCurrentFrameNames = new Set();
+            let unknownDetectedThisFrame = false;
+
+            if (resizedDetections.length > 0) {
+              resizedDetections.forEach(detection => {
+                const { box } = detection.detection;
+                let label = 'Unknown';
+                let isKnown = false;
+                let distance = 1.0;
+
+                if (state.faceMatcher) {
+                  const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
+                  label = bestMatch.label;
+                  distance = bestMatch.distance;
+                  isKnown = (label !== 'unknown');
+                }
+
+                drawFaceBox(ctx, box, label, isKnown, distance);
+
+                if (isKnown) {
+                  detectedCurrentFrameNames.add(label);
+                  handlePersonGreeting(label, 1 - distance);
+                } else {
+                  unknownDetectedThisFrame = true;
+                }
+              });
+
+              if (unknownDetectedThisFrame) {
+                handleUnknownGreeting();
+              }
+            }
+
+            cleanupExitedPersons(now, detectedCurrentFrameNames, unknownDetectedThisFrame);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+        requestAnimationFrame(detectFrame);
+      }
+      requestAnimationFrame(detectFrame);
+    }
+
+    function drawFaceBox(ctx, box, label, isKnown, distance) {
+      const color = isKnown ? '#10B981' : '#F59E0B';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+      const displayText = isKnown ? ('คุณ ' + label) : 'ลูกค้าทั่วไป';
+      ctx.font = 'bold 15px Sarabun, sans-serif';
+      const textWidth = ctx.measureText(displayText).width;
+
+      ctx.fillStyle = color;
+      ctx.fillRect(box.x, box.y - 28, textWidth + 20, 26);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(displayText, box.x + 10, box.y - 9);
+    }
+
+    function handlePersonGreeting(name, confidence) {
+      const now = Date.now();
+      let person = state.trackedPersons.get(name);
+      if (!person) {
+        state.trackedPersons.set(name, { lastSeen: now, hasGreeted: true });
+        speakText('สวัสดีค่ะคุณ ' + name);
+        logStatus('[GREET] ทักทายผู้ใช้: คุณ ' + name);
+        recordScanLog(name, 'KNOWN', confidence);
+      } else {
+        person.lastSeen = now;
+      }
+    }
+
+    function handleUnknownGreeting() {
+      const now = Date.now();
+      if (!state.unknownTracker.hasGreeted) {
+        state.unknownTracker.hasGreeted = true;
+        state.unknownTracker.lastSeen = now;
+        speakText('สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ');
+        logStatus('[GREET] ทักทายลูกค้าทั่วไป');
+        recordScanLog('ลูกค้าทั่วไป', 'UNKNOWN', 0);
+      } else {
+        state.unknownTracker.lastSeen = now;
+      }
+    }
+
+    function cleanupExitedPersons(now, detectedNames, unknownDetected) {
+      state.trackedPersons.forEach((data, name) => {
+        if (!detectedNames.has(name) && now - data.lastSeen > state.EXIT_THRESHOLD_MS) {
+          state.trackedPersons.delete(name);
+          logStatus('[EXIT] คุณ ' + name + ' เดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
+        }
+      });
+
+      if (!unknownDetected && state.unknownTracker.hasGreeted && now - state.unknownTracker.lastSeen > state.EXIT_THRESHOLD_MS) {
+        state.unknownTracker.hasGreeted = false;
+        state.unknownTracker.lastSeen = 0;
+        logStatus('[EXIT] ลูกค้าทั่วไปเดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
+      }
+    }
+
+    function recordScanLog(name, status, confidence) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run.logScanEvent(name, status, confidence);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'logScan', name: name, status: status, confidence: confidence })
+        }).catch(function(e) { console.warn('Log scan error:', e); });
+      }
+    }
+
+    // --- Face Registration Logic ---
+    async function captureFaceForRegistration() {
+      if (!state.cameraStarted) {
+        showToast('กรุณาเปิดกล้อง Webcam ก่อนถ่ายภาพ', 'warning');
+        return;
+      }
+
+      const video = document.getElementById('webcamVideo');
+      const snapshotCanvas = document.getElementById('snapshotCanvas');
+      const snapshotCtx = snapshotCanvas.getContext('2d');
+      const previewImg = document.getElementById('regPreviewImage');
+      const captureStatus = document.getElementById('regCaptureStatus');
+
+      snapshotCanvas.width = video.videoWidth || 640;
+      snapshotCanvas.height = video.videoHeight || 480;
+      snapshotCtx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+
+      captureStatus.textContent = 'กำลังวิเคราะห์ใบหน้าและสกัด Vector...';
+      captureStatus.className = 'text-xs text-blue-400 mt-2';
+
+      try {
+        const detection = await faceapi.detectSingleFace(snapshotCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+          .withFaceLandmarks()
+          .withFaceDescriptor();
+
+        if (!detection) {
+          captureStatus.textContent = 'ไม่พบใบหน้าในภาพ กรุณาขยับหน้าตรงในระยะที่เหมาะสมแล้วลองใหม่';
+          captureStatus.className = 'text-xs text-rose-400 mt-2';
+          state.capturedDescriptor = null;
+          state.capturedImageBase64 = null;
+          document.getElementById('saveProfileBtn').disabled = true;
+          return;
+        }
+
+        const base64 = snapshotCanvas.toDataURL('image/jpeg', 0.85);
+        previewImg.src = base64;
+        previewImg.classList.remove('hidden');
+        document.getElementById('regEmptyHint').classList.add('hidden');
+
+        state.capturedDescriptor = Array.from(detection.descriptor);
+        state.capturedImageBase64 = base64;
+
+        captureStatus.textContent = 'ตรวจพบใบหน้าเรียบร้อย พร้อมสำหรับบันทึกข้อมูล';
+        captureStatus.className = 'text-xs text-emerald-400 mt-2';
+        document.getElementById('saveProfileBtn').disabled = false;
+      } catch (err) {
+        captureStatus.textContent = 'เกิดข้อผิดพลาดในการวิเคราะห์ใบหน้า: ' + (err ? err.message : err);
+        captureStatus.className = 'text-xs text-rose-400 mt-2';
+      }
+    }
+
+    function saveProfile() {
+      const nameInput = document.getElementById('regNameInput');
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        showToast('กรุณาระบุชื่อ-นามสกุล', 'warning');
+        nameInput.focus();
+        return;
+      }
+
+      if (!state.capturedDescriptor || !state.capturedImageBase64) {
+        showToast('กรุณากดถ่ายภาพใบหน้าก่อนบันทึก', 'warning');
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveProfileBtn');
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังบันทึกข้อมูล...';
+
+      const payload = {
+        name: name,
+        descriptor: state.capturedDescriptor,
+        imageBase64: state.capturedImageBase64
+      };
+
+      var handleSaveSuccess = function(response) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 บันทึกข้อมูลใบหน้า';
+
+        if (response && response.success) {
+          showToast('ลงทะเบียนคุณ "' + name + '" สำเร็จเรียบร้อย', 'success');
+          nameInput.value = '';
+          document.getElementById('regPreviewImage').classList.add('hidden');
+          document.getElementById('regEmptyHint').classList.remove('hidden');
+          document.getElementById('regCaptureStatus').textContent = '';
+          state.capturedDescriptor = null;
+          state.capturedImageBase64 = null;
+          saveBtn.disabled = true;
+
+          loadProfilesFromBackend();
+          switchTab('scanner');
+        } else {
+          showToast(response.message || 'บันทึกล้มเหลว', 'error');
+        }
+      };
+
+      var handleSaveError = function(err) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '💾 บันทึกข้อมูลใบหน้า';
+        showToast('บันทึกไม่สำเร็จ: ' + (err ? err.message : err), 'error');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleSaveSuccess)
+          .withFailureHandler(handleSaveError)
+          .saveFaceProfile(payload);
+      } else {
+        // Direct REST API (GitHub Pages / Standalone HTTPS)
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveProfile', payload: payload })
+        })
+          .then(function(r) { return r.json(); })
+          .then(handleSaveSuccess)
+          .catch(handleSaveError);
+      }
+    }
+
+    function deleteProfile(id, name) {
+      if (!confirm('คุณต้องการลบข้อมูลใบหน้าของ "' + name + '" ใช่หรือไม่?')) return;
+
+      showToast('กำลังลบข้อมูล ' + name + '...', 'info');
+      var handleDeleteSuccess = function(response) {
+        if (response && response.success) {
+          showToast('ลบข้อมูล ' + name + ' เรียบร้อยแล้ว', 'success');
+          loadProfilesFromBackend();
+        } else {
+          showToast(response.message || 'ลบข้อมูลไม่สำเร็จ', 'error');
+        }
+      };
+
+      var handleDeleteError = function(err) {
+        showToast('ลบไม่สำเร็จ: ' + (err ? err.message : err), 'error');
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleDeleteSuccess)
+          .withFailureHandler(handleDeleteError)
+          .deleteFaceProfile(id);
+      } else {
+        // Direct REST API (GitHub Pages / Standalone HTTPS)
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'deleteProfile', id: id })
+        })
+          .then(function(r) { return r.json(); })
+          .then(handleDeleteSuccess)
+          .catch(handleDeleteError);
+      }
+    }
+
+    // --- UI Helpers ---
+    function renderProfilesList() {
+      const container = document.getElementById('profilesListContainer');
+      if (!container) return;
+
+      if (state.profiles.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-slate-400"><svg class="w-16 h-16 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><p class="text-base font-medium">ยังไม่มีข้อมูลใบหน้าที่ลงทะเบียนไว้</p><p class="text-xs text-slate-500 mt-1">กดที่แท็บ "ลงทะเบียนใบหน้า" เพื่อเพิ่มข้อมูลผู้ใช้ใหม่</p></div>';
+        return;
+      }
+
+      let html = '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">';
+      state.profiles.forEach(p => {
+        var safeName = (p.name || '').replace(/"/g, '&quot;');
+        var safeUrl = (p.imageUrl || '');
+        var imgDisplay = safeUrl
+          ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-14 h-14 rounded-full object-cover border-2 border-blue-500/50 flex-shrink-0" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=1E293B&color=38BDF8\'">'
+          : '<div class="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center text-lg font-bold text-blue-400 border border-slate-600 flex-shrink-0">' + safeName.charAt(0) + '</div>';
+
+        html += '<div class="glass-card rounded-xl p-4 flex items-center justify-between border border-slate-700/60 hover:border-blue-500/40 transition">' +
+          '<div class="flex items-center space-x-3 overflow-hidden">' +
+          imgDisplay +
+          '<div class="truncate"><h4 class="font-semibold text-white truncate">' + safeName + '</h4><p class="text-xs text-slate-400">บันทึกเมื่อ: ' + (p.createdAt || '-') + '</p></div></div>' +
+          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition" title="ลบข้อมูล"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function switchTab(tabName) {
+      state.currentTab = tabName;
+      ['scanner', 'register', 'profiles'].forEach(t => {
+        const btn = document.getElementById('tabBtn_' + t);
+        const pane = document.getElementById('tabPane_' + t);
+        if (t === tabName) {
+          btn.className = 'px-4 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2';
+          pane.classList.remove('hidden');
+        } else {
+          btn.className = 'px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2';
+          pane.classList.add('hidden');
+        }
+      });
+      if (tabName === 'profiles') renderProfilesList();
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (state.soundEnabled) {
+        btn.innerHTML = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg><span class="text-sm">เปิดเสียงพูด</span>';
+        showToast('เปิดเสียงพูดแล้ว', 'info');
+      } else {
+        btn.innerHTML = '<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg><span class="text-sm">ปิดเสียงพูด</span>';
+        window.speechSynthesis && window.speechSynthesis.cancel();
+        showToast('ปิดเสียงพูดแล้ว', 'info');
+      }
+    }
+
+    function testGreetingSpeech(type) {
+      if (type === 'known') {
+        speakText('สวัสดีค่ะคุณ ธนกร');
+      } else {
+        speakText('สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toastNotification');
+      const toastText = document.getElementById('toastText');
+      const toastIcon = document.getElementById('toastIcon');
+      if (!toast) return;
+
+      let borderClass = 'border-blue-500/50 text-blue-300';
+      let iconSvg = '<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+
+      if (type === 'success') {
+        borderClass = 'border-emerald-500/50 text-emerald-300';
+        iconSvg = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+      } else if (type === 'error') {
+        borderClass = 'border-rose-500/50 text-rose-300';
+        iconSvg = '<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+      }
+
+      toastIcon.innerHTML = iconSvg;
+      toastText.textContent = message;
+      toast.className = 'fixed bottom-5 right-5 z-50 glass-card px-4 py-3 rounded-xl flex items-center space-x-3 shadow-2xl border ' + borderClass + ' toast-visible transition-all duration-300';
+
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.className = 'fixed bottom-5 right-5 z-50 hidden toast-enter';
+      }, 4000);
+    }
+
+    
+    // Expose all action functions explicitly to window for HTML onclick
+    window.startCamera = startCamera;
+    window.stopCamera = stopCamera;
+    window.switchTab = switchTab;
+    window.toggleSound = toggleSound;
+    window.testGreetingSpeech = testGreetingSpeech;
+    window.captureFaceForRegistration = captureFaceForRegistration;
+    window.saveProfile = saveProfile;
+    window.deleteProfile = deleteProfile;
+    window.loadProfilesFromBackend = loadProfilesFromBackend;
+
+    // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
+    // (Executes immediately without relying on DOMContentLoaded in iframe)
+    (async function startApplicationNow() {
+      logStatus('[START] กำลังเริ่มต้นระบบ AI Face Recognition...');
+      
+      // 1. ตรวจสอบระบบเสียงภาษาไทยทันที
+      initSpeech();
+
+      // 2. ดึงข้อมูลโปรไฟล์จากแคชในเครื่องทันที 0ms และซิงค์ Google Sheets
+      loadProfilesFromBackend();
+
+      // 3. เริ่มโหลดไลบรารีและโมเดล AI ในพื้นหลัง (ไม่บล็อก UI และกล้อง)
+      try {
+        await ensureFaceApiLoaded();
+        await loadFaceModels();
+      } catch (err) {
+        logStatus('[ERROR] ความล้มเหลวของโมเดล AI: ' + (err ? err.message : err), true);
+        const modelBadge = document.getElementById('modelStatusBadge');
+        if (modelBadge) {
+          modelBadge.innerHTML = '<span class="text-red-400">●</span> โหลดโมเดล AI ล้มเหลว';
+          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+        }
+      }
+    })();
+  </script>
+
+</body>
+</html>
