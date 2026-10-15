@@ -426,28 +426,63 @@
           
           <!-- Snapshot / Live Preview -->
           <div class="space-y-3">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              ภาพถ่ายใบหน้า
-            </label>
-            <div class="relative aspect-video rounded-xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center">
-              <img id="regPreviewImage" class="hidden w-full h-full object-cover">
-              <canvas id="snapshotCanvas" class="hidden"></canvas>
-              
-              <div id="regEmptyHint" class="text-center p-4 text-slate-500">
-                <svg class="w-12 h-12 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                </svg>
-                <p class="text-xs">กดปุ่ม "ถ่ายภาพจากกล้อง" ด้านล่าง</p>
-              </div>
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                ตัวอย่างกล้องสด & ภาพถ่าย
+              </label>
+              <span id="regLiveBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>กล้องสด (LIVE)</span>
+              </span>
             </div>
 
-            <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-2.5 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 transition flex items-center justify-center space-x-2 text-sm">
-              <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-              </svg>
-              <span>📸 ถ่ายภาพใบหน้าจากกล้อง</span>
-            </button>
-            <p id="regCaptureStatus" class="text-xs text-center"></p>
+            <div class="relative aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden bg-slate-900 border-2 border-slate-700/80 shadow-2xl flex items-center justify-center">
+              
+              <!-- Live Video Stream -->
+              <div id="regVideoContainer" class="relative w-full h-full">
+                <video id="regWebcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+
+                <!-- Face Positioning Oval Guide -->
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div class="w-44 h-56 sm:w-52 sm:h-64 rounded-[50%] border-2 border-dashed border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center">
+                    <span class="text-[11px] font-medium text-blue-200 bg-slate-950/70 px-2.5 py-0.5 rounded-full border border-blue-500/30 backdrop-blur-sm shadow">
+                      วางใบหน้าให้อยู่ในกรอบนี้
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Fallback overlay if camera is not started -->
+                <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 text-center">
+                  <p class="text-xs text-slate-400 mb-3">กล้องยังไม่เริ่มทำงาน</p>
+                  <button type="button" onclick="startCamera()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition">
+                    เปิดกล้อง Webcam
+                  </button>
+                </div>
+              </div>
+
+              <!-- Captured Snapshot Preview (Hidden initially) -->
+              <img id="regPreviewImage" class="hidden w-full h-full object-cover">
+              <canvas id="snapshotCanvas" class="hidden"></canvas>
+            </div>
+
+            <!-- Action Buttons: Capture & Retake -->
+            <div class="space-y-2">
+              <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 transition flex items-center justify-center space-x-2 text-sm">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                </svg>
+                <span>📸 ถ่ายภาพใบหน้าจากกล้อง</span>
+              </button>
+
+              <button id="retakeRegBtn" onclick="retakePhotoForRegistration()" class="hidden w-full py-2.5 rounded-xl font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center justify-center space-x-2 text-sm">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>🔄 ถ่ายภาพใหม่ (Retake)</span>
+              </button>
+            </div>
+
+            <p id="regCaptureStatus" class="text-xs text-center min-h-[1.25rem]"></p>
           </div>
 
           <!-- Registration Form Input -->
@@ -1008,6 +1043,14 @@
         video.srcObject = state.stream;
         await video.play();
 
+        const regVideo = document.getElementById('regWebcamVideo');
+        if (regVideo) {
+          regVideo.srcObject = state.stream;
+          regVideo.play().catch(function() {});
+        }
+        const regOverlay = document.getElementById('regCameraOffOverlay');
+        if (regOverlay) regOverlay.classList.add('hidden');
+
         state.cameraStarted = true;
         cameraBadge.innerHTML = '<span class="text-emerald-400">●</span> กล้องทำงานอยู่';
         cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
@@ -1038,6 +1081,11 @@
       state.cameraStarted = false;
       state.isDetecting = false;
       document.getElementById('webcamVideo').srcObject = null;
+      const regVideo = document.getElementById('regWebcamVideo');
+      if (regVideo) regVideo.srcObject = null;
+      const regOverlay = document.getElementById('regCameraOffOverlay');
+      if (regOverlay) regOverlay.classList.remove('hidden');
+
       const canvas = document.getElementById('overlayCanvas');
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1193,23 +1241,30 @@
 
     // --- Face Registration Logic ---
     async function captureFaceForRegistration() {
-      if (!state.cameraStarted) {
-        showToast('กรุณาเปิดกล้อง Webcam ก่อนถ่ายภาพ', 'warning');
+      const regVideo = document.getElementById('regWebcamVideo');
+      const video = (regVideo && regVideo.readyState >= 2) ? regVideo : document.getElementById('webcamVideo');
+
+      if (!state.cameraStarted || !video || video.readyState < 2) {
+        showToast('กรุณารอสักครู่ให้กล้องเริ่มทำงานก่อนถ่ายภาพ', 'warning');
+        startCamera();
         return;
       }
 
-      const video = document.getElementById('webcamVideo');
       const snapshotCanvas = document.getElementById('snapshotCanvas');
       const snapshotCtx = snapshotCanvas.getContext('2d');
       const previewImg = document.getElementById('regPreviewImage');
       const captureStatus = document.getElementById('regCaptureStatus');
+      const regVideoContainer = document.getElementById('regVideoContainer');
+      const captureBtn = document.getElementById('captureForRegBtn');
+      const retakeBtn = document.getElementById('retakeRegBtn');
+      const regLiveBadge = document.getElementById('regLiveBadge');
 
       snapshotCanvas.width = video.videoWidth || 640;
       snapshotCanvas.height = video.videoHeight || 480;
       snapshotCtx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
 
-      captureStatus.textContent = 'กำลังวิเคราะห์ใบหน้าและสกัด Vector...';
-      captureStatus.className = 'text-xs text-blue-400 mt-2';
+      captureStatus.textContent = 'กำลังวิเคราะห์ใบหน้าและสกัด Vector 128 มิติ...';
+      captureStatus.className = 'text-xs text-blue-400 mt-2 font-medium';
 
       try {
         const detection = await faceapi.detectSingleFace(snapshotCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
@@ -1217,8 +1272,8 @@
           .withFaceDescriptor();
 
         if (!detection) {
-          captureStatus.textContent = 'ไม่พบใบหน้าในภาพ กรุณาขยับหน้าตรงในระยะที่เหมาะสมแล้วลองใหม่';
-          captureStatus.className = 'text-xs text-rose-400 mt-2';
+          captureStatus.textContent = '❌ ไม่พบใบหน้าในภาพ กรุณาขยับหน้าให้อยู่ในกรอบวงรีแล้วลองใหม่อีกครั้ง';
+          captureStatus.className = 'text-xs text-rose-400 mt-2 font-medium';
           state.capturedDescriptor = null;
           state.capturedImageBase64 = null;
           document.getElementById('saveProfileBtn').disabled = true;
@@ -1228,17 +1283,56 @@
         const base64 = snapshotCanvas.toDataURL('image/jpeg', 0.85);
         previewImg.src = base64;
         previewImg.classList.remove('hidden');
-        document.getElementById('regEmptyHint').classList.add('hidden');
+        if (regVideoContainer) regVideoContainer.classList.add('hidden');
+        if (captureBtn) captureBtn.classList.add('hidden');
+        if (retakeBtn) retakeBtn.classList.remove('hidden');
+        if (regLiveBadge) {
+          regLiveBadge.className = 'px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-semibold flex items-center gap-1.5';
+          regLiveBadge.innerHTML = '<span class="text-blue-400">✓</span> <span>ภาพถ่ายพร้อมบันทึก</span>';
+        }
 
         state.capturedDescriptor = Array.from(detection.descriptor);
         state.capturedImageBase64 = base64;
 
-        captureStatus.textContent = 'ตรวจพบใบหน้าเรียบร้อย พร้อมสำหรับบันทึกข้อมูล';
-        captureStatus.className = 'text-xs text-emerald-400 mt-2';
+        captureStatus.textContent = '✓ ตรวจพบใบหน้าเรียบร้อย พร้อมสำหรับบันทึกข้อมูล';
+        captureStatus.className = 'text-xs text-emerald-400 mt-2 font-medium';
         document.getElementById('saveProfileBtn').disabled = false;
       } catch (err) {
         captureStatus.textContent = 'เกิดข้อผิดพลาดในการวิเคราะห์ใบหน้า: ' + (err ? err.message : err);
-        captureStatus.className = 'text-xs text-rose-400 mt-2';
+        captureStatus.className = 'text-xs text-rose-400 mt-2 font-medium';
+      }
+    }
+
+    function retakePhotoForRegistration() {
+      state.capturedDescriptor = null;
+      state.capturedImageBase64 = null;
+
+      const previewImg = document.getElementById('regPreviewImage');
+      const regVideoContainer = document.getElementById('regVideoContainer');
+      const captureBtn = document.getElementById('captureForRegBtn');
+      const retakeBtn = document.getElementById('retakeRegBtn');
+      const captureStatus = document.getElementById('regCaptureStatus');
+      const saveBtn = document.getElementById('saveProfileBtn');
+      const regLiveBadge = document.getElementById('regLiveBadge');
+
+      if (previewImg) {
+        previewImg.classList.add('hidden');
+        previewImg.src = '';
+      }
+      if (regVideoContainer) regVideoContainer.classList.remove('hidden');
+      if (captureBtn) captureBtn.classList.remove('hidden');
+      if (retakeBtn) retakeBtn.classList.add('hidden');
+      if (saveBtn) saveBtn.disabled = true;
+      if (captureStatus) captureStatus.textContent = '';
+      if (regLiveBadge) {
+        regLiveBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1.5';
+        regLiveBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span>กล้องสด (LIVE)</span>';
+      }
+
+      const regVideo = document.getElementById('regWebcamVideo');
+      if (regVideo && state.stream) {
+        regVideo.srcObject = state.stream;
+        regVideo.play().catch(function() {});
       }
     }
 
@@ -1274,12 +1368,7 @@
         if (response && response.success) {
           showToast('ลงทะเบียนคุณ "' + name + '" สำเร็จเรียบร้อย', 'success');
           nameInput.value = '';
-          document.getElementById('regPreviewImage').classList.add('hidden');
-          document.getElementById('regEmptyHint').classList.remove('hidden');
-          document.getElementById('regCaptureStatus').textContent = '';
-          state.capturedDescriptor = null;
-          state.capturedImageBase64 = null;
-          saveBtn.disabled = true;
+          retakePhotoForRegistration();
 
           loadProfilesFromBackend();
           switchTab('scanner');
@@ -1396,6 +1485,21 @@
       });
       if (tabName === 'profiles') renderProfilesList();
       if (tabName === 'users') loadSystemUsers();
+      if (tabName === 'register') {
+        const regVideo = document.getElementById('regWebcamVideo');
+        const regOverlay = document.getElementById('regCameraOffOverlay');
+        if (state.cameraStarted && state.stream) {
+          if (regVideo && regVideo.srcObject !== state.stream) {
+            regVideo.srcObject = state.stream;
+          }
+          if (regVideo) regVideo.play().catch(function() {});
+          if (regOverlay) regOverlay.classList.add('hidden');
+        } else {
+          startCamera().catch(function() {
+            if (regOverlay) regOverlay.classList.remove('hidden');
+          });
+        }
+      }
     }
 
     function toggleSound() {
@@ -1848,6 +1952,7 @@
     window.toggleSound = toggleSound;
     window.testGreetingSpeech = testGreetingSpeech;
     window.captureFaceForRegistration = captureFaceForRegistration;
+    window.retakePhotoForRegistration = retakePhotoForRegistration;
     window.saveProfile = saveProfile;
     window.deleteProfile = deleteProfile;
     window.loadProfilesFromBackend = loadProfilesFromBackend;
