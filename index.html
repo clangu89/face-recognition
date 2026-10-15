@@ -1379,14 +1379,18 @@
 
     function switchTab(tabName) {
       state.currentTab = tabName;
-      ['scanner', 'register', 'profiles'].forEach(t => {
+      ['scanner', 'register', 'profiles', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
         const pane = document.getElementById('tabPane_' + t);
+        if (!btn || !pane) return;
+
         if (t === tabName) {
-          btn.className = 'px-4 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2';
+          btn.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-500/30', 'font-semibold');
+          btn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'font-medium');
           pane.classList.remove('hidden');
         } else {
-          btn.className = 'px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2';
+          btn.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-500/30', 'font-semibold');
+          btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'font-medium');
           pane.classList.add('hidden');
         }
       });
