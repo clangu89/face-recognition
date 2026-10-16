@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <title>ระบบจดจำใบหน้าและทักทายด้วยเสียง (Face Recognition & Greeting)</title>
@@ -15,7 +15,7 @@
         var list = document.getElementById('diagnosticLogList');
         if (list) {
           var item = document.createElement('div');
-          item.style.color = isError ? '#f87171' : '#34d399';
+          item.style.color = isError ? '#D94338' : '#1E824C';
           item.textContent = '[' + time + '] ' + msg;
           list.appendChild(item);
           list.scrollTop = list.scrollHeight;
@@ -39,78 +39,102 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Sarabun', 'Outfit', 'sans-serif'],
+            sans: ['Sarabun', 'Nunito', 'Outfit', 'sans-serif'],
+          },
+          colors: {
+            ch: {
+              cream: '#F2EFE4',
+              sand: '#EAE6DA',
+              card: '#FFFFFF',
+              border: '#E5E0D0',
+              ink: '#1F1E1B',
+              muted: '#6E6B62',
+              green: '#28AE60',
+              greenHover: '#229954',
+              greenSoft: '#EAF7EF',
+              red: '#E5534B',
+              redSoft: '#FDECEB',
+              amber: '#D9822B',
+              amberSoft: '#FEF6E6',
+              gold: '#F8D57E'
+            }
           }
         }
       }
     };
   </script>
 
-  <!-- Inline Stylesheet (Directly bundled) -->
+  <!-- Inline Stylesheet (Clubhouse Theme System) -->
   <style>
     @keyframes scanline {
-      0% { top: 0%; opacity: 0.8; }
+      0% { top: 0%; opacity: 0.75; }
       50% { opacity: 1; }
-      100% { top: 100%; opacity: 0.8; }
+      100% { top: 100%; opacity: 0.75; }
     }
     .scan-line {
       position: absolute;
       left: 0; right: 0;
       height: 3px;
-      background: linear-gradient(90deg, rgba(59, 130, 246, 0) 0%, rgba(59, 130, 246, 1) 50%, rgba(59, 130, 246, 0) 100%);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
-      animation: scanline 2.5s ease-in-out infinite alternate;
+      background: linear-gradient(90deg, rgba(40, 174, 96, 0) 0%, rgba(40, 174, 96, 0.95) 50%, rgba(40, 174, 96, 0) 100%);
+      box-shadow: 0 0 14px rgba(40, 174, 96, 0.65);
+      animation: scanline 2.8s ease-in-out infinite alternate;
       pointer-events: none;
     }
     .glass-card {
-      background: rgba(30, 41, 59, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: #FFFFFF;
+      border: 1px solid #E5E0D0;
+      box-shadow: 0 8px 28px rgba(31, 30, 27, 0.05);
+    }
+    .ch-squircle {
+      border-radius: 38%;
+    }
+    .ch-speaking-ring {
+      box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 6px #28AE60;
     }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    ::-webkit-scrollbar-track { background: #EAE6DA; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: #C8C2B0; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #A8A18E; }
     .toast-enter { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .toast-visible { transform: translateY(0); opacity: 1; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+<body class="bg-[#F2EFE4] text-[#1F1E1B] min-h-screen flex flex-col font-sans selection:bg-[#28AE60] selection:text-white">
 
   <!-- ========================================================================= -->
-  <!-- LOGIN VIEW (Shown when unauthenticated) -->
+  <!-- LOGIN VIEW (Shown when unauthenticated - Clubhouse Welcome Screen) -->
   <!-- ========================================================================= -->
-  <div id="loginView" class="hidden min-h-screen flex items-center justify-center p-4 bg-slate-950 relative overflow-hidden">
-    <!-- Ambient Background Glows -->
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+  <div id="loginView" class="hidden min-h-screen flex items-center justify-center p-4 bg-[#F2EFE4] relative overflow-hidden">
+    <!-- Warm Ambient Background Blobs -->
+    <div class="absolute -top-36 -left-36 w-96 h-96 bg-[#E5DFC9]/70 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-36 -right-36 w-96 h-96 bg-[#28AE60]/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="w-full max-w-md glass-card rounded-3xl p-8 border border-slate-800/90 shadow-2xl relative z-10 backdrop-blur-xl">
+    <div class="w-full max-w-md glass-card rounded-[32px] p-8 sm:p-10 border border-[#E5E0D0] shadow-[0_14px_40px_rgba(31,30,27,0.07)] relative z-10">
       <!-- Brand Logo & Header -->
       <div class="text-center mb-8">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-xl shadow-blue-500/30 mx-auto mb-4">
-          <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+        <div class="w-16 h-16 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-md mx-auto mb-4 text-3xl">
+          👋
         </div>
-        <h2 class="text-2xl font-bold text-white tracking-tight">AI Face Recognition</h2>
-        <p class="text-sm text-slate-400 mt-1">เข้าสู่ระบบเพื่อใช้งานระบบสแกนใบหน้าและทักทาย</p>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7F5EE] border border-[#E5E0D0] text-[11px] font-bold text-[#6E6B62] uppercase tracking-wider mb-2">
+          <span>🏠</span>
+          <span>WELCOME TO THE CLUB</span>
+        </div>
+        <h2 class="text-2xl font-extrabold text-[#1F1E1B] tracking-tight">AI Face Recognition</h2>
+        <p class="text-sm text-[#6E6B62] mt-1">เข้าสู่ห้องต้อนรับอัจฉริยะเพื่อสแกนใบหน้าและทักทายด้วยเสียง</p>
       </div>
 
       <!-- Error Alert Message -->
-      <div id="loginErrorAlert" class="hidden mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center space-x-2.5">
-        <svg class="w-4 h-4 flex-shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div id="loginErrorAlert" class="hidden mb-5 p-3.5 rounded-2xl bg-[#FDECEB] border border-[#F5C2C0] text-[#D94338] text-xs font-medium flex items-center space-x-2.5">
+        <svg class="w-4 h-4 flex-shrink-0 text-[#D94338]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
         </svg>
         <span id="loginErrorText">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span>
@@ -119,29 +143,29 @@
       <!-- Login Form -->
       <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
+          <label class="block text-xs font-bold text-[#4A473E] mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8C877B]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
               </svg>
             </div>
             <input type="text" id="loginUsername" required autocomplete="username" placeholder="ระบุชื่อผู้ใช้งาน"
-              class="w-full pl-10 pr-3.5 py-3 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none">
+              class="w-full pl-10 pr-3.5 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DDD7C5] text-[#1F1E1B] placeholder-[#9A9589] text-sm focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 transition outline-none">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1.5">รหัสผ่าน (Password)</label>
+          <label class="block text-xs font-bold text-[#4A473E] mb-1.5">รหัสผ่าน (Password)</label>
           <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#8C877B]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
               </svg>
             </div>
             <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="ระบุรหัสผ่าน"
-              class="w-full pl-10 pr-11 py-3 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-500 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none">
-            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeBtn')" id="loginEyeBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition">
+              class="w-full pl-10 pr-11 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DDD7C5] text-[#1F1E1B] placeholder-[#9A9589] text-sm focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 transition outline-none">
+            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeBtn')" id="loginEyeBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#8C877B] hover:text-[#1F1E1B] transition">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -150,11 +174,11 @@
           </div>
         </div>
 
-        <div class="pt-2">
+        <div class="pt-3">
           <button type="submit" id="loginSubmitBtn"
-            class="w-full py-3.5 px-4 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center justify-center text-sm">
-            <span>เข้าสู่ระบบ</span>
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="w-full py-3.5 px-6 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-lg shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center justify-center text-sm space-x-2">
+            <span>👋 เข้าสู่ระบบ</span>
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
             </svg>
           </button>
@@ -164,52 +188,51 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- MAIN APPLICATION VIEW (Shown when authenticated) -->
+  <!-- MAIN APPLICATION VIEW (Shown when authenticated - Clubhouse Hallway) -->
   <!-- ========================================================================= -->
   <div id="mainAppView" class="hidden min-h-screen flex flex-col">
 
-  <!-- Top Navigation Header -->
-  <header class="glass-card sticky top-0 z-40 border-b border-slate-800/80 px-4 lg:px-8 py-3.5 shadow-md">
+  <!-- Top Navigation Header (Clubhouse Hallway Bar) -->
+  <header class="bg-[#F2EFE4]/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#E2DDD0] px-4 lg:px-8 py-3.5">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
       
       <!-- Brand Logo & Title -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+      <div class="flex items-center space-x-3.5">
+        <div class="w-11 h-11 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-sm text-2xl">
+          👋
         </div>
         <div>
-          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+          <div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#6E6B62]">
+            <span>🏠 GREETING CLUB</span>
+            <span>•</span>
+            <span class="px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#28AE60] border border-[#BEE6CE]">v3.0 Live</span>
+          </div>
+          <h1 class="text-lg font-extrabold tracking-tight text-[#1F1E1B]">
             AI Face Recognition & Greeting
-            <span class="text-[11px] font-normal px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">v3.0 Ultra-Fast</span>
           </h1>
-          <p class="text-xs text-slate-400">ระบบตรวจสอบใบหน้าและทักทายด้วยเสียงภาษาไทยอัตโนมัติ</p>
         </div>
       </div>
 
       <!-- Live Status Badges & User Profile Pill -->
       <div class="flex flex-wrap items-center gap-2">
-        <span id="modelStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-500/40">
+        <span id="modelStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
           ⏳ กำลังเตรียมโมเดล AI...
         </span>
-        <span id="cameraStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+        <span id="cameraStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
           ⚪ กล้องปิดอยู่
         </span>
-        <span id="voiceStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+        <span id="voiceStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
           ⏳ ตรวจสอบเสียงไทย...
         </span>
 
-        <!-- User Profile & Logout -->
-        <div class="flex items-center space-x-3 ml-2 pl-3 border-l border-slate-800">
+        <!-- User Profile & Clubhouse "Leave quietly" Logout -->
+        <div class="flex items-center space-x-3 ml-2 pl-3 border-l border-[#DCD6C4]">
           <div class="text-right">
-            <div id="headerUserName" class="text-xs font-semibold text-white">Admin</div>
-            <div id="headerUserRole" class="text-[10px] text-purple-400 font-medium">ผู้ดูแลระบบ (Admin)</div>
+            <div id="headerUserName" class="text-xs font-bold text-[#1F1E1B]">Admin</div>
+            <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold">ผู้ดูแลระบบ (Admin)</div>
           </div>
-          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 transition flex items-center space-x-1.5 text-xs">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
+          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3.5 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm">
+            <span>✌️</span>
             <span class="hidden sm:inline">ออกจากระบบ</span>
           </button>
         </div>
@@ -219,66 +242,58 @@
   </header>
 
   <!-- Main Container -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-4">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-5">
 
-    <!-- Diagnostic Log Console (Live status reporter) -->
-    <div id="diagnosticContainer" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs font-mono">
-      <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-slate-800">
-        <span class="text-slate-400 font-semibold flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          สถานะการเชื่อมต่อระบบ (Diagnostic Log):
+    <!-- Diagnostic Log Console (Warm Sand Note Box) -->
+    <div id="diagnosticContainer" class="p-3.5 rounded-2xl bg-[#EAE6DA]/85 border border-[#DCD6C4] text-xs font-mono shadow-inner">
+      <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-[#DCD6C4]">
+        <span class="text-[#5C5950] font-bold flex items-center gap-1.5 font-sans">
+          <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
+          สถานะการเชื่อมต่อห้องระบบ (Room Activity Log):
         </span>
-        <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[10px] text-slate-500 hover:text-slate-300">ล้างข้อความ</button>
+        <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-full hover:bg-[#DDD7C5]/50 transition">ล้างข้อความ</button>
       </div>
       <div id="diagnosticLogList" class="space-y-1 max-h-24 overflow-y-auto pr-2"></div>
     </div>
 
-    <!-- Tab Navigation & Sound Bar -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
-      <div class="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
-        <button id="tabBtn_scanner" onclick="switchTab('scanner')" class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-          </svg>
-          <span>ตรวจจับและทักทาย</span>
+    <!-- Tab Navigation & Sound Bar (Clubhouse Pill Selector) -->
+    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
+      <div class="flex flex-wrap items-center gap-1.5 bg-[#EAE6DA] p-1.5 rounded-full border border-[#DCD6C4]">
+        <button id="tabBtn_scanner" onclick="switchTab('scanner')" class="px-4 py-2 rounded-full text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center space-x-2">
+          <span>🎙️</span>
+          <span>ห้องตรวจจับและทักทาย</span>
         </button>
-        <button id="tabBtn_register" onclick="switchTab('register')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-          </svg>
+        <button id="tabBtn_register" onclick="switchTab('register')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+          <span>✨</span>
           <span>ลงทะเบียนใบหน้า</span>
         </button>
-        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-          </svg>
-          <span>รายชื่อในระบบ</span>
-          <span id="profileCountBadge" class="ml-1.5 px-2 py-0.5 rounded-full text-xs bg-slate-800 text-blue-400 font-semibold border border-blue-500/30">0 คน</span>
+        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+          <span>👥</span>
+          <span>สมาชิกในคลับ</span>
+          <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
         </button>
-        <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-          </svg>
+        <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+          <span>⚙️</span>
           <span>จัดการผู้ใช้งาน</span>
         </button>
       </div>
 
       <!-- Voice Control & Testing Buttons -->
       <div class="flex items-center space-x-2">
-        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3.5 py-2 rounded-xl glass-card text-slate-200 hover:text-white border border-slate-700 hover:border-slate-600 transition flex items-center space-x-2 shadow-sm">
-          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="px-4 py-2 rounded-full bg-white text-[#1F1E1B] hover:bg-[#F7F5EE] border border-[#E2DDD0] transition flex items-center space-x-2 shadow-sm font-semibold text-sm">
+          <svg class="w-5 h-5 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
           </svg>
-          <span class="text-sm font-medium">เปิดเสียงพูด</span>
+          <span class="text-sm">เปิดเสียงพูด</span>
         </button>
 
-        <div class="hidden sm:flex items-center space-x-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800">
-          <span class="text-xs text-slate-400 px-2 font-medium">ทดสอบเสียง:</span>
-          <button onclick="testGreetingSpeech('known')" class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition">
-            เสียงคนรู้จัก
+        <div class="hidden sm:flex items-center space-x-1.5 bg-[#EAE6DA] p-1 rounded-full border border-[#DCD6C4]">
+          <span class="text-xs text-[#6E6B62] px-2.5 font-semibold">🔊 ทดสอบเสียง:</span>
+          <button onclick="testGreetingSpeech('known')" class="text-xs px-3 py-1.5 rounded-full bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] font-semibold border border-[#BEE6CE] transition">
+            สมาชิกคุ้นเคย
           </button>
-          <button onclick="testGreetingSpeech('unknown')" class="text-xs px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition">
-            เสียงลูกค้าทั่วไป
+          <button onclick="testGreetingSpeech('unknown')" class="text-xs px-3 py-1.5 rounded-full bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] font-semibold border border-[#F5DFB0] transition">
+            แขกผู้มาเยือน
           </button>
         </div>
       </div>
@@ -289,116 +304,113 @@
     <!-- ========================================================================= -->
     <div id="tabPane_scanner" class="space-y-4">
       
-      <!-- Greeting Alert Banner -->
-      <div id="greetingBanner" class="hidden items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-900/90 via-indigo-900/90 to-purple-900/90 border border-blue-400/40 shadow-2xl backdrop-blur-md">
+      <!-- Greeting Alert Banner (Clubhouse Active Speaker Toast) -->
+      <div id="greetingBanner" class="hidden items-center justify-between p-4 rounded-[24px] bg-white border-2 border-[#28AE60] shadow-lg">
         <div class="flex items-center space-x-3.5">
-          <div class="w-10 h-10 rounded-xl bg-blue-500/30 flex items-center justify-center text-2xl flex-shrink-0 animate-bounce">
+          <div class="w-12 h-12 ch-squircle bg-[#EAF7EF] border-2 border-[#28AE60] flex items-center justify-center text-2xl flex-shrink-0 ch-speaking-ring">
             👋
           </div>
           <div>
-            <span class="text-xs font-semibold uppercase tracking-wider text-blue-300">ระบบทักทายด้วยเสียง</span>
-            <p id="greetingBannerText" class="text-lg font-bold text-white tracking-wide">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#28AE60] flex items-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
+              กำลังทักทายในห้อง (Speaking Now)
+            </span>
+            <p id="greetingBannerText" class="text-lg font-extrabold text-[#1F1E1B] tracking-tight">
               สวัสดีค่ะคุณ...
             </p>
           </div>
         </div>
-        <span class="text-xs px-3 py-1 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/40">
-          ทักทายแล้ว
+        <span class="text-xs px-3.5 py-1.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold border border-[#BEE6CE]">
+          🔊 ทักทายแล้ว
         </span>
       </div>
 
       <!-- Main Video Viewport & Controls -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        <!-- Camera Stream Frame (3 Cols) -->
+        <!-- Camera Stream Frame (3 Cols - Clubhouse Room Stage) -->
         <div class="lg:col-span-3">
-          <div class="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden bg-slate-900 border-2 border-slate-800 shadow-2xl flex items-center justify-center">
-            
-            <!-- Webcam Video Element -->
-            <video id="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
-
-            <!-- Real-time Bounding Box Canvas -->
-            <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-
-            <!-- Animated Radar Scan Line -->
-            <div class="scan-line"></div>
-
-            <!-- Start Camera Overlay (When Camera is Stopped) -->
-            <div id="startCameraOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-6 text-center">
-              <div class="w-20 h-20 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-4 text-blue-400">
-                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
+          <div class="glass-card rounded-[28px] p-3 sm:p-4">
+            <!-- Stage Top Bar -->
+            <div class="flex items-center justify-between px-2 pb-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60] bg-[#EAF7EF] px-2.5 py-1 rounded-full border border-[#BEE6CE]">
+                  🏠 WELCOME STAGE
+                </span>
+                <span class="text-xs font-semibold text-[#6E6B62] hidden sm:inline">ห้องต้อนรับอัตโนมัติด้วย AI</span>
               </div>
-              <h3 class="text-xl font-bold text-white mb-2">กล้อง Webcam พร้อมเปิดใช้งานทันที</h3>
-              <p class="text-sm text-slate-400 max-w-md mb-6">
-                กดปุ่มด้านล่างเพื่อเปิดกล้อง Webcam ได้ทันที โดยระบบจะสแกนใบหน้าให้อัตโนมัติเมื่อโมเดล AI พร้อม
-              </p>
-              <button id="startCameraBtn" onclick="startCamera()" class="px-6 py-3.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 transition transform hover:-translate-y-0.5 flex items-center space-x-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>เปิดกล้อง Webcam & เริ่มสแกน</span>
-              </button>
+              <span class="text-xs text-[#8C877B] font-medium">Real-time 128D Vector</span>
             </div>
 
-            <!-- Stop Camera Floating Button -->
-            <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-semibold backdrop-blur-md border border-rose-500/50 shadow-lg transition flex items-center space-x-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-              <span>หยุดกล้อง</span>
-            </button>
+            <div class="relative w-full aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#E5E0D0] shadow-inner flex items-center justify-center">
+              
+              <!-- Webcam Video Element -->
+              <video id="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
 
+              <!-- Real-time Bounding Box Canvas -->
+              <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+              <!-- Animated Radar Scan Line -->
+              <div class="scan-line"></div>
+
+              <!-- Start Camera Overlay (When Camera is Stopped - Warm Sand Card) -->
+              <div id="startCameraOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-md p-6 text-center">
+                <div class="w-20 h-20 ch-squircle bg-[#EAF7EF] border-2 border-[#BEE6CE] flex items-center justify-center mb-4 text-4xl shadow-sm">
+                  🎙️
+                </div>
+                <h3 class="text-xl font-extrabold text-[#1F1E1B] mb-1.5">พร้อมเปิดเวทีต้อนรับ (Open Stage)</h3>
+                <p class="text-sm text-[#6E6B62] max-w-md mb-6">
+                  แตะปุ่มด้านล่างเพื่อเปิดกล้อง Webcam ระบบจะตรวจจับใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ
+                </p>
+                <button id="startCameraBtn" onclick="startCamera()" class="px-7 py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
+                  <span>✋ เปิดกล้อง & เริ่มต้อนรับ</span>
+                </button>
+              </div>
+
+              <!-- Stop Camera Floating Button (Leave Quietly style) -->
+              <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 px-4 py-2 rounded-full bg-[#FDECEB]/95 hover:bg-[#FBD8D6] text-[#D94338] text-xs font-bold backdrop-blur-md border border-[#F5C2C0] shadow-md transition flex items-center space-x-1.5">
+                <span>✌️ พักกล้อง (Leave Stage)</span>
+              </button>
+
+            </div>
           </div>
         </div>
 
-        <!-- Right Side: Rules Card -->
+        <!-- Right Side: Rules Card (Room Guidelines) -->
         <div class="space-y-4">
-          <div class="glass-card rounded-2xl p-5 border border-slate-800 space-y-4">
-            <h3 class="font-bold text-white text-base flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-              เงื่อนไขการทำงานของระบบ
+          <div class="glass-card rounded-[28px] p-5 space-y-4">
+            <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+              กติกาห้องต้อนรับ (Room Rules)
             </h3>
 
             <!-- Rule 1: Known Face -->
-            <div class="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
-              <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span>กรณีพบข้อมูลใบหน้าตรงกัน</span>
+            <div class="p-3.5 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
+              <div class="flex items-center space-x-2 text-[#1E824C] font-bold text-xs">
+                <span>🟢 สมาชิกที่ลงทะเบียนแล้ว</span>
               </div>
-              <p class="text-xs text-emerald-200">
-                ระบบจะตีกรอบสีเขียว ระบุชื่อ และเปล่งเสียงทักทาย: <span class="font-bold text-white">"สวัสดีค่ะคุณ [ชื่อ]"</span>
+              <p class="text-xs text-[#2D6A4F] leading-relaxed">
+                แสดงกรอบสีเขียวพร้อมชื่อ และส่งเสียงทักทาย: <span class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณ [ชื่อ]"</span>
               </p>
             </div>
 
             <!-- Rule 2: Unknown Face -->
-            <div class="p-3.5 rounded-xl bg-amber-950/40 border border-amber-500/30 space-y-1">
-              <div class="flex items-center space-x-2 text-amber-400 font-semibold text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>กรณีไม่พบข้อมูล (ลูกค้าทั่วไป)</span>
+            <div class="p-3.5 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
+              <div class="flex items-center space-x-2 text-[#9C6214] font-bold text-xs">
+                <span>🟡 แขกผู้มาเยือน (Guest)</span>
               </div>
-              <p class="text-xs text-amber-200">
-                ระบบจะตีกรอบสีส้ม และเปล่งเสียงทักทาย: <span class="font-bold text-white">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+              <p class="text-xs text-[#7C4D10] leading-relaxed">
+                แสดงกรอบสีส้มทอง และส่งเสียงทักทาย: <span class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
               </p>
             </div>
 
             <!-- Rule 3: Single Greet Logic -->
-            <div class="p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30 space-y-1">
-              <div class="flex items-center space-x-2 text-blue-400 font-semibold text-xs">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>ระบบตัดการพูดซ้ำ (Anti-Spam)</span>
+            <div class="p-3.5 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-1">
+              <div class="flex items-center space-x-2 text-[#5C5950] font-bold text-xs">
+                <span>⏱️ ระบบป้องกันการทักซ้ำ</span>
               </div>
-              <p class="text-xs text-blue-200">
-                ระบบจะทักทายเพียง <span class="font-bold text-white">1 ครั้ง</span> เมื่อยืนอยู่หน้ากล้อง และจะรีเซ็ตเพื่อทักทายใหม่เมื่อ <span class="font-bold text-white">เดินออกจากรัศมีกล้องเกิน 3 วินาที</span>
+              <p class="text-xs text-[#6E6B62] leading-relaxed">
+                ทักทายเพียง <span class="font-bold text-[#1F1E1B]">1 ครั้ง</span> ขณะยืนหน้ากล้อง และรีเซ็ตอัตโนมัติเมื่อ <span class="font-bold text-[#1F1E1B]">เดินออกจากกล้องเกิน 3 วินาที</span>
               </p>
             </div>
 
@@ -414,12 +426,18 @@
     <!-- ========================================================================= -->
     <div id="tabPane_register" class="hidden space-y-6">
       
-      <div class="max-w-3xl mx-auto glass-card rounded-2xl p-6 sm:p-8 border border-slate-800 space-y-6">
-        <div>
-          <h2 class="text-xl font-bold text-white">ลงทะเบียนใบหน้าใหม่ (Face Registration)</h2>
-          <p class="text-sm text-slate-400 mt-1">
-            ถ่ายภาพใบหน้าหน้าตรงจากกล้อง เพื่อสกัดเวกเตอร์ข้อมูลคณิตศาสตร์ 128 มิติ และบันทึกรูปลง Google Drive
-          </p>
+      <div class="max-w-3xl mx-auto glass-card rounded-[28px] p-6 sm:p-8 space-y-6">
+        <div class="flex items-start justify-between gap-4 border-b border-[#EFECE2] pb-4">
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">NEW SPEAKER PROFILE</span>
+            <h2 class="text-xl font-extrabold text-[#1F1E1B] mt-0.5">ลงทะเบียนสมาชิกใหม่เข้าห้อง</h2>
+            <p class="text-xs text-[#6E6B62] mt-1">
+              ถ่ายภาพใบหน้าหน้าตรงเพื่อสกัดเวกเตอร์ 128 มิติ และสร้างโปรไฟล์เสียงทักทาย
+            </p>
+          </div>
+          <div class="w-12 h-12 ch-squircle bg-[#F8D57E] flex items-center justify-center text-2xl shadow-inner flex-shrink-0">
+            📸
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -427,16 +445,16 @@
           <!-- Snapshot / Live Preview -->
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                ตัวอย่างกล้องสด & ภาพถ่าย
+              <label class="block text-xs font-bold uppercase tracking-wider text-[#5C5950]">
+                ตัวอย่างกล้องสด & ภาพโปรไฟล์
               </label>
-              <span id="regLiveBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="regLiveBadge" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span>
                 <span>กล้องสด (LIVE)</span>
               </span>
             </div>
 
-            <div class="relative aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden bg-slate-900 border-2 border-slate-700/80 shadow-2xl flex items-center justify-center">
+            <div class="relative aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#DCD6C4] shadow-md flex items-center justify-center">
               
               <!-- Live Video Stream -->
               <div id="regVideoContainer" class="relative w-full h-full">
@@ -444,18 +462,18 @@
 
                 <!-- Face Positioning Oval Guide -->
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div class="w-44 h-56 sm:w-52 sm:h-64 rounded-[50%] border-2 border-dashed border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.35)] flex items-center justify-center">
-                    <span class="text-[11px] font-medium text-blue-200 bg-slate-950/70 px-2.5 py-0.5 rounded-full border border-blue-500/30 backdrop-blur-sm shadow">
-                      วางใบหน้าให้อยู่ในกรอบนี้
+                  <div class="w-44 h-56 sm:w-52 sm:h-64 rounded-[50%] border-2 border-dashed border-[#28AE60]/80 shadow-[0_0_25px_rgba(40,174,96,0.3)] flex items-center justify-center">
+                    <span class="text-[11px] font-bold text-white bg-[#1F1E1B]/75 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow">
+                      จัดใบหน้าให้อยู่ในกรอบ
                     </span>
                   </div>
                 </div>
 
                 <!-- Fallback overlay if camera is not started -->
-                <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 text-center">
-                  <p class="text-xs text-slate-400 mb-3">กล้องยังไม่เริ่มทำงาน</p>
-                  <button type="button" onclick="startCamera()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition">
-                    เปิดกล้อง Webcam
+                <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-sm p-4 text-center">
+                  <p class="text-xs font-semibold text-[#6E6B62] mb-3">กล้องยังไม่เปิดทำงาน</p>
+                  <button type="button" onclick="startCamera()" class="px-5 py-2.5 rounded-full text-xs font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-sm transition">
+                    ✋ เปิดกล้อง Webcam
                   </button>
                 </div>
               </div>
@@ -467,48 +485,39 @@
 
             <!-- Action Buttons: Capture & Retake -->
             <div class="space-y-2">
-              <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 transition flex items-center justify-center space-x-2 text-sm">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                </svg>
+              <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-3 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center justify-center space-x-2 text-sm">
                 <span>📸 ถ่ายภาพใบหน้าจากกล้อง</span>
               </button>
 
-              <button id="retakeRegBtn" onclick="retakePhotoForRegistration()" class="hidden w-full py-2.5 rounded-xl font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center justify-center space-x-2 text-sm">
-                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
+              <button id="retakeRegBtn" onclick="retakePhotoForRegistration()" class="hidden w-full py-2.5 rounded-full font-bold bg-[#EAE6DA] hover:bg-[#DFD9C8] text-[#1F1E1B] border border-[#DCD6C4] transition flex items-center justify-center space-x-2 text-sm">
                 <span>🔄 ถ่ายภาพใหม่ (Retake)</span>
               </button>
             </div>
 
-            <p id="regCaptureStatus" class="text-xs text-center min-h-[1.25rem]"></p>
+            <p id="regCaptureStatus" class="text-xs text-center font-medium min-h-[1.25rem]"></p>
           </div>
 
           <!-- Registration Form Input -->
           <div class="space-y-4">
             <div>
-              <label for="regNameInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                ชื่อ - นามสกุล หรือชื่อเรียก <span class="text-rose-400">*</span>
+              <label for="regNameInput" class="block text-xs font-bold uppercase tracking-wider text-[#5C5950] mb-1.5">
+                ชื่อ - นามสกุล หรือชื่อที่ใช้ทักทาย <span class="text-[#E5534B]">*</span>
               </label>
-              <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm">
-              <p class="text-xs text-slate-500 mt-1">ชื่อนี้จะถูกนำไปใช้ในเสียงทักทาย "สวัสดีค่ะคุณ [ชื่อ]"</p>
+              <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] placeholder-[#9C978B] focus:outline-none focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 text-sm transition">
+              <p class="text-xs text-[#8C877B] mt-1.5">ระบบจะทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
             </div>
 
-            <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs text-slate-300">
-              <h4 class="font-semibold text-white">💡 คำแนะนำสำหรับการบันทึกใบหน้า:</h4>
-              <ul class="list-disc list-inside space-y-1 text-slate-400">
+            <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-2 text-xs text-[#5C5950]">
+              <h4 class="font-bold text-[#1F1E1B]">💡 เทคนิคการถ่ายภาพให้แม่นยำ:</h4>
+              <ul class="list-disc list-inside space-y-1 text-[#6E6B62]">
                 <li>อยู่ในบริเวณที่มีแสงสว่างเพียงพอ ไม่ย้อนแสง</li>
-                <li>มองตรงไปที่กล้องและถอดแว่นตาดำหรือหน้ากากอนามัย</li>
-                <li>ลงทะเบียนทีละ 1 ท่านเท่านั้น</li>
+                <li>มองตรงไปที่กล้อง ถอดแว่นตาดำหรือหน้ากากอนามัย</li>
+                <li>มีใบหน้าอยู่ในกรอบเพียง 1 ท่านขณะกดถ่าย</li>
               </ul>
             </div>
 
-            <button id="saveProfileBtn" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-xl font-semibold bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white shadow-lg shadow-blue-600/30 transition text-sm flex items-center justify-center space-x-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
-              </svg>
-              <span>💾 บันทึกข้อมูลใบหน้าลงระบบ</span>
+            <button id="saveProfileBtn" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] disabled:bg-[#EAE6DA] disabled:text-[#9C978B] disabled:cursor-not-allowed text-white shadow-md shadow-[#28AE60]/20 disabled:shadow-none transition text-sm flex items-center justify-center space-x-2">
+              <span>💾 บันทึกโปรไฟล์เข้าห้อง</span>
             </button>
           </div>
 
@@ -525,15 +534,15 @@
       
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-bold text-white">รายชื่อที่ลงทะเบียนไว้ในระบบ</h2>
-          <p class="text-xs text-slate-400">ข้อมูลจัดเก็บใน Google Sheets และรูปภาพสำรองบน Google Drive</p>
+          <h2 class="text-xl font-extrabold text-[#1F1E1B]">สมาชิกในห้องทั้งหมด (Registered Speakers)</h2>
+          <p class="text-xs text-[#6E6B62]">ข้อมูลใบหน้าจัดเก็บบน Google Sheets และรูปโปรไฟล์บน Google Drive</p>
         </div>
 
-        <button onclick="loadProfilesFromBackend()" class="px-3 py-1.5 rounded-xl glass-card text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 hover:border-slate-600 flex items-center space-x-1.5 transition">
-          <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button onclick="loadProfilesFromBackend()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
-          <span>รีเฟรชข้อมูล</span>
+          <span>รีเฟรชรายชื่อ</span>
         </button>
       </div>
 
@@ -550,16 +559,16 @@
       <!-- User Management Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold text-white flex items-center gap-2">
-            <span>จัดการผู้ใช้งานระบบ (User Management)</span>
-            <span class="text-xs px-2.5 py-0.5 rounded-full bg-purple-900/60 text-purple-300 border border-purple-500/40">เฉพาะผู้ดูแลระบบ</span>
+          <h2 class="text-xl font-extrabold text-[#1F1E1B] flex items-center gap-2">
+            <span>จัดการผู้ดูแลห้อง (Moderators & Operators)</span>
+            <span class="text-xs px-3 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold">เฉพาะ Admin</span>
           </h2>
-          <p class="text-xs text-slate-400">กำหนดสิทธิ์และสร้างบัญชีผู้ใช้งานสำหรับล็อกอินเข้าใช้งานระบบ</p>
+          <p class="text-xs text-[#6E6B62]">กำหนดสิทธิ์และจัดการบัญชีผู้ใช้งานสำหรับล็อกอินเข้าควบคุมระบบ</p>
         </div>
 
-        <button onclick="openUserModal()" class="px-4 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/30 transition flex items-center space-x-2 text-sm">
+        <button onclick="openUserModal()" class="px-5 py-2.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center space-x-2 text-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
           </svg>
           <span>เพิ่มผู้ใช้งานใหม่</span>
         </button>
@@ -567,52 +576,52 @@
 
       <!-- User Stats Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
           <div>
-            <div class="text-xs text-slate-400 font-medium">ผู้ใช้งานทั้งหมด</div>
-            <div id="statTotalUsers" class="text-2xl font-bold text-white mt-1">0</div>
+            <div class="text-xs text-[#6E6B62] font-semibold">บัญชีผู้ใช้งานทั้งหมด</div>
+            <div id="statTotalUsers" class="text-2xl font-extrabold text-[#1F1E1B] mt-1">0</div>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+          <div class="w-11 h-11 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-xl">
             👥
           </div>
         </div>
-        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
           <div>
-            <div class="text-xs text-slate-400 font-medium">ผู้ดูแลระบบ (Admin)</div>
-            <div id="statAdminUsers" class="text-2xl font-bold text-purple-400 mt-1">0</div>
+            <div class="text-xs text-[#6E6B62] font-semibold">ผู้ดูแลระบบ (Moderator / Admin)</div>
+            <div id="statAdminUsers" class="text-2xl font-extrabold text-[#28AE60] mt-1">0</div>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
-            🛡️
+          <div class="w-11 h-11 ch-squircle bg-[#EAF7EF] border border-[#BEE6CE] flex items-center justify-center text-xl">
+            ✳️
           </div>
         </div>
-        <div class="glass-card p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
           <div>
-            <div class="text-xs text-slate-400 font-medium">เจ้าหน้าที่ (Operator)</div>
-            <div id="statOperatorUsers" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+            <div class="text-xs text-[#6E6B62] font-semibold">เจ้าหน้าที่ (Operator)</div>
+            <div id="statOperatorUsers" class="text-2xl font-extrabold text-[#D9822B] mt-1">0</div>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-            👤
+          <div class="w-11 h-11 ch-squircle bg-[#FEF6E6] border border-[#F5DFB0] flex items-center justify-center text-xl">
+            🎙️
           </div>
         </div>
       </div>
 
       <!-- Users Table Container -->
-      <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+      <div class="glass-card rounded-[28px] overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-900/90 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+            <thead class="bg-[#F7F5EE] text-xs font-bold text-[#5C5950] uppercase tracking-wider border-b border-[#E5E0D0]">
               <tr>
-                <th class="px-5 py-3.5">ชื่อผู้ใช้ (Username)</th>
-                <th class="px-5 py-3.5">ชื่อ-นามสกุล</th>
-                <th class="px-5 py-3.5">สิทธิ์การใช้งาน</th>
-                <th class="px-5 py-3.5">สถานะ</th>
-                <th class="px-5 py-3.5">เข้าสู่ระบบล่าสุด</th>
-                <th class="px-5 py-3.5 text-right">จัดการ</th>
+                <th class="px-5 py-4">ชื่อผู้ใช้ (Username)</th>
+                <th class="px-5 py-4">ชื่อ-นามสกุล</th>
+                <th class="px-5 py-4">บทบาทในห้อง</th>
+                <th class="px-5 py-4">สถานะ</th>
+                <th class="px-5 py-4">เข้าใช้งานล่าสุด</th>
+                <th class="px-5 py-4 text-right">จัดการ</th>
               </tr>
             </thead>
-            <tbody id="usersTableBody" class="divide-y divide-slate-800/80 text-slate-200">
+            <tbody id="usersTableBody" class="divide-y divide-[#EFECE2] text-[#1F1E1B]">
               <tr>
-                <td colspan="6" class="px-5 py-8 text-center text-slate-500">กำลังโหลดข้อมูลผู้ใช้งาน...</td>
+                <td colspan="6" class="px-5 py-8 text-center text-[#8C877B]">กำลังโหลดข้อมูลผู้ใช้งาน...</td>
               </tr>
             </tbody>
           </table>
@@ -629,11 +638,16 @@
   <!-- ========================================================================= -->
   <!-- USER MODAL (Add / Edit System User) -->
   <!-- ========================================================================= -->
-  <div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-    <div class="w-full max-w-lg glass-card rounded-3xl p-6 border border-slate-700 shadow-2xl relative">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-        <h3 id="userModalTitle" class="text-lg font-bold text-white">เพิ่มผู้ใช้งานใหม่</h3>
-        <button onclick="closeUserModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+  <div id="userModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-[#1F1E1B]/50 backdrop-blur-sm">
+    <div class="w-full max-w-lg glass-card rounded-[32px] p-6 sm:p-7 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-4 border-b border-[#EFECE2] mb-5">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-9 h-9 ch-squircle bg-[#EAF7EF] border border-[#BEE6CE] flex items-center justify-center text-lg">
+            👤
+          </div>
+          <h3 id="userModalTitle" class="text-lg font-extrabold text-[#1F1E1B]">เพิ่มผู้ใช้งานใหม่</h3>
+        </div>
+        <button onclick="closeUserModal()" class="text-[#8C877B] hover:text-[#1F1E1B] p-1.5 rounded-full hover:bg-[#F7F5EE] transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>
@@ -645,28 +659,28 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อผู้ใช้ (Username) *</label>
-            <input type="text" id="userFormUsername" required placeholder="เช่น staff_01" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+            <label class="block text-xs font-bold text-[#5C5950] mb-1.5">ชื่อผู้ใช้ (Username) *</label>
+            <input type="text" id="userFormUsername" required placeholder="เช่น staff_01" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm focus:outline-none focus:border-[#28AE60] focus:bg-white">
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">ชื่อ-นามสกุล (Full Name) *</label>
-            <input type="text" id="userFormFullName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+            <label class="block text-xs font-bold text-[#5C5950] mb-1.5">ชื่อ-นามสกุล (Full Name) *</label>
+            <input type="text" id="userFormFullName" required placeholder="เช่น สมชาย ใจดี" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm focus:outline-none focus:border-[#28AE60] focus:bg-white">
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">สิทธิ์การใช้งาน (Role) *</label>
-            <select id="userFormRole" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+            <label class="block text-xs font-bold text-[#5C5950] mb-1.5">สิทธิ์การใช้งาน (Role) *</label>
+            <select id="userFormRole" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm focus:outline-none focus:border-[#28AE60] focus:bg-white">
               <option value="operator">เจ้าหน้าที่ (Operator)</option>
               <option value="admin">ผู้ดูแลระบบ (Admin)</option>
             </select>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1">สถานะ (Status) *</label>
-            <select id="userFormStatus" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
+            <label class="block text-xs font-bold text-[#5C5950] mb-1.5">สถานะ (Status) *</label>
+            <select id="userFormStatus" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm focus:outline-none focus:border-[#28AE60] focus:bg-white">
               <option value="ACTIVE">ใช้งานได้ (ACTIVE)</option>
               <option value="INACTIVE">ระงับการใช้งาน (INACTIVE)</option>
             </select>
@@ -674,13 +688,13 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">
+          <label class="block text-xs font-bold text-[#5C5950] mb-1.5">
             <span id="userFormPasswordLabel">รหัสผ่าน (Password) *</span>
-            <span id="userFormPasswordHint" class="hidden text-[10px] text-slate-400 font-normal">(เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</span>
+            <span id="userFormPasswordHint" class="hidden text-[11px] text-[#8C877B] font-normal">(เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</span>
           </label>
           <div class="relative">
-            <input type="password" id="userFormPassword" placeholder="ความยาวอย่างน้อย 4 ตัวอักษร" class="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:border-blue-500">
-            <button type="button" onclick="togglePasswordVisibility('userFormPassword', 'modalEyeBtn')" id="modalEyeBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300">
+            <input type="password" id="userFormPassword" placeholder="ความยาวอย่างน้อย 4 ตัวอักษร" class="w-full pl-3.5 pr-10 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm focus:outline-none focus:border-[#28AE60] focus:bg-white">
+            <button type="button" onclick="togglePasswordVisibility('userFormPassword', 'modalEyeBtn')" id="modalEyeBtn" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#8C877B] hover:text-[#1F1E1B]">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -689,9 +703,9 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
-          <button type="button" onclick="closeUserModal()" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition">ยกเลิก</button>
-          <button type="submit" id="userModalSubmitBtn" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition">บันทึกข้อมูล</button>
+        <div class="flex items-center justify-end space-x-3 pt-4 border-t border-[#EFECE2]">
+          <button type="button" onclick="closeUserModal()" class="px-5 py-2.5 rounded-full text-sm font-bold text-[#5C5950] hover:text-[#1F1E1B] bg-[#EAE6DA] hover:bg-[#DFD9C8] transition">ยกเลิก</button>
+          <button type="submit" id="userModalSubmitBtn" class="px-6 py-2.5 rounded-full text-sm font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition">บันทึกข้อมูล</button>
         </div>
       </form>
     </div>
@@ -700,7 +714,7 @@
   <!-- Toast Notification Floating Box -->
   <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden toast-enter">
     <div id="toastIcon"></div>
-    <span id="toastText" class="text-sm font-medium text-white"></span>
+    <span id="toastText" class="text-sm font-bold text-[#1F1E1B]"></span>
   </div>
 
   <!-- ========================================================================= -->
@@ -714,7 +728,7 @@
         if (list) {
           window._bootLogs.forEach(function(item) {
             var el = document.createElement('div');
-            el.style.color = item.isError ? '#f87171' : '#34d399';
+            el.style.color = item.isError ? '#D94338' : '#1E824C';
             el.textContent = '[' + item.time + '] ' + item.msg;
             list.appendChild(el);
           });
@@ -810,8 +824,8 @@
       if (!('speechSynthesis' in window)) {
         logStatus('[WARN] เบราว์เซอร์นี้ไม่มี SpeechSynthesis (ใช้ Web Audio แทน)', true);
         if (voiceBadge) {
-          voiceBadge.innerHTML = '<span class="text-amber-400">●</span> ใช้เสียง Web Audio';
-          voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-amber-900/60 text-amber-300 border border-amber-500/40';
+          voiceBadge.innerHTML = '<span class="text-[#D9822B]">●</span> ใช้เสียง Web Audio';
+          voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold';
         }
         return;
       }
@@ -823,16 +837,16 @@
           
           if (voiceBadge) {
             if (state.thaiVoice) {
-              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> เสียงไทย: ' + state.thaiVoice.name;
-              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+              voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียงไทย: ' + state.thaiVoice.name;
+              voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
               logStatus('[OK] ตรวจพบเสียงภาษาไทย: ' + state.thaiVoice.name);
             } else if (voices.length > 0) {
-              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> เสียงระบบเบราว์เซอร์';
-              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+              voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียงระบบเบราว์เซอร์';
+              voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
               logStatus('[OK] พร้อมใช้งานระบบเสียงสังเคราะห์');
             } else {
-              voiceBadge.innerHTML = '<span class="text-emerald-400">●</span> ระบบเสียงพร้อม';
-              voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+              voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> ระบบเสียงพร้อม';
+              voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
             }
           }
         } catch (e) {
@@ -892,8 +906,8 @@
     async function loadFaceModels() {
       const modelBadge = document.getElementById('modelStatusBadge');
       if (modelBadge) {
-        modelBadge.innerHTML = '<span class="text-blue-400">●</span> กำลังดาวน์โหลดโมเดล AI...';
-        modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-500/40';
+        modelBadge.innerHTML = '<span class="text-[#D9822B] animate-pulse">●</span> กำลังดาวน์โหลดโมเดล AI...';
+        modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold';
       }
 
       logStatus('[AI] กำลังโหลดโมเดล AI น้ำหนักเบาจาก Edge CDN...');
@@ -913,8 +927,8 @@
         await fetchModels(MODEL_URL);
         state.modelsLoaded = true;
         if (modelBadge) {
-          modelBadge.innerHTML = '<span class="text-emerald-400">●</span> โมเดล AI พร้อมใช้งาน';
-          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+          modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
+          modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
         }
         logStatus('[OK] โมเดล AI ทั้งหมดพร้อมทำงาน 100%');
         showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
@@ -924,16 +938,16 @@
           await fetchModels(MODEL_URL_BACKUP);
           state.modelsLoaded = true;
           if (modelBadge) {
-            modelBadge.innerHTML = '<span class="text-emerald-400">●</span> โมเดล AI พร้อมใช้งาน';
-            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+            modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
+            modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
           }
           logStatus('[OK] โมเดล AI โหลดสำเร็จจาก CDN สำรอง');
           showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
         } catch (err2) {
           logStatus('[ERROR] ไม่สามารถโหลดโมเดล AI: ' + (err2 ? err2.message : err2), true);
           if (modelBadge) {
-            modelBadge.innerHTML = '<span class="text-red-400">●</span> โหลดโมเดล AI ล้มเหลว';
-            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+            modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
+            modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
           }
         }
       }
@@ -1052,8 +1066,8 @@
         if (regOverlay) regOverlay.classList.add('hidden');
 
         state.cameraStarted = true;
-        cameraBadge.innerHTML = '<span class="text-emerald-400">●</span> กล้องทำงานอยู่';
-        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-900/60 text-emerald-300 border border-emerald-500/40';
+        cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-pulse">●</span> กล้องทำงานอยู่ (ON AIR)';
+        cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
         document.getElementById('startCameraOverlay').classList.add('hidden');
         document.getElementById('stopCameraBtn').classList.remove('hidden');
         logStatus('[OK] กล้อง Webcam เปิดใช้งานแล้ว เริ่มการสแกนใบหน้า');
@@ -1068,8 +1082,8 @@
         } else {
           showToast('ไม่สามารถเปิดกล้องได้: ' + errMsg, 'error');
         }
-        cameraBadge.innerHTML = '<span class="text-red-400">●</span> กล้องไม่พร้อมใช้งาน';
-        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+        cameraBadge.innerHTML = '<span class="text-[#E5534B]">●</span> กล้องไม่พร้อมใช้งาน';
+        cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
       }
     }
 
@@ -1093,8 +1107,8 @@
       document.getElementById('startCameraOverlay').classList.remove('hidden');
       document.getElementById('stopCameraBtn').classList.add('hidden');
       const cameraBadge = document.getElementById('cameraStatusBadge');
-      cameraBadge.innerHTML = '<span class="text-slate-400">●</span> กล้องปิดอยู่';
-      cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700';
+      cameraBadge.innerHTML = '<span class="text-[#8C877B]">●</span> กล้องปิดอยู่';
+      cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium';
       logStatus('[CAMERA] กล้อง Webcam ปิดการทำงานแล้ว');
     }
 
@@ -1170,19 +1184,36 @@
     }
 
     function drawFaceBox(ctx, box, label, isKnown, distance) {
-      const color = isKnown ? '#10B981' : '#F59E0B';
+      const color = isKnown ? '#28AE60' : '#D9822B';
       ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(box.x, box.y, box.width, box.height);
+      ctx.lineWidth = 3.5;
 
-      const displayText = isKnown ? ('คุณ ' + label) : 'ลูกค้าทั่วไป';
-      ctx.font = 'bold 15px Sarabun, sans-serif';
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(box.x, box.y, box.width, box.height, 18);
+        ctx.stroke();
+      } else {
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+      }
+
+      const displayText = isKnown ? ('👋 คุณ ' + label) : '✨ ลูกค้าทั่วไป';
+      ctx.font = 'bold 15px "Plus Jakarta Sans", "Sarabun", sans-serif';
       const textWidth = ctx.measureText(displayText).width;
+      const badgeWidth = textWidth + 24;
+      const badgeHeight = 28;
+      const badgeY = Math.max(4, box.y - 34);
 
       ctx.fillStyle = color;
-      ctx.fillRect(box.x, box.y - 28, textWidth + 20, 26);
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(box.x, badgeY, badgeWidth, badgeHeight, 14);
+        ctx.fill();
+      } else {
+        ctx.fillRect(box.x, badgeY, badgeWidth, badgeHeight);
+      }
+
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(displayText, box.x + 10, box.y - 9);
+      ctx.fillText(displayText, box.x + 12, badgeY + 19);
     }
 
     function handlePersonGreeting(name, confidence) {
@@ -1264,7 +1295,7 @@
       snapshotCtx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
 
       captureStatus.textContent = 'กำลังวิเคราะห์ใบหน้าและสกัด Vector 128 มิติ...';
-      captureStatus.className = 'text-xs text-blue-400 mt-2 font-medium';
+      captureStatus.className = 'text-xs text-[#9C6214] mt-2 font-bold text-center';
 
       try {
         const detection = await faceapi.detectSingleFace(snapshotCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
@@ -1273,7 +1304,7 @@
 
         if (!detection) {
           captureStatus.textContent = '❌ ไม่พบใบหน้าในภาพ กรุณาขยับหน้าให้อยู่ในกรอบวงรีแล้วลองใหม่อีกครั้ง';
-          captureStatus.className = 'text-xs text-rose-400 mt-2 font-medium';
+          captureStatus.className = 'text-xs text-[#D94338] mt-2 font-bold text-center';
           state.capturedDescriptor = null;
           state.capturedImageBase64 = null;
           document.getElementById('saveProfileBtn').disabled = true;
@@ -1287,19 +1318,19 @@
         if (captureBtn) captureBtn.classList.add('hidden');
         if (retakeBtn) retakeBtn.classList.remove('hidden');
         if (regLiveBadge) {
-          regLiveBadge.className = 'px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-semibold flex items-center gap-1.5';
-          regLiveBadge.innerHTML = '<span class="text-blue-400">✓</span> <span>ภาพถ่ายพร้อมบันทึก</span>';
+          regLiveBadge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5';
+          regLiveBadge.innerHTML = '<span class="text-[#28AE60]">✓</span> <span>ภาพถ่ายพร้อมบันทึก</span>';
         }
 
         state.capturedDescriptor = Array.from(detection.descriptor);
         state.capturedImageBase64 = base64;
 
         captureStatus.textContent = '✓ ตรวจพบใบหน้าเรียบร้อย พร้อมสำหรับบันทึกข้อมูล';
-        captureStatus.className = 'text-xs text-emerald-400 mt-2 font-medium';
+        captureStatus.className = 'text-xs text-[#1E824C] mt-2 font-bold text-center';
         document.getElementById('saveProfileBtn').disabled = false;
       } catch (err) {
         captureStatus.textContent = 'เกิดข้อผิดพลาดในการวิเคราะห์ใบหน้า: ' + (err ? err.message : err);
-        captureStatus.className = 'text-xs text-rose-400 mt-2 font-medium';
+        captureStatus.className = 'text-xs text-[#D94338] mt-2 font-bold text-center';
       }
     }
 
@@ -1325,8 +1356,8 @@
       if (saveBtn) saveBtn.disabled = true;
       if (captureStatus) captureStatus.textContent = '';
       if (regLiveBadge) {
-        regLiveBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1.5';
-        regLiveBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span>กล้องสด (LIVE)</span>';
+        regLiveBadge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5';
+        regLiveBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span> <span>กล้องสด (LIVE)</span>';
       }
 
       const regVideo = document.getElementById('regWebcamVideo');
@@ -1363,7 +1394,7 @@
 
       var handleSaveSuccess = function(response) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '💾 บันทึกข้อมูลใบหน้า';
+        saveBtn.innerHTML = '<span>💾 บันทึกโปรไฟล์เข้าห้อง</span>';
 
         if (response && response.success) {
           showToast('ลงทะเบียนคุณ "' + name + '" สำเร็จเรียบร้อย', 'success');
@@ -1379,7 +1410,7 @@
 
       var handleSaveError = function(err) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '💾 บันทึกข้อมูลใบหน้า';
+        saveBtn.innerHTML = '<span>💾 บันทึกโปรไฟล์เข้าห้อง</span>';
         showToast('บันทึกไม่สำเร็จ: ' + (err ? err.message : err), 'error');
       };
 
@@ -1444,7 +1475,7 @@
       if (!container) return;
 
       if (state.profiles.length === 0) {
-        container.innerHTML = '<div class="text-center py-12 text-slate-400"><svg class="w-16 h-16 mx-auto mb-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><p class="text-base font-medium">ยังไม่มีข้อมูลใบหน้าที่ลงทะเบียนไว้</p><p class="text-xs text-slate-500 mt-1">กดที่แท็บ "ลงทะเบียนใบหน้า" เพื่อเพิ่มข้อมูลผู้ใช้ใหม่</p></div>';
+        container.innerHTML = '<div class="glass-card rounded-[28px] text-center py-12 px-6 text-[#6E6B62]"><div class="w-16 h-16 mx-auto mb-3 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-3xl">🎙️</div><p class="text-base font-extrabold text-[#1F1E1B]">ยังไม่มีสมาชิกที่ลงทะเบียนในห้องนี้</p><p class="text-xs text-[#8C877B] mt-1">แตะที่แท็บ "ลงทะเบียนใบหน้า" เพื่อเพิ่มโปรไฟล์สมาชิกใหม่</p></div>';
         return;
       }
 
@@ -1453,14 +1484,14 @@
         var safeName = (p.name || '').replace(/"/g, '&quot;');
         var safeUrl = (p.imageUrl || '');
         var imgDisplay = safeUrl
-          ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-14 h-14 rounded-full object-cover border-2 border-blue-500/50 flex-shrink-0" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=1E293B&color=38BDF8\'">'
-          : '<div class="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center text-lg font-bold text-blue-400 border border-slate-600 flex-shrink-0">' + safeName.charAt(0) + '</div>';
+          ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-16 h-16 ch-squircle object-cover border-2 border-[#28AE60] flex-shrink-0 shadow-sm" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=EAF7EF&color=1E824C\'">'
+          : '<div class="w-16 h-16 ch-squircle bg-[#EAF7EF] flex items-center justify-center text-xl font-extrabold text-[#1E824C] border-2 border-[#28AE60] flex-shrink-0 shadow-sm">' + safeName.charAt(0) + '</div>';
 
-        html += '<div class="glass-card rounded-xl p-4 flex items-center justify-between border border-slate-700/60 hover:border-blue-500/40 transition">' +
-          '<div class="flex items-center space-x-3 overflow-hidden">' +
-          imgDisplay +
-          '<div class="truncate"><h4 class="font-semibold text-white truncate">' + safeName + '</h4><p class="text-xs text-slate-400">บันทึกเมื่อ: ' + (p.createdAt || '-') + '</p></div></div>' +
-          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition" title="ลบข้อมูล"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
+        html += '<div class="glass-card rounded-[24px] p-4 flex items-center justify-between hover:border-[#28AE60]/60 transition shadow-sm">' +
+          '<div class="flex items-center space-x-3.5 overflow-hidden">' +
+          '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] shadow">🎙️</span></div>' +
+          '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">เข้าร่วมเมื่อ: ' + (p.createdAt || '-') + '</p></div></div>' +
+          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2.5 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบโปรไฟล์"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
       });
       html += '</div>';
       container.innerHTML = html;
@@ -1474,12 +1505,12 @@
         if (!btn || !pane) return;
 
         if (t === tabName) {
-          btn.classList.add('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-500/30', 'font-semibold');
-          btn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'font-medium');
+          btn.classList.add('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+          btn.classList.remove('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
           pane.classList.remove('hidden');
         } else {
-          btn.classList.remove('bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-500/30', 'font-semibold');
-          btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'font-medium');
+          btn.classList.remove('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+          btn.classList.add('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
           pane.classList.add('hidden');
         }
       });
@@ -1506,10 +1537,10 @@
       state.soundEnabled = !state.soundEnabled;
       const btn = document.getElementById('soundToggleBtn');
       if (state.soundEnabled) {
-        btn.innerHTML = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg><span class="text-sm">เปิดเสียงพูด</span>';
+        btn.innerHTML = '<svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg><span class="text-xs font-bold">เปิดเสียงพูด</span>';
         showToast('เปิดเสียงพูดแล้ว', 'info');
       } else {
-        btn.innerHTML = '<svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg><span class="text-sm">ปิดเสียงพูด</span>';
+        btn.innerHTML = '<svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg><span class="text-xs font-bold text-[#8C877B]">ปิดเสียงพูด</span>';
         window.speechSynthesis && window.speechSynthesis.cancel();
         showToast('ปิดเสียงพูดแล้ว', 'info');
       }
@@ -1529,20 +1560,23 @@
       const toastIcon = document.getElementById('toastIcon');
       if (!toast) return;
 
-      let borderClass = 'border-blue-500/50 text-blue-300';
-      let iconSvg = '<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+      let borderClass = 'border-[#28AE60] text-[#1F1E1B]';
+      let iconSvg = '<span class="w-6 h-6 rounded-full bg-[#EAF7EF] text-[#28AE60] flex items-center justify-center text-xs font-bold">👋</span>';
 
       if (type === 'success') {
-        borderClass = 'border-emerald-500/50 text-emerald-300';
-        iconSvg = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        borderClass = 'border-[#28AE60] text-[#1F1E1B]';
+        iconSvg = '<span class="w-6 h-6 rounded-full bg-[#EAF7EF] text-[#28AE60] flex items-center justify-center text-xs font-bold">✓</span>';
       } else if (type === 'error') {
-        borderClass = 'border-rose-500/50 text-rose-300';
-        iconSvg = '<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        borderClass = 'border-[#E5534B] text-[#1F1E1B]';
+        iconSvg = '<span class="w-6 h-6 rounded-full bg-[#FDECEB] text-[#D94338] flex items-center justify-center text-xs font-bold">!</span>';
+      } else if (type === 'warning') {
+        borderClass = 'border-[#D9822B] text-[#1F1E1B]';
+        iconSvg = '<span class="w-6 h-6 rounded-full bg-[#FEF6E6] text-[#9C6214] flex items-center justify-center text-xs font-bold">●</span>';
       }
 
       toastIcon.innerHTML = iconSvg;
       toastText.textContent = message;
-      toast.className = 'fixed bottom-5 right-5 z-50 glass-card px-4 py-3 rounded-xl flex items-center space-x-3 shadow-2xl border ' + borderClass + ' toast-visible transition-all duration-300';
+      toast.className = 'fixed bottom-5 right-5 z-50 glass-card px-5 py-3 rounded-full flex items-center space-x-2.5 shadow-xl border-2 ' + borderClass + ' toast-visible transition-all duration-300';
 
       clearTimeout(toast._timer);
       toast._timer = setTimeout(() => {
@@ -1578,8 +1612,8 @@
       var roleEl = document.getElementById('headerUserRole');
       if (nameEl) nameEl.textContent = user.fullName || user.username;
       if (roleEl) {
-        roleEl.textContent = user.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'เจ้าหน้าที่ (Operator)';
-        roleEl.className = user.role === 'admin' ? 'text-[10px] text-purple-400 font-medium' : 'text-[10px] text-emerald-400 font-medium';
+        roleEl.textContent = user.role === 'admin' ? '✳️ Moderator (Admin)' : '🎙️ Operator';
+        roleEl.className = user.role === 'admin' ? 'text-[10px] text-[#28AE60] font-bold' : 'text-[10px] text-[#6E6B62] font-semibold';
       }
 
       // Show/hide Admin User Management Tab
@@ -1609,11 +1643,11 @@
 
       errBox.classList.add('hidden');
       btn.disabled = true;
-      btn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังเข้าสู่ระบบ...';
+      btn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังเข้าสู่ห้อง...';
 
       var handleSuccess = function(response) {
         btn.disabled = false;
-        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+        btn.innerHTML = '<span>👋 เข้าสู่ระบบ (Enter Hallway)</span>';
 
         if (response && response.success && response.user) {
           state.currentUser = response.user;
@@ -1622,7 +1656,7 @@
           } catch(e) {}
 
           applyAuthenticatedUser(response.user);
-          showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ ' + response.user.fullName, 'success');
+          showToast('ยินดีต้อนรับเข้าสู่ห้อง คุณ ' + response.user.fullName, 'success');
           logStatus('[AUTH] เข้าสู่ระบบสำเร็จ: ' + response.user.username + ' (' + response.user.role + ')');
 
           // เริ่มต้นการทำงานเบื้องหลังเมื่อล็อกอินสำเร็จ
@@ -1639,7 +1673,7 @@
 
       var handleError = function(err) {
         btn.disabled = false;
-        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
+        btn.innerHTML = '<span>👋 เข้าสู่ระบบ (Enter Hallway)</span>';
         errText.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err ? err.message : err);
         errBox.classList.remove('hidden');
       };
@@ -1663,7 +1697,7 @@
     }
 
     function logoutUser() {
-      if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+      if (confirm('คุณต้องการออกจากห้อง (Leave Quietly) ใช่หรือไม่?')) {
         stopCamera();
         state.currentUser = null;
         try {
@@ -1692,7 +1726,7 @@
     // --- User Management Controller ---
     function loadSystemUsers() {
       var tbody = document.getElementById('usersTableBody');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">กำลังโหลดข้อมูลผู้ใช้งาน...</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-[#8C877B]">กำลังโหลดข้อมูลผู้ใช้งาน...</td></tr>';
 
       var handleSuccess = function(response) {
         if (response && response.success) {
@@ -1740,34 +1774,34 @@
       if (statOp) statOp.textContent = opCount;
 
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">ยังไม่มีผู้ใช้งานในระบบ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-[#8C877B]">ยังไม่มีผู้ใช้งานในระบบ</td></tr>';
         return;
       }
 
       var htmlRows = '';
       users.forEach(function(u) {
         var roleBadge = u.role === 'admin'
-          ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-900/60 text-purple-300 border border-purple-500/40">ผู้ดูแลระบบ</span>'
-          : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-500/40">เจ้าหน้าที่</span>';
+          ? '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">✳️ ผู้ดูแลระบบ</span>'
+          : '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0]">🎙️ เจ้าหน้าที่</span>';
 
         var statusBadge = u.status === 'ACTIVE'
-          ? '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">ใช้งานได้</span>'
-          : '<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">ระงับ</span>';
+          ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">● ใช้งานได้</span>'
+          : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0]">● ระงับ</span>';
 
         var safeUser = (u.username || '').replace(/"/g, '&quot;');
         var safeName = (u.fullName || '').replace(/"/g, '&quot;');
 
-        htmlRows += '<tr class="hover:bg-slate-900/40 transition">' +
-          '<td class="px-5 py-4 font-mono font-bold text-white flex items-center space-x-2">' +
-          '<span class="w-7 h-7 rounded-lg bg-slate-800 text-blue-400 flex items-center justify-center text-xs font-bold">' + safeUser.charAt(0).toUpperCase() + '</span>' +
+        htmlRows += '<tr class="hover:bg-[#F7F5EE] transition">' +
+          '<td class="px-5 py-4 font-mono font-bold text-[#1F1E1B] flex items-center space-x-2.5">' +
+          '<span class="w-8 h-8 ch-squircle bg-[#EAE6DA] border border-[#DCD6C4] text-[#1F1E1B] flex items-center justify-center text-xs font-extrabold">' + safeUser.charAt(0).toUpperCase() + '</span>' +
           '<span>' + safeUser + '</span></td>' +
-          '<td class="px-5 py-4 text-slate-300">' + safeName + '</td>' +
+          '<td class="px-5 py-4 font-semibold text-[#1F1E1B]">' + safeName + '</td>' +
           '<td class="px-5 py-4">' + roleBadge + '</td>' +
           '<td class="px-5 py-4">' + statusBadge + '</td>' +
-          '<td class="px-5 py-4 text-xs text-slate-400">' + (u.lastLogin || '-') + '</td>' +
-          '<td class="px-5 py-4 text-right space-x-1">' +
-          '<button onclick="openUserModal(\'' + u.id + '\')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition">แก้ไข</button>' +
-          '<button onclick="deleteUserAction(\'' + u.id + '\', \'' + safeUser + '\')" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition">ลบ</button>' +
+          '<td class="px-5 py-4 text-xs text-[#6E6B62]">' + (u.lastLogin || '-') + '</td>' +
+          '<td class="px-5 py-4 text-right space-x-1.5">' +
+          '<button onclick="openUserModal(\'' + u.id + '\')" class="px-3 py-1.5 rounded-full text-xs font-bold text-[#1F1E1B] bg-[#EAE6DA] hover:bg-[#DFD9C8] transition">แก้ไข</button>' +
+          '<button onclick="deleteUserAction(\'' + u.id + '\', \'' + safeUser + '\')" class="px-3 py-1.5 rounded-full text-xs font-bold text-[#D94338] bg-[#FDECEB] hover:bg-[#FBD8D6] transition">ลบ</button>' +
           '</td></tr>';
       });
 
@@ -1982,8 +2016,8 @@
         logStatus('[ERROR] ความล้มเหลวของโมเดล AI: ' + (err ? err.message : err), true);
         const modelBadge = document.getElementById('modelStatusBadge');
         if (modelBadge) {
-          modelBadge.innerHTML = '<span class="text-red-400">●</span> โหลดโมเดล AI ล้มเหลว';
-          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-900/60 text-red-300 border border-red-500/40';
+          modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
+          modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
         }
       }
     })();
