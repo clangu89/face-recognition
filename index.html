@@ -122,14 +122,14 @@
       <!-- Brand Logo & Header -->
       <div class="text-center mb-8">
         <div class="w-16 h-16 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-md mx-auto mb-4 text-3xl">
-          👋
+          🛡️
         </div>
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F7F5EE] border border-[#E5E0D0] text-[11px] font-bold text-[#6E6B62] uppercase tracking-wider mb-2">
-          <span>🏠</span>
-          <span>WELCOME TO THE CLUB</span>
+          <span>🔒</span>
+          <span>SYSTEM AUTHENTICATION</span>
         </div>
         <h2 class="text-2xl font-extrabold text-[#1F1E1B] tracking-tight">AI Face Recognition</h2>
-        <p class="text-sm text-[#6E6B62] mt-1">เข้าสู่ห้องต้อนรับอัจฉริยะเพื่อสแกนใบหน้าและทักทายด้วยเสียง</p>
+        <p class="text-sm text-[#6E6B62] mt-1">กรุณาเข้าสู่ระบบเพื่อใช้งานระบบตรวจจับใบหน้าและทักทายอัตโนมัติ</p>
       </div>
 
       <!-- Error Alert Message -->
@@ -177,7 +177,7 @@
         <div class="pt-3">
           <button type="submit" id="loginSubmitBtn"
             class="w-full py-3.5 px-6 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-lg shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center justify-center text-sm space-x-2">
-            <span>👋 เข้าสู่ระบบ</span>
+            <span>เข้าสู่ระบบ</span>
             <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
             </svg>
@@ -199,16 +199,16 @@
       <!-- Brand Logo & Title -->
       <div class="flex items-center space-x-3.5">
         <div class="w-11 h-11 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-sm text-2xl">
-          👋
+          📷
         </div>
         <div>
           <div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#6E6B62]">
-            <span>🏠 GREETING CLUB</span>
+            <span>SMART RECEPTION SYSTEM</span>
             <span>•</span>
-            <span class="px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#28AE60] border border-[#BEE6CE]">v3.0 Live</span>
+            <span class="px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#28AE60] border border-[#BEE6CE]">v3.0</span>
           </div>
           <h1 class="text-lg font-extrabold tracking-tight text-[#1F1E1B]">
-            AI Face Recognition & Greeting
+            ระบบตรวจจับใบหน้าและทักทายอัจฉริยะ (AI Face Recognition)
           </h1>
         </div>
       </div>
@@ -225,14 +225,16 @@
           ⏳ ตรวจสอบเสียงไทย...
         </span>
 
-        <!-- User Profile & Clubhouse "Leave quietly" Logout -->
+        <!-- User Profile & Logout -->
         <div class="flex items-center space-x-3 ml-2 pl-3 border-l border-[#DCD6C4]">
           <div class="text-right">
             <div id="headerUserName" class="text-xs font-bold text-[#1F1E1B]">Admin</div>
-            <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold">ผู้ดูแลระบบ (Admin)</div>
+            <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold">ผู้ดูแลระบบ (Administrator)</div>
           </div>
           <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3.5 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm">
-            <span>✌️</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
             <span class="hidden sm:inline">ออกจากระบบ</span>
           </button>
         </div>
@@ -249,7 +251,7 @@
       <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-[#DCD6C4]">
         <span class="text-[#5C5950] font-bold flex items-center gap-1.5 font-sans">
           <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
-          สถานะการเชื่อมต่อห้องระบบ (Room Activity Log):
+          บันทึกสถานะการทำงานของระบบ (System Activity Log):
         </span>
         <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-full hover:bg-[#DDD7C5]/50 transition">ล้างข้อความ</button>
       </div>
@@ -260,21 +262,21 @@
     <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
       <div class="flex flex-wrap items-center gap-1.5 bg-[#EAE6DA] p-1.5 rounded-full border border-[#DCD6C4]">
         <button id="tabBtn_scanner" onclick="switchTab('scanner')" class="px-4 py-2 rounded-full text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center space-x-2">
-          <span>🎙️</span>
-          <span>ห้องตรวจจับและทักทาย</span>
+          <span>📷</span>
+          <span>ระบบตรวจจับและทักทายอัตโนมัติ</span>
         </button>
         <button id="tabBtn_register" onclick="switchTab('register')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
-          <span>✨</span>
-          <span>ลงทะเบียนใบหน้า</span>
+          <span>📝</span>
+          <span>ลงทะเบียนข้อมูลใบหน้า</span>
         </button>
         <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
-          <span>👥</span>
-          <span>สมาชิกในคลับ</span>
+          <span>📋</span>
+          <span>ทะเบียนประวัติใบหน้า</span>
           <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
         </button>
         <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
-          <span>⚙️</span>
-          <span>จัดการผู้ใช้งาน</span>
+          <span>🛡️</span>
+          <span>จัดการบัญชีผู้ใช้งานระบบ</span>
         </button>
       </div>
 
@@ -290,10 +292,10 @@
         <div class="hidden sm:flex items-center space-x-1.5 bg-[#EAE6DA] p-1 rounded-full border border-[#DCD6C4]">
           <span class="text-xs text-[#6E6B62] px-2.5 font-semibold">🔊 ทดสอบเสียง:</span>
           <button onclick="testGreetingSpeech('known')" class="text-xs px-3 py-1.5 rounded-full bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] font-semibold border border-[#BEE6CE] transition">
-            สมาชิกคุ้นเคย
+            บุคลากร/สมาชิก
           </button>
           <button onclick="testGreetingSpeech('unknown')" class="text-xs px-3 py-1.5 rounded-full bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] font-semibold border border-[#F5DFB0] transition">
-            แขกผู้มาเยือน
+            ผู้มาติดต่อทั่วไป
           </button>
         </div>
       </div>
@@ -304,16 +306,16 @@
     <!-- ========================================================================= -->
     <div id="tabPane_scanner" class="space-y-4">
       
-      <!-- Greeting Alert Banner (Clubhouse Active Speaker Toast) -->
+      <!-- Greeting Alert Banner -->
       <div id="greetingBanner" class="hidden items-center justify-between p-4 rounded-[24px] bg-white border-2 border-[#28AE60] shadow-lg">
         <div class="flex items-center space-x-3.5">
           <div class="w-12 h-12 ch-squircle bg-[#EAF7EF] border-2 border-[#28AE60] flex items-center justify-center text-2xl flex-shrink-0 ch-speaking-ring">
-            👋
+            🔊
           </div>
           <div>
             <span class="text-[11px] font-bold uppercase tracking-wider text-[#28AE60] flex items-center gap-1">
               <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
-              กำลังทักทายในห้อง (Speaking Now)
+              ระบบกำลังกล่าวคำทักทาย (Active Greeting)
             </span>
             <p id="greetingBannerText" class="text-lg font-extrabold text-[#1F1E1B] tracking-tight">
               สวัสดีค่ะคุณ...
@@ -321,23 +323,23 @@
           </div>
         </div>
         <span class="text-xs px-3.5 py-1.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold border border-[#BEE6CE]">
-          🔊 ทักทายแล้ว
+          ✓ กล่าวทักทายแล้ว
         </span>
       </div>
 
       <!-- Main Video Viewport & Controls -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        <!-- Camera Stream Frame (3 Cols - Clubhouse Room Stage) -->
+        <!-- Camera Stream Frame (3 Cols) -->
         <div class="lg:col-span-3">
           <div class="glass-card rounded-[28px] p-3 sm:p-4">
             <!-- Stage Top Bar -->
             <div class="flex items-center justify-between px-2 pb-3">
               <div class="flex items-center space-x-2">
                 <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60] bg-[#EAF7EF] px-2.5 py-1 rounded-full border border-[#BEE6CE]">
-                  🏠 WELCOME STAGE
+                  🎥 LIVE RECOGNITION
                 </span>
-                <span class="text-xs font-semibold text-[#6E6B62] hidden sm:inline">ห้องต้อนรับอัตโนมัติด้วย AI</span>
+                <span class="text-xs font-semibold text-[#6E6B62] hidden sm:inline">จุดตรวจจับใบหน้าและต้อนรับอัตโนมัติ</span>
               </div>
               <span class="text-xs text-[#8C877B] font-medium">Real-time 128D Vector</span>
             </div>
@@ -353,41 +355,47 @@
               <!-- Animated Radar Scan Line -->
               <div class="scan-line"></div>
 
-              <!-- Start Camera Overlay (When Camera is Stopped - Warm Sand Card) -->
+              <!-- Start Camera Overlay (When Camera is Stopped) -->
               <div id="startCameraOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-md p-6 text-center">
                 <div class="w-20 h-20 ch-squircle bg-[#EAF7EF] border-2 border-[#BEE6CE] flex items-center justify-center mb-4 text-4xl shadow-sm">
-                  🎙️
+                  📷
                 </div>
-                <h3 class="text-xl font-extrabold text-[#1F1E1B] mb-1.5">พร้อมเปิดเวทีต้อนรับ (Open Stage)</h3>
+                <h3 class="text-xl font-extrabold text-[#1F1E1B] mb-1.5">ระบบกล้องตรวจจับใบหน้าพร้อมทำงาน</h3>
                 <p class="text-sm text-[#6E6B62] max-w-md mb-6">
-                  แตะปุ่มด้านล่างเพื่อเปิดกล้อง Webcam ระบบจะตรวจจับใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ
+                  กดปุ่มด้านล่างเพื่อเปิดใช้งานกล้อง Webcam ระบบจะประมวลผลใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ
                 </p>
                 <button id="startCameraBtn" onclick="startCamera()" class="px-7 py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
-                  <span>✋ เปิดกล้อง & เริ่มต้อนรับ</span>
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                  </svg>
+                  <span>เปิดการทำงานกล้องและเริ่มตรวจจับ</span>
                 </button>
               </div>
 
-              <!-- Stop Camera Floating Button (Leave Quietly style) -->
+              <!-- Stop Camera Floating Button -->
               <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 px-4 py-2 rounded-full bg-[#FDECEB]/95 hover:bg-[#FBD8D6] text-[#D94338] text-xs font-bold backdrop-blur-md border border-[#F5C2C0] shadow-md transition flex items-center space-x-1.5">
-                <span>✌️ พักกล้อง (Leave Stage)</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <span>หยุดการทำงานกล้อง</span>
               </button>
 
             </div>
           </div>
         </div>
 
-        <!-- Right Side: Rules Card (Room Guidelines) -->
+        <!-- Right Side: Rules Card -->
         <div class="space-y-4">
           <div class="glass-card rounded-[28px] p-5 space-y-4">
             <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-              กติกาห้องต้อนรับ (Room Rules)
+              หลักเกณฑ์การตรวจจับและทักทาย
             </h3>
 
             <!-- Rule 1: Known Face -->
             <div class="p-3.5 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
               <div class="flex items-center space-x-2 text-[#1E824C] font-bold text-xs">
-                <span>🟢 สมาชิกที่ลงทะเบียนแล้ว</span>
+                <span>🟢 บุคลากรหรือสมาชิกที่มีข้อมูลในระบบ</span>
               </div>
               <p class="text-xs text-[#2D6A4F] leading-relaxed">
                 แสดงกรอบสีเขียวพร้อมชื่อ และส่งเสียงทักทาย: <span class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณ [ชื่อ]"</span>
@@ -397,7 +405,7 @@
             <!-- Rule 2: Unknown Face -->
             <div class="p-3.5 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
               <div class="flex items-center space-x-2 text-[#9C6214] font-bold text-xs">
-                <span>🟡 แขกผู้มาเยือน (Guest)</span>
+                <span>🟡 ผู้มาติดต่อหรือลูกค้าทั่วไป</span>
               </div>
               <p class="text-xs text-[#7C4D10] leading-relaxed">
                 แสดงกรอบสีส้มทอง และส่งเสียงทักทาย: <span class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
@@ -407,10 +415,10 @@
             <!-- Rule 3: Single Greet Logic -->
             <div class="p-3.5 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-1">
               <div class="flex items-center space-x-2 text-[#5C5950] font-bold text-xs">
-                <span>⏱️ ระบบป้องกันการทักซ้ำ</span>
+                <span>⏱️ ระบบป้องกันการกล่าวทักทายซ้ำ</span>
               </div>
               <p class="text-xs text-[#6E6B62] leading-relaxed">
-                ทักทายเพียง <span class="font-bold text-[#1F1E1B]">1 ครั้ง</span> ขณะยืนหน้ากล้อง และรีเซ็ตอัตโนมัติเมื่อ <span class="font-bold text-[#1F1E1B]">เดินออกจากกล้องเกิน 3 วินาที</span>
+                กล่าวทักทายเพียง <span class="font-bold text-[#1F1E1B]">1 ครั้ง</span> ขณะยืนหน้ากล้อง และรีเซ็ตอัตโนมัติเมื่อ <span class="font-bold text-[#1F1E1B]">ออกจากรัศมีกล้องเกิน 3 วินาที</span>
               </p>
             </div>
 
@@ -429,14 +437,14 @@
       <div class="max-w-3xl mx-auto glass-card rounded-[28px] p-6 sm:p-8 space-y-6">
         <div class="flex items-start justify-between gap-4 border-b border-[#EFECE2] pb-4">
           <div>
-            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">NEW SPEAKER PROFILE</span>
-            <h2 class="text-xl font-extrabold text-[#1F1E1B] mt-0.5">ลงทะเบียนสมาชิกใหม่เข้าห้อง</h2>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">FACE PROFILE REGISTRATION</span>
+            <h2 class="text-xl font-extrabold text-[#1F1E1B] mt-0.5">ลงทะเบียนข้อมูลใบหน้าบุคลากร / สมาชิก</h2>
             <p class="text-xs text-[#6E6B62] mt-1">
-              ถ่ายภาพใบหน้าหน้าตรงเพื่อสกัดเวกเตอร์ 128 มิติ และสร้างโปรไฟล์เสียงทักทาย
+              ถ่ายภาพใบหน้าหน้าตรงเพื่อสกัดเวกเตอร์ 128 มิติ และบันทึกข้อมูลเข้าสู่ฐานข้อมูลระบบ
             </p>
           </div>
           <div class="w-12 h-12 ch-squircle bg-[#F8D57E] flex items-center justify-center text-2xl shadow-inner flex-shrink-0">
-            📸
+            📝
           </div>
         </div>
 
@@ -446,7 +454,7 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between">
               <label class="block text-xs font-bold uppercase tracking-wider text-[#5C5950]">
-                ตัวอย่างกล้องสด & ภาพโปรไฟล์
+                ตัวอย่างกล้องสด & ภาพถ่ายใบหน้า
               </label>
               <span id="regLiveBadge" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span>
@@ -464,7 +472,7 @@
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
                   <div class="w-44 h-56 sm:w-52 sm:h-64 rounded-[50%] border-2 border-dashed border-[#28AE60]/80 shadow-[0_0_25px_rgba(40,174,96,0.3)] flex items-center justify-center">
                     <span class="text-[11px] font-bold text-white bg-[#1F1E1B]/75 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow">
-                      จัดใบหน้าให้อยู่ในกรอบ
+                      จัดตำแหน่งใบหน้าให้อยู่ในกรอบ
                     </span>
                   </div>
                 </div>
@@ -473,7 +481,7 @@
                 <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-sm p-4 text-center">
                   <p class="text-xs font-semibold text-[#6E6B62] mb-3">กล้องยังไม่เปิดทำงาน</p>
                   <button type="button" onclick="startCamera()" class="px-5 py-2.5 rounded-full text-xs font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-sm transition">
-                    ✋ เปิดกล้อง Webcam
+                    เปิดการทำงานกล้อง
                   </button>
                 </div>
               </div>
@@ -504,20 +512,20 @@
                 ชื่อ - นามสกุล หรือชื่อที่ใช้ทักทาย <span class="text-[#E5534B]">*</span>
               </label>
               <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] placeholder-[#9C978B] focus:outline-none focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 text-sm transition">
-              <p class="text-xs text-[#8C877B] mt-1.5">ระบบจะทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
+              <p class="text-xs text-[#8C877B] mt-1.5">ระบบจะกล่าวทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
             </div>
 
             <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-2 text-xs text-[#5C5950]">
-              <h4 class="font-bold text-[#1F1E1B]">💡 เทคนิคการถ่ายภาพให้แม่นยำ:</h4>
+              <h4 class="font-bold text-[#1F1E1B]">💡 ข้อแนะนำในการบันทึกภาพใบหน้า:</h4>
               <ul class="list-disc list-inside space-y-1 text-[#6E6B62]">
                 <li>อยู่ในบริเวณที่มีแสงสว่างเพียงพอ ไม่ย้อนแสง</li>
                 <li>มองตรงไปที่กล้อง ถอดแว่นตาดำหรือหน้ากากอนามัย</li>
-                <li>มีใบหน้าอยู่ในกรอบเพียง 1 ท่านขณะกดถ่าย</li>
+                <li>มีใบหน้าอยู่ในกรอบเพียง 1 ท่านขณะกดถ่ายภาพ</li>
               </ul>
             </div>
 
             <button id="saveProfileBtn" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] disabled:bg-[#EAE6DA] disabled:text-[#9C978B] disabled:cursor-not-allowed text-white shadow-md shadow-[#28AE60]/20 disabled:shadow-none transition text-sm flex items-center justify-center space-x-2">
-              <span>💾 บันทึกโปรไฟล์เข้าห้อง</span>
+              <span>💾 บันทึกข้อมูลใบหน้าเข้าระบบ</span>
             </button>
           </div>
 
@@ -534,15 +542,15 @@
       
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-extrabold text-[#1F1E1B]">สมาชิกในห้องทั้งหมด (Registered Speakers)</h2>
-          <p class="text-xs text-[#6E6B62]">ข้อมูลใบหน้าจัดเก็บบน Google Sheets และรูปโปรไฟล์บน Google Drive</p>
+          <h2 class="text-xl font-extrabold text-[#1F1E1B]">ทะเบียนประวัติใบหน้าที่บันทึกในระบบ (Registered Profiles)</h2>
+          <p class="text-xs text-[#6E6B62]">ข้อมูลเวกเตอร์ใบหน้าจัดเก็บบน Google Sheets และรูปภาพอ้างอิงบน Google Drive</p>
         </div>
 
         <button onclick="loadProfilesFromBackend()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition">
           <svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
-          <span>รีเฟรชรายชื่อ</span>
+          <span>รีเฟรชข้อมูล</span>
         </button>
       </div>
 
@@ -560,17 +568,17 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-xl font-extrabold text-[#1F1E1B] flex items-center gap-2">
-            <span>จัดการผู้ดูแลห้อง (Moderators & Operators)</span>
-            <span class="text-xs px-3 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold">เฉพาะ Admin</span>
+            <span>การจัดการบัญชีผู้ใช้งานระบบ (User Management)</span>
+            <span class="text-xs px-3 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold">สำหรับผู้ดูแลระบบ</span>
           </h2>
-          <p class="text-xs text-[#6E6B62]">กำหนดสิทธิ์และจัดการบัญชีผู้ใช้งานสำหรับล็อกอินเข้าควบคุมระบบ</p>
+          <p class="text-xs text-[#6E6B62]">กำหนดสิทธิ์และบริหารจัดการบัญชีผู้ใช้งานสำหรับเข้าควบคุมระบบ</p>
         </div>
 
         <button onclick="openUserModal()" class="px-5 py-2.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center space-x-2 text-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
           </svg>
-          <span>เพิ่มผู้ใช้งานใหม่</span>
+          <span>เพิ่มบัญชีผู้ใช้งาน</span>
         </button>
       </div>
 
@@ -587,20 +595,20 @@
         </div>
         <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
           <div>
-            <div class="text-xs text-[#6E6B62] font-semibold">ผู้ดูแลระบบ (Moderator / Admin)</div>
+            <div class="text-xs text-[#6E6B62] font-semibold">ผู้ดูแลระบบ (Administrator)</div>
             <div id="statAdminUsers" class="text-2xl font-extrabold text-[#28AE60] mt-1">0</div>
           </div>
           <div class="w-11 h-11 ch-squircle bg-[#EAF7EF] border border-[#BEE6CE] flex items-center justify-center text-xl">
-            ✳️
+            🛡️
           </div>
         </div>
         <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
           <div>
-            <div class="text-xs text-[#6E6B62] font-semibold">เจ้าหน้าที่ (Operator)</div>
+            <div class="text-xs text-[#6E6B62] font-semibold">เจ้าหน้าที่ปฏิบัติงาน (Operator)</div>
             <div id="statOperatorUsers" class="text-2xl font-extrabold text-[#D9822B] mt-1">0</div>
           </div>
           <div class="w-11 h-11 ch-squircle bg-[#FEF6E6] border border-[#F5DFB0] flex items-center justify-center text-xl">
-            🎙️
+            👤
           </div>
         </div>
       </div>
@@ -611,12 +619,12 @@
           <table class="w-full text-left text-sm">
             <thead class="bg-[#F7F5EE] text-xs font-bold text-[#5C5950] uppercase tracking-wider border-b border-[#E5E0D0]">
               <tr>
-                <th class="px-5 py-4">ชื่อผู้ใช้ (Username)</th>
-                <th class="px-5 py-4">ชื่อ-นามสกุล</th>
-                <th class="px-5 py-4">บทบาทในห้อง</th>
-                <th class="px-5 py-4">สถานะ</th>
-                <th class="px-5 py-4">เข้าใช้งานล่าสุด</th>
-                <th class="px-5 py-4 text-right">จัดการ</th>
+                <th class="px-5 py-4">ชื่อผู้ใช้งาน (Username)</th>
+                <th class="px-5 py-4">ชื่อ - นามสกุล</th>
+                <th class="px-5 py-4">ระดับสิทธิ์การใช้งาน</th>
+                <th class="px-5 py-4">สถานะบัญชี</th>
+                <th class="px-5 py-4">เข้าสู่ระบบล่าสุด</th>
+                <th class="px-5 py-4 text-right">การจัดการ</th>
               </tr>
             </thead>
             <tbody id="usersTableBody" class="divide-y divide-[#EFECE2] text-[#1F1E1B]">
@@ -1066,7 +1074,7 @@
         if (regOverlay) regOverlay.classList.add('hidden');
 
         state.cameraStarted = true;
-        cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-pulse">●</span> กล้องทำงานอยู่ (ON AIR)';
+        cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-pulse">●</span> กล้องกำลังทำงาน';
         cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
         document.getElementById('startCameraOverlay').classList.add('hidden');
         document.getElementById('stopCameraBtn').classList.remove('hidden');
@@ -1196,7 +1204,7 @@
         ctx.strokeRect(box.x, box.y, box.width, box.height);
       }
 
-      const displayText = isKnown ? ('👋 คุณ ' + label) : '✨ ลูกค้าทั่วไป';
+      const displayText = isKnown ? ('คุณ ' + label) : 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
       ctx.font = 'bold 15px "Plus Jakarta Sans", "Sarabun", sans-serif';
       const textWidth = ctx.measureText(displayText).width;
       const badgeWidth = textWidth + 24;
@@ -1394,7 +1402,7 @@
 
       var handleSaveSuccess = function(response) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<span>💾 บันทึกโปรไฟล์เข้าห้อง</span>';
+        saveBtn.innerHTML = '<span>💾 บันทึกข้อมูลใบหน้าเข้าระบบ</span>';
 
         if (response && response.success) {
           showToast('ลงทะเบียนคุณ "' + name + '" สำเร็จเรียบร้อย', 'success');
@@ -1410,7 +1418,7 @@
 
       var handleSaveError = function(err) {
         saveBtn.disabled = false;
-        saveBtn.innerHTML = '<span>💾 บันทึกโปรไฟล์เข้าห้อง</span>';
+        saveBtn.innerHTML = '<span>💾 บันทึกข้อมูลใบหน้าเข้าระบบ</span>';
         showToast('บันทึกไม่สำเร็จ: ' + (err ? err.message : err), 'error');
       };
 
@@ -1475,7 +1483,7 @@
       if (!container) return;
 
       if (state.profiles.length === 0) {
-        container.innerHTML = '<div class="glass-card rounded-[28px] text-center py-12 px-6 text-[#6E6B62]"><div class="w-16 h-16 mx-auto mb-3 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-3xl">🎙️</div><p class="text-base font-extrabold text-[#1F1E1B]">ยังไม่มีสมาชิกที่ลงทะเบียนในห้องนี้</p><p class="text-xs text-[#8C877B] mt-1">แตะที่แท็บ "ลงทะเบียนใบหน้า" เพื่อเพิ่มโปรไฟล์สมาชิกใหม่</p></div>';
+        container.innerHTML = '<div class="glass-card rounded-[28px] text-center py-12 px-6 text-[#6E6B62]"><div class="w-16 h-16 mx-auto mb-3 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-3xl">📋</div><p class="text-base font-extrabold text-[#1F1E1B]">ยังไม่มีข้อมูลประวัติใบหน้าที่ลงทะเบียนในระบบ</p><p class="text-xs text-[#8C877B] mt-1">คลิกที่เมนู "ลงทะเบียนข้อมูลใบหน้า" เพื่อบันทึกข้อมูลใหม่</p></div>';
         return;
       }
 
@@ -1489,9 +1497,9 @@
 
         html += '<div class="glass-card rounded-[24px] p-4 flex items-center justify-between hover:border-[#28AE60]/60 transition shadow-sm">' +
           '<div class="flex items-center space-x-3.5 overflow-hidden">' +
-          '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] shadow">🎙️</span></div>' +
-          '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">เข้าร่วมเมื่อ: ' + (p.createdAt || '-') + '</p></div></div>' +
-          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2.5 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบโปรไฟล์"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
+          '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] text-[#28AE60] font-bold shadow">✓</span></div>' +
+          '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">วันที่ลงทะเบียน: ' + (p.createdAt || '-') + '</p></div></div>' +
+          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2.5 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบข้อมูล"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
       });
       html += '</div>';
       container.innerHTML = html;
@@ -1561,7 +1569,7 @@
       if (!toast) return;
 
       let borderClass = 'border-[#28AE60] text-[#1F1E1B]';
-      let iconSvg = '<span class="w-6 h-6 rounded-full bg-[#EAF7EF] text-[#28AE60] flex items-center justify-center text-xs font-bold">👋</span>';
+      let iconSvg = '<span class="w-6 h-6 rounded-full bg-[#EAF7EF] text-[#28AE60] flex items-center justify-center text-xs font-bold">ℹ️</span>';
 
       if (type === 'success') {
         borderClass = 'border-[#28AE60] text-[#1F1E1B]';
@@ -1612,7 +1620,7 @@
       var roleEl = document.getElementById('headerUserRole');
       if (nameEl) nameEl.textContent = user.fullName || user.username;
       if (roleEl) {
-        roleEl.textContent = user.role === 'admin' ? '✳️ Moderator (Admin)' : '🎙️ Operator';
+        roleEl.textContent = user.role === 'admin' ? 'ผู้ดูแลระบบ (Administrator)' : 'เจ้าหน้าที่ปฏิบัติงาน (Operator)';
         roleEl.className = user.role === 'admin' ? 'text-[10px] text-[#28AE60] font-bold' : 'text-[10px] text-[#6E6B62] font-semibold';
       }
 
@@ -1643,11 +1651,11 @@
 
       errBox.classList.add('hidden');
       btn.disabled = true;
-      btn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังเข้าสู่ห้อง...';
+      btn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังตรวจสอบข้อมูล...';
 
       var handleSuccess = function(response) {
         btn.disabled = false;
-        btn.innerHTML = '<span>👋 เข้าสู่ระบบ (Enter Hallway)</span>';
+        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
 
         if (response && response.success && response.user) {
           state.currentUser = response.user;
@@ -1656,7 +1664,7 @@
           } catch(e) {}
 
           applyAuthenticatedUser(response.user);
-          showToast('ยินดีต้อนรับเข้าสู่ห้อง คุณ ' + response.user.fullName, 'success');
+          showToast('เข้าสู่ระบบสำเร็จ ยินดีต้อนรับคุณ ' + response.user.fullName, 'success');
           logStatus('[AUTH] เข้าสู่ระบบสำเร็จ: ' + response.user.username + ' (' + response.user.role + ')');
 
           // เริ่มต้นการทำงานเบื้องหลังเมื่อล็อกอินสำเร็จ
@@ -1673,7 +1681,7 @@
 
       var handleError = function(err) {
         btn.disabled = false;
-        btn.innerHTML = '<span>👋 เข้าสู่ระบบ (Enter Hallway)</span>';
+        btn.innerHTML = '<span>เข้าสู่ระบบ</span><svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>';
         errText.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + (err ? err.message : err);
         errBox.classList.remove('hidden');
       };
@@ -1697,7 +1705,7 @@
     }
 
     function logoutUser() {
-      if (confirm('คุณต้องการออกจากห้อง (Leave Quietly) ใช่หรือไม่?')) {
+      if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
         stopCamera();
         state.currentUser = null;
         try {
@@ -1781,12 +1789,12 @@
       var htmlRows = '';
       users.forEach(function(u) {
         var roleBadge = u.role === 'admin'
-          ? '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">✳️ ผู้ดูแลระบบ</span>'
-          : '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0]">🎙️ เจ้าหน้าที่</span>';
+          ? '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">ผู้ดูแลระบบ (Admin)</span>'
+          : '<span class="px-3 py-1 rounded-full text-xs font-bold bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0]">เจ้าหน้าที่ (Operator)</span>';
 
         var statusBadge = u.status === 'ACTIVE'
-          ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">● ใช้งานได้</span>'
-          : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0]">● ระงับ</span>';
+          ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">● ใช้งานปกติ</span>'
+          : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0]">● ระงับสิทธิ์</span>';
 
         var safeUser = (u.username || '').replace(/"/g, '&quot;');
         var safeName = (u.fullName || '').replace(/"/g, '&quot;');
