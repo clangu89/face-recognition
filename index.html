@@ -819,14 +819,85 @@
       isDetecting: false,
       soundEnabled: true,
       thaiVoice: null,
+      speechUnlocked: false,
+      activeUtterance: null,
+      speechTimer: null,
+      audioCtx: null,
       trackedPersons: new Map(),
-      unknownTracker: { lastSeen: 0, hasGreeted: false },
+      unknownTracker: { lastSeen: 0, hasGreeted: false, confirmCount: 0 },
       EXIT_THRESHOLD_MS: 3000,
       capturedDescriptor: null,
       capturedImageBase64: null
     };
 
-    // --- Voice & Speech Synthesis ---
+    // Global pool to prevent Chrome V8 Garbage Collector from destroying active Utterances mid-speech
+    window._utterancePool = [];
+
+    // --- Voice & Speech Synthesis (High-Reliability Engine) ---
+    function refreshThaiVoice() {
+      if (!('speechSynthesis' in window)) return null;
+      try {
+        const voices = window.speechSynthesis.getVoices() || [];
+        if (voices.length === 0) return state.thaiVoice;
+
+        // Prioritize Thai voice (Google Thai / Kanya / Premwadee / any th-TH)
+        const thVoices = voices.filter(v =>
+          (v.lang && v.lang.toLowerCase().includes('th')) ||
+          (v.name && (v.name.toLowerCase().includes('thai') || v.name.includes('ไทย')))
+        );
+
+        if (thVoices.length > 0) {
+          // Prefer Google or Microsoft natural Thai voices if multiple exist
+          state.thaiVoice = thVoices.find(v => v.name.includes('Google') || v.name.includes('Premwadee') || v.name.includes('Kanya')) || thVoices[0];
+        }
+        return state.thaiVoice;
+      } catch (e) {
+        return state.thaiVoice;
+      }
+    }
+
+    function unlockSpeechEngine() {
+      if (state.speechUnlocked) return;
+      try {
+        // 1. Unlock Web Audio Context on user gesture
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx && !state.audioCtx) {
+          state.audioCtx = new AudioCtx();
+        }
+        if (state.audioCtx && state.audioCtx.state === 'suspended') {
+          state.audioCtx.resume().catch(function() {});
+        }
+
+        // 2. Warm up SpeechSynthesis on user gesture with silent utterance
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+          refreshThaiVoice();
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            const warmUp = new SpeechSynthesisUtterance(' ');
+            warmUp.lang = 'th-TH';
+            warmUp.volume = 0;
+            warmUp.rate = 2.0;
+            window._utterancePool.push(warmUp);
+            warmUp.onend = function() {
+              const idx = window._utterancePool.indexOf(warmUp);
+              if (idx !== -1) window._utterancePool.splice(idx, 1);
+            };
+            window.speechSynthesis.speak(warmUp);
+          }
+        }
+        state.speechUnlocked = true;
+        logStatus('[VOICE] ปลดล็อกระบบเสียงอัตโนมัติพร้อมทำงานทันที');
+      } catch (e) {}
+    }
+
+    // Bind one-time global user-gesture listeners to unlock audio as early as possible
+    ['click', 'touchstart', 'keydown'].forEach(function(evtName) {
+      document.addEventListener(evtName, function onFirstGesture() {
+        unlockSpeechEngine();
+        refreshThaiVoice();
+      }, { once: true, passive: true });
+    });
+
     function initSpeech() {
       const voiceBadge = document.getElementById('voiceStatusBadge');
       if (!('speechSynthesis' in window)) {
@@ -840,18 +911,20 @@
 
       const detectVoices = () => {
         try {
-          const voices = window.speechSynthesis.getVoices();
-          state.thaiVoice = voices.find(v => v.lang && v.lang.toLowerCase().includes('th')) || null;
+          const voices = window.speechSynthesis.getVoices() || [];
+          refreshThaiVoice();
           
           if (voiceBadge) {
             if (state.thaiVoice) {
               voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียงไทย: ' + state.thaiVoice.name;
               voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
-              logStatus('[OK] ตรวจพบเสียงภาษาไทย: ' + state.thaiVoice.name);
+              if (!state._loggedThaiVoice) {
+                state._loggedThaiVoice = true;
+                logStatus('[OK] ตรวจพบเสียงภาษาไทย: ' + state.thaiVoice.name);
+              }
             } else if (voices.length > 0) {
               voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียงระบบเบราว์เซอร์';
               voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
-              logStatus('[OK] พร้อมใช้งานระบบเสียงสังเคราะห์');
             } else {
               voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> ระบบเสียงพร้อม';
               voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
@@ -866,33 +939,111 @@
         window.speechSynthesis.onvoiceschanged = detectVoices;
       } catch(e) {}
       detectVoices();
-      setTimeout(detectVoices, 400);
-      setTimeout(detectVoices, 1200);
+      setTimeout(detectVoices, 300);
+      setTimeout(detectVoices, 1000);
+      setTimeout(detectVoices, 2500);
+    }
+
+    function playFallbackAudioTTS(text) {
+      try {
+        const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(text);
+        const audio = new Audio(url);
+        audio.volume = 1.0;
+        audio.play().catch(function(e) {
+          console.warn('Fallback TTS play error:', e);
+        });
+      } catch (e) {}
     }
 
     function speakText(text) {
       if (!state.soundEnabled || !text) return;
 
-      if ('speechSynthesis' in window) {
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'th-TH';
-          utterance.rate = 0.95;
-          utterance.pitch = 1.05;
-          if (state.thaiVoice) utterance.voice = state.thaiVoice;
-          window.speechSynthesis.speak(utterance);
-        } catch(e) {
-          console.warn('Speech error:', e);
-        }
-      } else {
-        try {
-          const audio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(text));
-          audio.play().catch(e => console.warn(e));
-        } catch (e) {}
+      showGreetingBanner(text);
+
+      if (!('speechSynthesis' in window)) {
+        playFallbackAudioTTS(text);
+        return;
       }
 
-      showGreetingBanner(text);
+      // Ensure latest Thai voice is selected even if voices loaded late
+      if (!state.thaiVoice) {
+        refreshThaiVoice();
+      }
+
+      clearTimeout(state.speechTimer);
+
+      const executeSpeak = function() {
+        try {
+          // Wake up speechSynthesis in case Chrome suspended/paused it
+          window.speechSynthesis.resume();
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'th-TH';
+          utterance.volume = 1.0;
+          utterance.rate = 0.95;
+          utterance.pitch = 1.05;
+          if (state.thaiVoice) {
+            utterance.voice = state.thaiVoice;
+          }
+
+          // Keep strong reference to prevent Chrome GC from collecting utterance mid-speech
+          state.activeUtterance = utterance;
+          window._utterancePool.push(utterance);
+
+          let started = false;
+          const cleanupUtterance = function() {
+            clearTimeout(utterance._watchdog);
+            const idx = window._utterancePool.indexOf(utterance);
+            if (idx !== -1) window._utterancePool.splice(idx, 1);
+          };
+
+          utterance.onstart = function() {
+            started = true;
+            clearTimeout(utterance._watchdog);
+          };
+
+          utterance.onend = function() {
+            cleanupUtterance();
+          };
+
+          utterance.onerror = function(ev) {
+            cleanupUtterance();
+            if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') {
+              console.warn('SpeechSynthesis error, using fallback audio:', ev.error);
+              playFallbackAudioTTS(text);
+            }
+          };
+
+          // Watchdog: if Chrome speech engine is stuck in paused/pending state for >1200ms, kick or fallback
+          utterance._watchdog = setTimeout(function() {
+            if (!started && state.soundEnabled) {
+              try {
+                window.speechSynthesis.resume();
+              } catch (e) {}
+              if (!window.speechSynthesis.speaking) {
+                playFallbackAudioTTS(text);
+              }
+            }
+          }, 1200);
+
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.warn('Speech error:', e);
+          playFallbackAudioTTS(text);
+        }
+      };
+
+      try {
+        // Avoid Chrome bug where cancel() + immediate speak() drops the new utterance
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+          window.speechSynthesis.cancel();
+          state.speechTimer = setTimeout(executeSpeak, 80);
+        } else {
+          executeSpeak();
+        }
+      } catch (e) {
+        executeSpeak();
+      }
     }
 
     function showGreetingBanner(text) {
@@ -1031,6 +1182,9 @@
 
     // --- Camera & Real-time Recognition ---
     async function startCamera() {
+      // ปลดล็อกระบบเสียงทันทีในจังหวะที่ผู้ใช้กดปุ่ม (ก่อนเข้า await getUserMedia)
+      unlockSpeechEngine();
+
       if (state.cameraStarted) return;
       const video = document.getElementById('webcamVideo');
       const cameraBadge = document.getElementById('cameraStatusBadge');
@@ -1176,9 +1330,13 @@
                 }
               });
 
-              if (unknownDetectedThisFrame) {
+              if (unknownDetectedThisFrame && detectedCurrentFrameNames.size === 0) {
                 handleUnknownGreeting();
+              } else if (!unknownDetectedThisFrame) {
+                state.unknownTracker.confirmCount = 0;
               }
+            } else {
+              state.unknownTracker.confirmCount = 0;
             }
 
             cleanupExitedPersons(now, detectedCurrentFrameNames, unknownDetectedThisFrame);
@@ -1239,14 +1397,15 @@
 
     function handleUnknownGreeting() {
       const now = Date.now();
-      if (!state.unknownTracker.hasGreeted) {
+      state.unknownTracker.lastSeen = now;
+      state.unknownTracker.confirmCount = (state.unknownTracker.confirmCount || 0) + 1;
+
+      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 3 เฟรม เพื่อป้องกันเฟรมแรกที่กล้องเพิ่งปรับโฟกัสแล้วเบลอ
+      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 3) {
         state.unknownTracker.hasGreeted = true;
-        state.unknownTracker.lastSeen = now;
         speakText('สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ');
-        logStatus('[GREET] ทักทายลูกค้าทั่วไป');
+        logStatus('[GREET] ทักทายผู้มาติดต่อ / ลูกค้าทั่วไป');
         recordScanLog('ลูกค้าทั่วไป', 'UNKNOWN', 0);
-      } else {
-        state.unknownTracker.lastSeen = now;
       }
     }
 
@@ -1261,7 +1420,8 @@
       if (!unknownDetected && state.unknownTracker.hasGreeted && now - state.unknownTracker.lastSeen > state.EXIT_THRESHOLD_MS) {
         state.unknownTracker.hasGreeted = false;
         state.unknownTracker.lastSeen = 0;
-        logStatus('[EXIT] ลูกค้าทั่วไปเดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
+        state.unknownTracker.confirmCount = 0;
+        logStatus('[EXIT] ผู้มาติดต่อเดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
       }
     }
 
@@ -1545,6 +1705,7 @@
       state.soundEnabled = !state.soundEnabled;
       const btn = document.getElementById('soundToggleBtn');
       if (state.soundEnabled) {
+        unlockSpeechEngine();
         btn.innerHTML = '<svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg><span class="text-xs font-bold">เปิดเสียงพูด</span>';
         showToast('เปิดเสียงพูดแล้ว', 'info');
       } else {
@@ -1555,6 +1716,7 @@
     }
 
     function testGreetingSpeech(type) {
+      unlockSpeechEngine();
       if (type === 'known') {
         speakText('สวัสดีค่ะคุณ ธนกร');
       } else {
@@ -1639,6 +1801,7 @@
 
     function handleLoginSubmit(event) {
       if (event) event.preventDefault();
+      unlockSpeechEngine();
       var userEl = document.getElementById('loginUsername');
       var passEl = document.getElementById('loginPassword');
       var errBox = document.getElementById('loginErrorAlert');
