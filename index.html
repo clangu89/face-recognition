@@ -250,8 +250,8 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-5">
 
-    <!-- Tab Navigation & Sound Bar (Clubhouse Pill Selector) -->
-    <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
+    <!-- Tab Navigation (Clean Clubhouse Pill Selector) -->
+    <div class="flex items-center justify-between gap-4 pb-1">
       <div class="flex flex-wrap items-center gap-1.5 bg-[#EAE6DA] p-1.5 rounded-full border border-[#DCD6C4]">
         <button id="tabBtn_scanner" onclick="switchTab('scanner')" class="px-4 py-2 rounded-full text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center space-x-2">
           <span>📷</span>
@@ -275,43 +275,18 @@
           <span>จัดการบัญชีผู้ใช้งานระบบ</span>
         </button>
       </div>
+    </div>
 
-      <!-- Voice Control & Testing Buttons -->
-      <div class="flex flex-wrap items-center gap-2">
-        <button id="soundToggleBtn" onclick="toggleSound()" class="px-4 py-2 rounded-full bg-white text-[#1F1E1B] hover:bg-[#F7F5EE] border border-[#E2DDD0] transition flex items-center space-x-2 shadow-sm font-semibold text-sm">
-          <svg class="w-5 h-5 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
-          </svg>
-          <span class="text-sm">เปิดเสียงพูด</span>
-        </button>
-
-        <!-- Quick Voice Selector Pill -->
-        <div class="flex items-center bg-white rounded-full border border-[#E2DDD0] px-3 py-1.5 shadow-sm">
-          <span class="text-xs mr-1.5">🎙️</span>
-          <select id="quickVoiceSelect" onchange="handleVoiceSelectionChange(this.value, true)" aria-label="เลือกเสียงพูดทักทาย" class="bg-transparent text-xs font-bold text-[#1F1E1B] focus:outline-none cursor-pointer pr-1 max-w-[195px] sm:max-w-[230px] truncate">
-            <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
-              <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
-              <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
-              <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
-              <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
-              <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
-              <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
-            </optgroup>
-            <optgroup id="quickDeviceVoicesGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
-            </optgroup>
-          </select>
-        </div>
-
-        <div class="hidden sm:flex items-center space-x-1.5 bg-[#EAE6DA] p-1 rounded-full border border-[#DCD6C4]">
-          <span class="text-xs text-[#6E6B62] px-2.5 font-semibold">🔊 ทดสอบเสียง:</span>
-          <button onclick="testGreetingSpeech('known')" class="text-xs px-3 py-1.5 rounded-full bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] font-semibold border border-[#BEE6CE] transition">
-            บุคลากร/สมาชิก
-          </button>
-          <button onclick="testGreetingSpeech('unknown')" class="text-xs px-3 py-1.5 rounded-full bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] font-semibold border border-[#F5DFB0] transition">
-            ผู้มาติดต่อทั่วไป
-          </button>
-        </div>
+    <!-- Diagnostic Log Console (System Activity Log - Placed Under Menu) -->
+    <div id="diagnosticContainer" class="p-3.5 rounded-2xl bg-[#EAE6DA]/85 border border-[#DCD6C4] text-xs font-mono shadow-inner">
+      <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-[#DCD6C4]">
+        <span class="text-[#5C5950] font-bold flex items-center gap-1.5 font-sans">
+          <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
+          บันทึกสถานะการทำงานของระบบ (System Activity Log):
+        </span>
+        <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-0.5 rounded-full hover:bg-[#DDD7C5]/60 transition">ล้างข้อความ</button>
       </div>
+      <div id="diagnosticLogList" class="space-y-1 max-h-24 overflow-y-auto pr-2"></div>
     </div>
 
     <!-- ========================================================================= -->
@@ -397,8 +372,58 @@
           </div>
         </div>
 
-        <!-- Right Side: Detection Rules & System Activity Log Cards -->
+        <!-- Right Side: Quick Voice Controls & Detection Rules Cards -->
         <div class="space-y-4">
+
+          <!-- Quick Voice Controls Card (ส่วนในรูป - ด้านขวา) -->
+          <div class="glass-card rounded-[28px] p-5 space-y-3.5">
+            <div class="flex items-center justify-between pb-2 border-b border-[#EFECE2]">
+              <h3 class="font-extrabold text-[#1F1E1B] text-sm flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                🎙️ การควบคุมเสียงพูดทักทาย
+              </h3>
+              <!-- Sound Toggle Button -->
+              <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1 rounded-full bg-white text-[#1F1E1B] hover:bg-[#F7F5EE] border border-[#E2DDD0] transition flex items-center space-x-1.5 shadow-sm font-semibold text-xs">
+                <svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                </svg>
+                <span class="text-xs">เปิดเสียงพูด</span>
+              </button>
+            </div>
+
+            <!-- Quick Voice Selector Dropdown -->
+            <div class="space-y-1">
+              <label for="quickVoiceSelect" class="block text-[11px] font-bold text-[#5C5950]">รูปแบบเสียงที่ใช้งาน</label>
+              <div class="flex items-center bg-[#F7F5EE] rounded-xl border border-[#DCD6C4] px-3 py-2 shadow-inner">
+                <span class="text-xs mr-2">🎙️</span>
+                <select id="quickVoiceSelect" onchange="handleVoiceSelectionChange(this.value, true)" aria-label="เลือกเสียงพูดทักทาย" class="w-full bg-transparent text-xs font-bold text-[#1F1E1B] focus:outline-none cursor-pointer truncate">
+                  <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
+                    <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
+                    <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
+                    <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
+                    <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
+                    <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
+                    <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
+                  </optgroup>
+                  <optgroup id="quickDeviceVoicesGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            <!-- Sound Preview Buttons -->
+            <div class="space-y-1 pt-1">
+              <span class="block text-[11px] font-bold text-[#5C5950]">ทดสอบเสียงพูดทักทาย</span>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="testGreetingSpeech('known')" class="py-2 px-2.5 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm">
+                  <span>🔊</span> <span>สมาชิกในระบบ</span>
+                </button>
+                <button type="button" onclick="testGreetingSpeech('unknown')" class="py-2 px-2.5 rounded-xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm">
+                  <span>🔊</span> <span>ผู้มาติดต่อทั่วไป</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Detection Rules Card -->
           <div class="glass-card rounded-[28px] p-5 space-y-4">
@@ -437,18 +462,6 @@
               </p>
             </div>
 
-          </div>
-
-          <!-- Diagnostic Log Console (System Activity Log) -->
-          <div id="diagnosticContainer" class="glass-card rounded-[28px] p-5 space-y-3 font-mono">
-            <div class="flex items-center justify-between pb-2 border-b border-[#EFECE2]">
-              <span class="text-[#5C5950] font-bold flex items-center gap-2 font-sans text-xs">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60] animate-ping"></span>
-                บันทึกสถานะการทำงาน (System Activity Log):
-              </span>
-              <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-0.5 rounded-full bg-[#EAE6DA] hover:bg-[#DDD7C5] transition">ล้างข้อความ</button>
-            </div>
-            <div id="diagnosticLogList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1 text-[11px]"></div>
           </div>
 
         </div>
