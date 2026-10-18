@@ -722,8 +722,68 @@
 
         </div>
 
-        <!-- Right Column: Testing & Live Greeting Preview (5 Cols) -->
+        <!-- Right Column: Custom Greeting Messages & Audio Preview (5 Cols) -->
         <div class="lg:col-span-5 space-y-5">
+
+          <!-- Custom Greeting Messages Editor Card -->
+          <div class="glass-card rounded-[28px] p-6 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-[#EFECE2]">
+              <div>
+                <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                  ข้อความกล่าวทักทาย (Greeting Messages)
+                </h3>
+                <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบประโยคที่ระบบจะพูดทักทายอัตโนมัติ</p>
+              </div>
+              <button type="button" onclick="resetGreetingTemplates()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-3 py-1 rounded-full bg-[#EAE6DA] hover:bg-[#DDD7C5] transition" title="คืนค่าข้อความเริ่มต้น">
+                คืนค่าเริ่มต้น
+              </button>
+            </div>
+
+            <!-- Known Member Greeting Input -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label for="greetingKnownInput" class="block text-xs font-bold text-[#1E824C] flex items-center gap-1.5">
+                  <span>🟢</span> <span>ข้อความทักทายสมาชิก:</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <button type="button" onclick="insertGreetingTag('known', '{name}')" class="px-2 py-0.5 rounded-md bg-[#EAF7EF] hover:bg-[#28AE60] hover:text-white text-[#1E824C] font-mono font-bold transition text-[10px] border border-[#BEE6CE] shadow-xs" title="แทรกตัวแปรชื่อสมาชิก">+ {name}</button>
+                  <button type="button" onclick="insertGreetingTag('known', '{particle}')" class="px-2 py-0.5 rounded-md bg-[#EAE6DA] hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs" title="แทรกตัวแปรคำลงท้าย">+ {particle}</button>
+                </div>
+              </div>
+              <input type="text" id="greetingKnownInput" oninput="updateGreetingTemplate('known', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณ {name}">
+              
+              <!-- Live Preview for Known -->
+              <div class="p-2.5 rounded-xl bg-[#EAF7EF]/70 border border-[#BEE6CE] text-xs flex items-center gap-2">
+                <span class="text-[10px] font-bold text-[#1E824C] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
+                <span id="voicePreviewKnownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณ ธนกร"</span>
+              </div>
+            </div>
+
+            <!-- Unknown Visitor Greeting Input -->
+            <div class="space-y-1.5 pt-1">
+              <div class="flex items-center justify-between">
+                <label for="greetingUnknownInput" class="block text-xs font-bold text-[#9C6214] flex items-center gap-1.5">
+                  <span>🟡</span> <span>ข้อความทักทายผู้มาติดต่อ:</span>
+                </label>
+                <div class="flex items-center gap-1">
+                  <button type="button" onclick="insertGreetingTag('unknown', '{particle}')" class="px-2 py-0.5 rounded-md bg-[#EAE6DA] hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs" title="แทรกตัวแปรคำลงท้าย">+ {particle}</button>
+                </div>
+              </div>
+              <input type="text" id="greetingUnknownInput" oninput="updateGreetingTemplate('unknown', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}">
+              
+              <!-- Live Preview for Unknown -->
+              <div class="p-2.5 rounded-xl bg-[#FEF6E6]/70 border border-[#F5DFB0] text-xs flex items-center gap-2">
+                <span class="text-[10px] font-bold text-[#9C6214] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
+                <span id="voicePreviewUnknownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+              </div>
+            </div>
+
+            <!-- Variable Guide footnote -->
+            <div class="text-[11px] text-[#8C877B] leading-relaxed pt-2 border-t border-[#EFECE2]">
+              💡 <strong>แท็กคำสั่ง</strong>: <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{name}</code> แทนที่ด้วยชื่อสมาชิก, <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{particle}</code> แทนที่ด้วยคำลงท้าย (<span class="font-bold text-[#1F1E1B]">ค่ะ</span> / <span class="font-bold text-[#1F1E1B]">ครับ</span>)
+            </div>
+          </div>
 
           <!-- Speech Preview & Testing Card -->
           <div class="glass-card rounded-[28px] p-6 space-y-4">
@@ -732,7 +792,7 @@
               ทดสอบเสียงพูด (Audio Preview)
             </h3>
             <p class="text-xs text-[#6E6B62]">
-              กดปุ่มเพื่อฟังตัวอย่างเสียงพูดทักทายตามค่าที่กำหนดไว้ในปัจจุบัน
+              กดปุ่มเพื่อฟังตัวอย่างเสียงพูดทักทายตามข้อความและสุ้มเสียงที่กำหนดไว้
             </p>
 
             <div class="space-y-3 pt-1">
@@ -745,28 +805,6 @@
                 <span class="text-base">🔊</span>
                 <span>ทดสอบเสียง: ลูกค้าหรือผู้มาติดต่อทั่วไป</span>
               </button>
-            </div>
-          </div>
-
-          <!-- Live Greeting Text Preview Card -->
-          <div class="glass-card rounded-[28px] p-6 space-y-3.5">
-            <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-              ข้อความทักทายจริงของระบบ
-            </h3>
-
-            <div class="p-3.5 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
-              <div class="text-[11px] font-bold text-[#1E824C] flex items-center gap-1.5">
-                <span>🟢</span> <span>สมาชิกหรือบุคลากร:</span>
-              </div>
-              <p id="voicePreviewKnownText" class="text-sm font-extrabold text-[#1F1E1B]">"สวัสดีค่ะคุณ ธนกร"</p>
-            </div>
-
-            <div class="p-3.5 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
-              <div class="text-[11px] font-bold text-[#9C6214] flex items-center gap-1.5">
-                <span>🟡</span> <span>ผู้มาติดต่อทั่วไป:</span>
-              </div>
-              <p id="voicePreviewUnknownText" class="text-sm font-extrabold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</p>
             </div>
           </div>
 
@@ -1100,6 +1138,8 @@
     };
 
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
+    const DEFAULT_KNOWN_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
+    const DEFAULT_UNKNOWN_GREETING_TEXT = 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}';
 
     const state = {
       currentUser: null,
@@ -1118,6 +1158,8 @@
       voiceRate: 1.00,
       voicePitch: 1.00,
       voiceParticle: 'ค่ะ',
+      knownGreetingTemplate: DEFAULT_KNOWN_GREETING_TEMPLATE,
+      unknownGreetingText: DEFAULT_UNKNOWN_GREETING_TEXT,
       speechUnlocked: false,
       activeUtterance: null,
       activeAudio: null,
@@ -1158,6 +1200,12 @@
           if (typeof parsed.voiceRate === 'number' && !isNaN(parsed.voiceRate)) state.voiceRate = parsed.voiceRate;
           if (typeof parsed.voicePitch === 'number' && !isNaN(parsed.voicePitch)) state.voicePitch = parsed.voicePitch;
           if (parsed.voiceParticle === 'ค่ะ' || parsed.voiceParticle === 'ครับ') state.voiceParticle = parsed.voiceParticle;
+          if (typeof parsed.knownGreetingTemplate === 'string' && parsed.knownGreetingTemplate.trim()) {
+            state.knownGreetingTemplate = parsed.knownGreetingTemplate.trim();
+          }
+          if (typeof parsed.unknownGreetingText === 'string' && parsed.unknownGreetingText.trim()) {
+            state.unknownGreetingText = parsed.unknownGreetingText.trim();
+          }
         }
       } catch (e) {}
     }
@@ -1168,7 +1216,9 @@
           voiceSelection: state.voiceSelection,
           voiceRate: state.voiceRate,
           voicePitch: state.voicePitch,
-          voiceParticle: state.voiceParticle
+          voiceParticle: state.voiceParticle,
+          knownGreetingTemplate: state.knownGreetingTemplate,
+          unknownGreetingText: state.unknownGreetingText
         }));
       } catch (e) {}
     }
@@ -1322,22 +1372,34 @@
         }
       }
 
+      const knownInput = document.getElementById('greetingKnownInput');
+      const unknownInput = document.getElementById('greetingUnknownInput');
+      if (knownInput && document.activeElement !== knownInput) {
+        knownInput.value = state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE;
+      }
+      if (unknownInput && document.activeElement !== unknownInput) {
+        unknownInput.value = state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT;
+      }
+
+      const sampleKnown = buildGreetingMessage('known', 'ธนกร');
+      const sampleUnknown = buildGreetingMessage('unknown');
+
       const knownRuleEl = document.getElementById('ruleKnownGreetingText');
       const unknownRuleEl = document.getElementById('ruleUnknownGreetingText');
       if (knownRuleEl) {
-        knownRuleEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณ [ชื่อ]"';
+        knownRuleEl.textContent = '"' + sampleKnown + '"';
       }
       if (unknownRuleEl) {
-        unknownRuleEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณลูกค้า วันนี้รับอะไรดี' + state.voiceParticle + '"';
+        unknownRuleEl.textContent = '"' + sampleUnknown + '"';
       }
 
       const previewKnownEl = document.getElementById('voicePreviewKnownText');
       const previewUnknownEl = document.getElementById('voicePreviewUnknownText');
       if (previewKnownEl) {
-        previewKnownEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณ ธนกร"';
+        previewKnownEl.textContent = '"' + sampleKnown + '"';
       }
       if (previewUnknownEl) {
-        previewUnknownEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณลูกค้า วันนี้รับอะไรดี' + state.voiceParticle + '"';
+        previewUnknownEl.textContent = '"' + sampleUnknown + '"';
       }
 
       updateVoiceStatusBadge();
@@ -1402,16 +1464,76 @@
       syncVoiceControlsUI();
     }
 
+    function updateGreetingTemplate(type, value) {
+      if (type === 'known') {
+        state.knownGreetingTemplate = value;
+      } else if (type === 'unknown') {
+        state.unknownGreetingText = value;
+      }
+      saveVoiceSettingsToStorage();
+      syncVoiceControlsUI();
+    }
+
+    function insertGreetingTag(type, tag) {
+      const inputEl = (type === 'known')
+        ? document.getElementById('greetingKnownInput')
+        : document.getElementById('greetingUnknownInput');
+      if (!inputEl) return;
+
+      const start = inputEl.selectionStart !== undefined ? inputEl.selectionStart : inputEl.value.length;
+      const end = inputEl.selectionEnd !== undefined ? inputEl.selectionEnd : inputEl.value.length;
+      const currentVal = inputEl.value || '';
+      const before = currentVal.substring(0, start);
+      const after = currentVal.substring(end);
+      const newVal = before + tag + after;
+
+      inputEl.value = newVal;
+      updateGreetingTemplate(type, newVal);
+
+      inputEl.focus();
+      const nextPos = start + tag.length;
+      if (typeof inputEl.setSelectionRange === 'function') {
+        inputEl.setSelectionRange(nextPos, nextPos);
+      }
+    }
+
+    function resetGreetingTemplates() {
+      state.knownGreetingTemplate = DEFAULT_KNOWN_GREETING_TEMPLATE;
+      state.unknownGreetingText = DEFAULT_UNKNOWN_GREETING_TEXT;
+      saveVoiceSettingsToStorage();
+      syncVoiceControlsUI();
+      showToast('คืนค่าข้อความทักทายเริ่มต้นเรียบร้อย', 'info');
+    }
+
     function resetVoiceSettings() {
+      state.knownGreetingTemplate = DEFAULT_KNOWN_GREETING_TEMPLATE;
+      state.unknownGreetingText = DEFAULT_UNKNOWN_GREETING_TEXT;
       handleVoiceSelectionChange('preset:female_polite', true);
     }
 
     function buildGreetingMessage(type, personName) {
       const particle = state.voiceParticle || 'ค่ะ';
       if (type === 'known') {
-        return 'สวัสดี' + particle + 'คุณ ' + (personName || 'ธนกร');
+        const rawTemplate = (state.knownGreetingTemplate && state.knownGreetingTemplate.trim())
+          ? state.knownGreetingTemplate
+          : DEFAULT_KNOWN_GREETING_TEMPLATE;
+        const safeName = (personName || 'ธนกร').trim();
+
+        let msg = rawTemplate.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle);
+
+        const hasNameTag = /\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi.test(msg);
+        if (hasNameTag) {
+          msg = msg.replace(/\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi, safeName);
+        } else {
+          msg = msg.trim() + ' ' + safeName;
+        }
+        return msg.trim();
       }
-      return 'สวัสดี' + particle + 'คุณลูกค้า วันนี้รับอะไรดี' + particle;
+
+      const rawUnknown = (state.unknownGreetingText && state.unknownGreetingText.trim())
+        ? state.unknownGreetingText
+        : DEFAULT_UNKNOWN_GREETING_TEXT;
+      return rawUnknown.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle).trim();
     }
 
     function stopActiveAudioPlayback() {
@@ -2842,6 +2964,9 @@
     window.setVoiceParticle = setVoiceParticle;
     window.updateVoiceSlider = updateVoiceSlider;
     window.resetVoiceSettings = resetVoiceSettings;
+    window.updateGreetingTemplate = updateGreetingTemplate;
+    window.insertGreetingTag = insertGreetingTag;
+    window.resetGreetingTemplates = resetGreetingTemplates;
     window.captureFaceForRegistration = captureFaceForRegistration;
     window.retakePhotoForRegistration = retakePhotoForRegistration;
     window.saveProfile = saveProfile;
