@@ -268,12 +268,12 @@
           <span>📝</span>
           <span>ลงทะเบียนข้อมูลใบหน้า</span>
         </button>
-        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
           <span>📋</span>
           <span>ทะเบียนประวัติใบหน้า</span>
           <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
         </button>
-        <button id="tabBtn_attendance" onclick="switchTab('attendance')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+        <button id="tabBtn_attendance" onclick="switchTab('attendance')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
           <span>📊</span>
           <span>ประวัติการลงเวลา</span>
           <span id="attendanceCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 รายการ</span>
@@ -5271,6 +5271,14 @@
     });
 
     function switchTab(tabName) {
+      // Permission guard: only admin can access 'profiles', 'attendance', and 'users'
+      var adminOnlyTabs = ['profiles', 'attendance', 'users'];
+      if (adminOnlyTabs.indexOf(tabName) !== -1) {
+        if (!state.currentUser || state.currentUser.role !== 'admin') {
+          showToast('หน้านี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น', 'warning');
+          tabName = 'scanner';
+        }
+      }
       state.currentTab = tabName;
       ['scanner', 'register', 'profiles', 'attendance', 'voicesettings', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
@@ -5458,17 +5466,26 @@
         roleEl.className = user.role === 'admin' ? 'text-[10px] text-[#28AE60] font-bold' : 'text-[10px] text-[#6E6B62] font-semibold';
       }
 
-      // Show/hide Admin User Management Tab & Dropdown Item
+      // Show/hide Admin-only Tabs & Dropdown Items (Profiles, Attendance, User Management)
       var userTabBtn = document.getElementById('tabBtn_users');
       var userDropdownItem = document.getElementById('navDropdownItem_users');
+      var profilesTabBtn = document.getElementById('tabBtn_profiles');
+      var attendanceTabBtn = document.getElementById('tabBtn_attendance');
+
       if (user.role === 'admin') {
         if (userTabBtn) userTabBtn.classList.remove('hidden');
         if (userDropdownItem) userDropdownItem.classList.remove('hidden');
+        if (profilesTabBtn) profilesTabBtn.classList.remove('hidden');
+        if (attendanceTabBtn) attendanceTabBtn.classList.remove('hidden');
         loadSystemUsers();
       } else {
         if (userTabBtn) userTabBtn.classList.add('hidden');
         if (userDropdownItem) userDropdownItem.classList.add('hidden');
-        if (state.currentTab === 'users') switchTab('scanner');
+        if (profilesTabBtn) profilesTabBtn.classList.add('hidden');
+        if (attendanceTabBtn) attendanceTabBtn.classList.add('hidden');
+        if (state.currentTab === 'profiles' || state.currentTab === 'attendance' || state.currentTab === 'users') {
+          switchTab('scanner');
+        }
       }
     }
 
