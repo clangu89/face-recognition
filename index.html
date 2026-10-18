@@ -1700,6 +1700,7 @@
       allAttendanceLogs: [],
       attendanceFilterDate: '',
       attendanceSearchTerm: '',
+      pendingProfileTypeChanges: {},
       profileMessages: {},
       activeMessageModalProfile: null,
       speechUnlocked: false,
@@ -3098,26 +3099,73 @@
     function toggleProfileType(profileId, newType) {
       const profile = (state.profiles || []).find(p => p.id === profileId);
       if (!profile) return;
+      const oldType = profile.personType;
       profile.personType = newType;
+      if (!state.pendingProfileTypeChanges) state.pendingProfileTypeChanges = {};
+      state.pendingProfileTypeChanges[profileId] = newType;
+
       renderProfilesList();
       try {
         localStorage.setItem('cached_face_profiles', JSON.stringify(state.profiles));
       } catch(e) {}
-      showToast('เปลี่ยนประเภทคุณ ' + profile.name + ' เป็น ' + (newType === 'vip' ? 'VIP' : 'พนักงาน') + ' แล้ว', 'info');
+
+      const typeLabel = (newType === 'vip') ? 'VIP' : 'พนักงาน';
+      showToast('กำลังบันทึกประเภทคุณ ' + profile.name + ' เป็น ' + typeLabel + '...', 'info');
+
+      const payload = {
+        action: 'updateProfileType',
+        id: profileId,
+        profileId: profileId,
+        name: profile.name,
+        personName: profile.name,
+        personType: newType
+      };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(function() {
-            logStatus('[SYNC] อัปเดตประเภทโปรไฟล์ ' + profile.name + ' เป็น ' + newType + ' สำเร็จ');
+          .withSuccessHandler(function(res) {
+            delete state.pendingProfileTypeChanges[profileId];
+            if (res && res.success) {
+              logStatus('[SYNC] บันทึกประเภทโปรไฟล์ ' + profile.name + ' เป็น ' + typeLabel + ' ลง Google Sheets สำเร็จ');
+              showToast('บันทึกคุณ ' + profile.name + ' เป็น ' + typeLabel + ' สำเร็จแล้ว', 'success');
+            } else {
+              showToast('บันทึกไม่สำเร็จ: ' + (res ? res.message : 'เกิดข้อผิดพลาด'), 'error');
+              profile.personType = oldType;
+              renderProfilesList();
+            }
           })
-          .updateProfileType(profileId, newType);
+          .withFailureHandler(function(err) {
+            delete state.pendingProfileTypeChanges[profileId];
+            showToast('บันทึกล้มเหลว: ' + (err ? err.message : err), 'error');
+            profile.personType = oldType;
+            renderProfilesList();
+          })
+          .updateProfileType(profileId, newType, profile.name);
       } else {
         fetch(GAS_API_URL, {
           method: 'POST',
           redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'updateProfileType', profileId: profileId, personType: newType })
-        }).catch(function(e) { console.warn('Update profile type error:', e); });
+          body: JSON.stringify(payload)
+        })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            delete state.pendingProfileTypeChanges[profileId];
+            if (res && res.success) {
+              logStatus('[SYNC] บันทึกประเภทโปรไฟล์ ' + profile.name + ' เป็น ' + typeLabel + ' ลง Google Sheets สำเร็จ');
+              showToast('บันทึกคุณ ' + profile.name + ' เป็น ' + typeLabel + ' สำเร็จแล้ว', 'success');
+            } else {
+              showToast('บันทึกไม่สำเร็จ: ' + (res ? res.message : 'เกิดข้อผิดพลาด'), 'error');
+              profile.personType = oldType;
+              renderProfilesList();
+            }
+          })
+          .catch(function(err) {
+            delete state.pendingProfileTypeChanges[profileId];
+            showToast('เชื่อมต่อบันทึกประเภทล้มเหลว: ' + (err ? err.message : err), 'error');
+            profile.personType = oldType;
+            renderProfilesList();
+          });
       }
     }
 
@@ -3784,7 +3832,15 @@
 
       var handleProfilesSuccess = function(response) {
         if (response && response.success) {
-          state.profiles = response.profiles || [];
+          const incomingProfiles = response.profiles || [];
+          if (state.pendingProfileTypeChanges && Object.keys(state.pendingProfileTypeChanges).length > 0) {
+            incomingProfiles.forEach(function(p) {
+              if (state.pendingProfileTypeChanges[p.id]) {
+                p.personType = state.pendingProfileTypeChanges[p.id];
+              }
+            });
+          }
+          state.profiles = incomingProfiles;
           try {
             localStorage.setItem('cached_face_profiles', JSON.stringify(state.profiles));
           } catch (e) {}

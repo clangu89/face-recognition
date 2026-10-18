@@ -47,7 +47,10 @@ function doGet(e) {
     } else if (action === "recordAttendance") {
       result = recordAttendanceLog(e.parameter);
     } else if (action === "updateProfileType") {
-      result = updateProfileType(e.parameter.id, e.parameter.personType);
+      var gId = e.parameter.id || e.parameter.profileId;
+      var gType = e.parameter.personType;
+      var gName = e.parameter.name || e.parameter.personName;
+      result = updateProfileType(gId, gType, gName);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -421,26 +424,68 @@ function saveFaceProfile(payload) {
 /**
  * อัปเดตประเภทโปรไฟล์ใบหน้า (VIP หรือ พนักงาน)
  */
-function updateProfileType(profileId, personType) {
+function updateProfileType(profileId, personType, personName) {
   try {
-    if (!profileId) return { success: false, message: "ไม่พบ Profile ID" };
+    var pId = profileId ? String(profileId).trim() : "";
+    var pName = personName ? String(personName).trim() : "";
+    if (!pId && !pName) {
+      return { success: false, message: "ไม่พบ Profile ID หรือ ชื่อบุคคล" };
+    }
     var cleanType = (String(personType).toLowerCase() === 'vip') ? 'vip' : 'employee';
     var ss = getDatabaseSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_PROFILES);
+    if (!sheet) {
+      initSheetAndFolder();
+      sheet = ss.getSheetByName(SHEET_PROFILES);
+    }
+
+    // ตรวจสอบว่ามีคอลัมน์ Person_Type (คอลัมน์ 8) หรือไม่
+    if (sheet.getLastColumn() < 8) {
+      sheet.getRange(1, 8).setValue("Person_Type")
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
+    }
+
     var data = sheet.getDataRange().getValues();
+    var matchedRowIndex = -1;
 
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === String(profileId).trim()) {
-        sheet.getRange(i + 1, 8).setValue(cleanType);
-        return {
-          success: true,
-          message: "อัปเดตประเภทเป็น " + (cleanType === 'vip' ? 'VIP' : 'พนักงาน') + " สำเร็จ",
-          profileId: profileId,
-          personType: cleanType
-        };
+      var rowId = String(data[i][0] || "").trim();
+      var rowName = String(data[i][1] || "").trim();
+
+      // แมตช์ด้วย Profile_ID ก่อน หากไม่มีให้แมตช์ด้วยชื่อ
+      if (pId && rowId === pId) {
+        matchedRowIndex = i + 1;
+        break;
+      } else if (!pId && pName && rowName === pName) {
+        matchedRowIndex = i + 1;
+        break;
       }
     }
-    return { success: false, message: "ไม่พบรหัสโปรไฟล์" };
+
+    // หากยังไม่เจอ แต่มีทั้งสองค่า ลองหาด้วยชื่อสำรอง
+    if (matchedRowIndex === -1 && pName) {
+      for (var j = 1; j < data.length; j++) {
+        if (String(data[j][1] || "").trim() === pName) {
+          matchedRowIndex = j + 1;
+          break;
+        }
+      }
+    }
+
+    if (matchedRowIndex !== -1) {
+      sheet.getRange(matchedRowIndex, 8).setValue(cleanType);
+      SpreadsheetApp.flush(); // บันทึกลง Google Sheets ทันที
+      return {
+        success: true,
+        message: "อัปเดตประเภทเป็น " + (cleanType === 'vip' ? 'VIP' : 'พนักงาน') + " สำเร็จ",
+        profileId: pId || String(data[matchedRowIndex - 1][0]),
+        personType: cleanType
+      };
+    }
+
+    return { success: false, message: "ไม่พบรหัสโปรไฟล์ในระบบ: " + (pId || pName) };
   } catch (e) {
     return { success: false, message: e.toString() };
   }
@@ -792,7 +837,10 @@ function doPost(e) {
     } else if (action === "recordAttendance") {
       result = recordAttendanceLog(data.payload || data);
     } else if (action === "updateProfileType") {
-      result = updateProfileType(data.id || (e.parameter && e.parameter.id), data.personType || (e.parameter && e.parameter.personType));
+      var pId = data.id || data.profileId || (e.parameter && (e.parameter.id || e.parameter.profileId));
+      var pType = data.personType || (e.parameter && e.parameter.personType);
+      var pName = data.name || data.personName || (e.parameter && (e.parameter.name || e.parameter.personName));
+      result = updateProfileType(pId, pType, pName);
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
