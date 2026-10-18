@@ -12,6 +12,7 @@ const SHEET_LOGS = "ScanLogs";
 const SHEET_USERS = "SystemUsers";
 const SHEET_MESSAGES = "ProfileMessages";
 const SHEET_SETTINGS = "SystemSettings";
+const SHEET_ATTENDANCE = "AttendanceLogs";
 const DRIVE_FOLDER_NAME = "FaceRecognition_Photos";
 const DB_SPREADSHEET_NAME = "AI_Face_Recognition_Database";
 
@@ -41,6 +42,12 @@ function doGet(e) {
       result = getSystemSettings();
     } else if (action === "saveSettings") {
       result = saveSystemSettings(e.parameter);
+    } else if (action === "getTodayAttendance") {
+      result = getTodayAttendance(e.parameter.date);
+    } else if (action === "recordAttendance") {
+      result = recordAttendanceLog(e.parameter);
+    } else if (action === "updateProfileType") {
+      result = updateProfileType(e.parameter.id, e.parameter.personType);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -104,13 +111,22 @@ function initSheetAndFolder() {
         "Drive_Image_URL", 
         "Drive_File_ID", 
         "Created_At", 
-        "Last_Seen_At"
+        "Last_Seen_At",
+        "Person_Type"
       ]);
-      profileSheet.getRange(1, 1, 1, 7)
+      profileSheet.getRange(1, 1, 1, 8)
         .setBackground("#1E293B")
         .setFontColor("#FFFFFF")
         .setFontWeight("bold");
       profileSheet.setFrozenRows(1);
+    } else {
+      // ตรวจสอบว่ามีคอลัมน์ Person_Type หรือยัง
+      if (profileSheet.getLastColumn() < 8) {
+        profileSheet.getRange(1, 8).setValue("Person_Type")
+          .setBackground("#1E293B")
+          .setFontColor("#FFFFFF")
+          .setFontWeight("bold");
+      }
     }
 
     // 2. ตรวจสอบ Sheet ประวัติการสแกน (ScanLogs)
@@ -198,9 +214,33 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["GREETING_UNKNOWN_TEXT", "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}", "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป", nowStr]);
       settingsSheet.appendRow(["VOICE_PARTICLE", "ค่ะ", "คำลงท้ายเสียงพูดทักทาย (ค่ะ/ครับ)", nowStr]);
       settingsSheet.appendRow(["BELL_CHIME_ENABLED", "true", "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)", nowStr]);
+      settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
+      settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
     }
 
-    // 6. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
+    // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
+    var attSheet = ss.getSheetByName(SHEET_ATTENDANCE);
+    if (!attSheet) {
+      attSheet = ss.insertSheet(SHEET_ATTENDANCE);
+      attSheet.appendRow([
+        "Log_ID",
+        "Date",
+        "Profile_ID",
+        "Person_Name",
+        "Person_Type",
+        "Action_Type",
+        "Action_Time",
+        "Work_Status",
+        "Timestamp"
+      ]);
+      attSheet.getRange(1, 1, 1, 9)
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
+      attSheet.setFrozenRows(1);
+    }
+
+    // 7. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
     getOrCreateDriveFolder();
 
     return {
@@ -263,6 +303,8 @@ function getFaceProfiles() {
       var rawDescriptors = row[2];
       var imageUrl = row[3];
       var createdAt = row[5];
+      var rawType = row[7] ? String(row[7]).trim().toLowerCase() : '';
+      var personType = (rawType === 'vip') ? 'vip' : 'employee';
 
       var descriptorArray = [];
       try {
@@ -275,6 +317,7 @@ function getFaceProfiles() {
           name: name,
           descriptors: descriptorArray,
           imageUrl: imageUrl || "",
+          personType: personType,
           createdAt: createdAt ? Utilities.formatDate(new Date(createdAt), "GMT+7", "yyyy-MM-dd HH:mm:ss") : ""
         });
       }
@@ -313,6 +356,8 @@ function saveFaceProfile(payload) {
     var now = new Date();
     var imageUrl = "";
     var fileId = "";
+    var rawType = payload.personType ? String(payload.personType).trim().toLowerCase() : 'employee';
+    var personType = (rawType === 'vip') ? 'vip' : 'employee';
 
     // บันทึกรูปภาพลง Google Drive ถ้ามี base64 ส่งมา
     if (payload.imageBase64 && payload.imageBase64.indexOf("data:image") !== -1) {
@@ -334,7 +379,7 @@ function saveFaceProfile(payload) {
       }
     }
 
-    // บันทึกลง Sheet
+    // บันทึกลง Sheet (รวมคอลัมน์ Person_Type)
     var descriptorJson = JSON.stringify(payload.descriptor);
     sheet.appendRow([
       profileId,
@@ -343,17 +388,19 @@ function saveFaceProfile(payload) {
       imageUrl,
       fileId,
       now,
-      now
+      now,
+      personType
     ]);
 
     return {
       success: true,
-      message: "บันทึกโปรไฟล์ " + payload.name + " สำเร็จ",
+      message: "บันทึกโปรไฟล์ " + payload.name + " สำเร็จ (" + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ")",
       profile: {
         id: profileId,
         name: payload.name.trim(),
         descriptors: payload.descriptor,
         imageUrl: imageUrl,
+        personType: personType,
         createdAt: Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd HH:mm:ss")
       }
     };
@@ -362,6 +409,34 @@ function saveFaceProfile(payload) {
       success: false,
       message: error.toString()
     };
+  }
+}
+
+/**
+ * อัปเดตประเภทโปรไฟล์ใบหน้า (VIP หรือ พนักงาน)
+ */
+function updateProfileType(profileId, personType) {
+  try {
+    if (!profileId) return { success: false, message: "ไม่พบ Profile ID" };
+    var cleanType = (String(personType).toLowerCase() === 'vip') ? 'vip' : 'employee';
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_PROFILES);
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === String(profileId).trim()) {
+        sheet.getRange(i + 1, 8).setValue(cleanType);
+        return {
+          success: true,
+          message: "อัปเดตประเภทเป็น " + (cleanType === 'vip' ? 'VIP' : 'พนักงาน') + " สำเร็จ",
+          profileId: profileId,
+          personType: cleanType
+        };
+      }
+    }
+    return { success: false, message: "ไม่พบรหัสโปรไฟล์" };
+  } catch (e) {
+    return { success: false, message: e.toString() };
   }
 }
 
@@ -706,6 +781,12 @@ function doPost(e) {
       result = getSystemSettings();
     } else if (action === "saveSettings") {
       result = saveSystemSettings(data.settings || data);
+    } else if (action === "getTodayAttendance") {
+      result = getTodayAttendance(data.date || (e.parameter && e.parameter.date));
+    } else if (action === "recordAttendance") {
+      result = recordAttendanceLog(data.payload || data);
+    } else if (action === "updateProfileType") {
+      result = updateProfileType(data.id || (e.parameter && e.parameter.id), data.personType || (e.parameter && e.parameter.personType));
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -887,7 +968,9 @@ function getSystemSettings() {
       knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
       unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
       voiceParticle: "ค่ะ",
-      bellChimeEnabled: true
+      bellChimeEnabled: true,
+      workStartTime: "08:30",
+      workEndTime: "17:30"
     };
 
     if (data && data.length > 1) {
@@ -902,6 +985,10 @@ function getSystemSettings() {
           settings.voiceParticle = String(val).trim();
         } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
           settings.bellChimeEnabled = (String(val).trim().toLowerCase() === "true");
+        } else if (key === "WORK_START_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.workStartTime = String(val).trim();
+        } else if (key === "WORK_END_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.workEndTime = String(val).trim();
         }
       }
     }
@@ -918,7 +1005,9 @@ function getSystemSettings() {
         knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
         unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
         voiceParticle: "ค่ะ",
-        bellChimeEnabled: true
+        bellChimeEnabled: true,
+        workStartTime: "08:30",
+        workEndTime: "17:30"
       }
     };
   }
@@ -961,6 +1050,18 @@ function saveSystemSettings(payload) {
         desc: "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)"
       };
     }
+    if (payload.workStartTime !== undefined) {
+      updateMap["WORK_START_TIME"] = {
+        value: String(payload.workStartTime).trim(),
+        desc: "เวลาเริ่มเข้างานพนักงาน (HH:mm)"
+      };
+    }
+    if (payload.workEndTime !== undefined) {
+      updateMap["WORK_END_TIME"] = {
+        value: String(payload.workEndTime).trim(),
+        desc: "เวลาเลิกงานพนักงาน (HH:mm)"
+      };
+    }
 
     // อัปเดตแถวที่มีอยู่เดิม
     var foundKeys = {};
@@ -995,6 +1096,103 @@ function saveSystemSettings(payload) {
     };
   } catch (error) {
     return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * บันทึกประวัติเวลาเข้า-ออกงานพนักงานลงตาราง AttendanceLogs
+ */
+function recordAttendanceLog(payload) {
+  try {
+    if (!payload || !payload.name) {
+      return { success: false, message: "กรุณาระบุข้อมูลพนักงาน" };
+    }
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_ATTENDANCE);
+    if (!sheet) {
+      initSheetAndFolder();
+      sheet = ss.getSheetByName(SHEET_ATTENDANCE);
+    }
+
+    var now = new Date();
+    var nowStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+    var dateStr = payload.date || Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+    var timeStr = payload.time || Utilities.formatDate(now, "GMT+7", "HH:mm:ss");
+    var actionType = (String(payload.actionType).toUpperCase() === 'CHECK_OUT') ? 'CHECK_OUT' : 'CHECK_IN';
+    var workStatus = payload.workStatus || (actionType === 'CHECK_IN' ? 'ตรงเวลา' : 'เลิกงานตามเวลา');
+    var logId = "ATT_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4).toUpperCase();
+    var personName = String(payload.name).trim();
+    var profileId = String(payload.profileId || "").trim();
+    var personType = String(payload.personType || "พนักงาน").trim();
+
+    sheet.appendRow([
+      logId,
+      dateStr,
+      profileId,
+      personName,
+      personType,
+      actionType,
+      timeStr,
+      workStatus,
+      nowStr
+    ]);
+
+    return {
+      success: true,
+      message: "บันทึก " + (actionType === 'CHECK_IN' ? "เข้างาน" : "ออกงาน") + " สำเร็จ (" + timeStr + ")",
+      log: {
+        id: logId,
+        date: dateStr,
+        profileId: profileId,
+        name: personName,
+        actionType: actionType,
+        time: timeStr,
+        workStatus: workStatus
+      }
+    };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * ดึงรายการลงเวลาเข้า-ออกงานของวันที่ระบุ (ค่าเริ่มต้น: วันนี้)
+ */
+function getTodayAttendance(targetDate) {
+  try {
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_ATTENDANCE);
+    if (!sheet) return { success: true, attendance: [] };
+
+    var now = new Date();
+    var dateQuery = targetDate || Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+    var data = sheet.getDataRange().getValues();
+    var list = [];
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var rDate = String(row[1] || "").trim();
+      if (row[1] instanceof Date) {
+        rDate = Utilities.formatDate(row[1], "GMT+7", "yyyy-MM-dd");
+      }
+      if (rDate === dateQuery) {
+        list.push({
+          id: String(row[0] || ""),
+          date: rDate,
+          profileId: String(row[2] || ""),
+          name: String(row[3] || ""),
+          personType: String(row[4] || ""),
+          actionType: String(row[5] || ""),
+          time: String(row[6] || ""),
+          workStatus: String(row[7] || ""),
+          timestamp: String(row[8] || "")
+        });
+      }
+    }
+
+    return { success: true, date: dateQuery, attendance: list };
+  } catch (e) {
+    return { success: false, message: e.toString(), attendance: [] };
   }
 }
 

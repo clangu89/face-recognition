@@ -229,13 +229,20 @@
           </span>
         </div>
 
-        <!-- User Profile & Logout -->
-        <div class="flex items-center space-x-2.5 pl-2.5 border-l border-[#DCD6C4] flex-shrink-0">
+        <!-- User Profile & Settings & Logout -->
+        <div class="flex items-center space-x-2 pl-2.5 border-l border-[#DCD6C4] flex-shrink-0">
           <div class="text-right leading-tight hidden sm:block">
             <div id="headerUserName" class="text-xs font-bold text-[#1F1E1B] truncate max-w-[110px]">Admin</div>
             <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold truncate max-w-[140px]">ผู้ดูแลระบบ (Administrator)</div>
           </div>
-          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm flex-shrink-0">
+          <button onclick="openSystemSettingsModal()" title="ตั้งค่าระบบ" class="px-3 py-1.5 rounded-full bg-[#EAE6DA] hover:bg-[#DDD7C5] text-[#1F1E1B] border border-[#DCD6C4] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm flex-shrink-0 cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#5C5950]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span class="hidden md:inline">ตั้งค่าระบบ</span>
+          </button>
+          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm flex-shrink-0 cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
@@ -605,7 +612,36 @@
                 ชื่อ - นามสกุล หรือชื่อที่ใช้ทักทาย <span class="text-[#E5534B]">*</span>
               </label>
               <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] placeholder-[#9C978B] focus:outline-none focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 text-sm font-semibold transition">
-              <p class="text-[11px] text-[#8C877B]">ระบบจะกล่าวทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
+              <p class="text-[11px] text-[#8C877B]">ระบบจะกล่าวทักทายตามประเภทบุคคลที่เลือกด้านล่าง</p>
+            </div>
+
+            <!-- Person Type Selection (Employee vs VIP) -->
+            <div class="glass-card rounded-[24px] p-4 sm:p-5 border border-[#EAE6DA] space-y-2.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-[#5C5950]">
+                ประเภทบุคคล (Person Type) <span class="text-[#E5534B]">*</span>
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label id="typeLabelEmployee" class="relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#28AE60] bg-[#EAF7EF]/60 shadow-xs">
+                  <input type="radio" name="regPersonType" value="employee" checked onchange="handlePersonTypeChange('employee')" class="sr-only">
+                  <div class="flex items-center space-x-2.5">
+                    <span class="text-xl">💼</span>
+                    <div>
+                      <div class="text-xs font-bold text-[#1F1E1B]">พนักงาน</div>
+                      <div class="text-[10px] text-[#6E6B62]">บันทึกเวลา + บอกวันเวลา</div>
+                    </div>
+                  </div>
+                </label>
+                <label id="typeLabelVip" class="relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#DDD7C5] bg-[#F7F5EE] hover:bg-white shadow-xs">
+                  <input type="radio" name="regPersonType" value="vip" onchange="handlePersonTypeChange('vip')" class="sr-only">
+                  <div class="flex items-center space-x-2.5">
+                    <span class="text-xl">⭐</span>
+                    <div>
+                      <div class="text-xs font-bold text-[#1F1E1B]">VIP (แขกพิเศษ)</div>
+                      <div class="text-[10px] text-[#6E6B62]">ทักทายกระชับ ไม่ลงเวลา</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <!-- Auto-Capture Toggle Switch Card -->
@@ -1203,6 +1239,137 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL: System Settings (ตั้งค่าคงที่เวลาเข้า-ออกงาน & บันทึกเวลาวันนี้) -->
+  <!-- ========================================================================= -->
+  <div id="systemSettingsModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-[#1F1E1B]/50 backdrop-blur-sm">
+    <div class="w-full max-w-2xl glass-card rounded-[32px] p-6 sm:p-7 shadow-2xl relative max-h-[92vh] flex flex-col">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-[#EFECE2] flex-shrink-0">
+        <div class="flex items-center space-x-3">
+          <div class="w-11 h-11 ch-squircle bg-[#EAF7EF] border-2 border-[#28AE60] flex items-center justify-center text-xl shadow-sm flex-shrink-0">
+            ⚙️
+          </div>
+          <div>
+            <h3 class="text-lg font-extrabold text-[#1F1E1B]">ตั้งค่าระบบและเวลาทำงาน (System Settings)</h3>
+            <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดเวลาเข้างาน-เลิกงาน และตรวจสอบประวัติการลงเวลาของพนักงาน</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSystemSettingsModal()" class="text-[#8C877B] hover:text-[#1F1E1B] p-1.5 rounded-full hover:bg-[#F7F5EE] transition cursor-pointer">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Navigation Tabs inside Modal -->
+      <div class="flex items-center space-x-2 pt-4 pb-2 border-b border-[#EFECE2] flex-shrink-0">
+        <button type="button" id="modalTabBtn_schedule" onclick="switchSettingsModalTab('schedule')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#28AE60] text-white shadow-xs cursor-pointer">
+          <span>🕒</span>
+          <span>เวลาเข้า-เลิกงาน (Work Schedule)</span>
+        </button>
+        <button type="button" id="modalTabBtn_attendance" onclick="switchSettingsModalTab('attendance')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#F7F5EE] text-[#5C5950] hover:bg-[#EAE6DA] cursor-pointer">
+          <span>📊</span>
+          <span>ประวัติลงเวลาวันนี้ (Today's Logs)</span>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="flex-1 overflow-y-auto py-4 space-y-4 min-h-[220px]">
+        
+        <!-- Tab Content 1: Work Schedule Settings -->
+        <div id="modalTabContent_schedule" class="space-y-4">
+          <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-base">📌</span>
+              <h4 class="text-xs font-bold text-[#1F1E1B]">เงื่อนไขการบันทึกเวลาทำงานของพนักงาน</h4>
+            </div>
+            <ul class="text-xs text-[#5C5950] space-y-1.5 list-disc list-inside">
+              <li><strong class="text-[#1E824C]">สแกนครั้งแรกของวัน:</strong> บันทึกเวลาเข้างาน (Check-In) โดยอัตโนมัติ หากเวลา &le; เวลาเข้างาน จะได้สถานะ <span class="font-bold text-[#1E824C]">"ตรงเวลา"</span> หากเกินกำหนดจะได้สถานะ <span class="font-bold text-[#D94338]">"สาย"</span></li>
+              <li><strong class="text-[#2980B9]">สแกนครั้งถัดไประหว่างวัน:</strong> หากเวลายังไม่ถึงเวลาเลิกงาน ระบบจะกล่าวทักทายปกติโดยไม่บันทึกเวลาออกงาน</li>
+              <li><strong class="text-[#D9822B]">สแกนเมื่อถึงเวลาเลิกงาน:</strong> ระบบจะบันทึกเวลาออกงาน (Check-Out) เฉพาะเมื่อเวลาปัจจุบัน <span class="font-bold text-[#D9822B]">&ge; เวลาเลิกงาน</span> เท่านั้น</li>
+              <li><strong class="text-[#F39C12]">VIP:</strong> จะได้รับการทักทายแบบกระชับ และไม่มีการบันทึกเวลาทำงาน</li>
+            </ul>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Work Start Time -->
+            <div class="glass-card p-4 rounded-2xl border border-[#EAE6DA] space-y-2">
+              <label for="settingWorkStartTime" class="block text-xs font-bold text-[#1E824C] flex items-center gap-1.5">
+                <span>🟢</span> <span>เวลาเข้างาน (Work Start Time)</span>
+              </label>
+              <input type="time" id="settingWorkStartTime" value="08:30" class="w-full px-4 py-2.5 rounded-xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] font-bold text-base focus:outline-none focus:border-[#28AE60] focus:bg-white transition">
+              <p class="text-[11px] text-[#8C877B]">สแกนก่อนหรือตรงเวลานี้ = ตรงเวลา</p>
+            </div>
+
+            <!-- Work End Time -->
+            <div class="glass-card p-4 rounded-2xl border border-[#EAE6DA] space-y-2">
+              <label for="settingWorkEndTime" class="block text-xs font-bold text-[#D9822B] flex items-center gap-1.5">
+                <span>🔴</span> <span>เวลาเลิกงาน (Work End Time)</span>
+              </label>
+              <input type="time" id="settingWorkEndTime" value="17:30" class="w-full px-4 py-2.5 rounded-xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] font-bold text-base focus:outline-none focus:border-[#28AE60] focus:bg-white transition">
+              <p class="text-[11px] text-[#8C877B]">บันทึกออกงานเฉพาะเวลา &ge; เวลานี้เท่านั้น</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content 2: Today's Attendance Logs -->
+        <div id="modalTabContent_attendance" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#1F1E1B]">รายการบันทึกเวลาวันนี้</h4>
+              <span id="attendanceDateBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]"></span>
+            </div>
+            <button type="button" onclick="loadTodayAttendanceFromBackend(true)" class="px-3 py-1.5 rounded-full bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] shadow-xs flex items-center gap-1.5 transition cursor-pointer">
+              <svg id="refreshAttendanceModalBtn" class="w-3.5 h-3.5 text-[#28AE60] transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              <span>รีเฟรช</span>
+            </button>
+          </div>
+
+          <div class="glass-card rounded-2xl overflow-hidden border border-[#EAE6DA]">
+            <div class="overflow-x-auto max-h-[300px]">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-[#F7F5EE] font-bold text-[#5C5950] uppercase tracking-wider border-b border-[#E5E0D0] sticky top-0">
+                  <tr>
+                    <th class="px-4 py-2.5">เวลา</th>
+                    <th class="px-4 py-2.5">ชื่อพนักงาน</th>
+                    <th class="px-4 py-2.5">ประเภท</th>
+                    <th class="px-4 py-2.5">สถานะ</th>
+                    <th class="px-4 py-2.5">เวลาทำงาน</th>
+                  </tr>
+                </thead>
+                <tbody id="modalAttendanceTableBody" class="divide-y divide-[#EFECE2] text-[#1F1E1B]">
+                  <tr>
+                    <td colspan="5" class="px-4 py-6 text-center text-[#8C877B]">กำลังโหลดข้อมูล...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-4 border-t border-[#EFECE2] flex-shrink-0">
+        <div id="modalScheduleSaveStatus" class="text-xs font-bold text-[#28AE60] min-h-[1rem]"></div>
+        <div class="flex items-center space-x-2.5">
+          <button type="button" onclick="closeSystemSettingsModal()" class="px-5 py-2.5 rounded-full text-xs font-bold text-[#5C5950] hover:text-[#1F1E1B] bg-[#EAE6DA] hover:bg-[#DFD9C8] transition cursor-pointer">
+            ปิดหน้าต่าง
+          </button>
+          <button type="button" id="saveWorkScheduleBtn" onclick="saveWorkScheduleFromModal()" class="px-6 py-2.5 rounded-full text-xs font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center space-x-1.5 cursor-pointer">
+            <span id="saveWorkScheduleIcon">💾</span>
+            <span id="saveWorkScheduleText">บันทึกเวลาทำงาน</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Toast Notification Floating Box -->
   <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden toast-enter">
     <div id="toastIcon"></div>
@@ -1358,6 +1525,8 @@
     const SYSTEM_SETTINGS_STORAGE_KEY = 'face_app_system_settings_v1';
     const DEFAULT_KNOWN_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
     const DEFAULT_UNKNOWN_GREETING_TEXT = 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}';
+    const DEFAULT_WORK_START_TIME = '08:30';
+    const DEFAULT_WORK_END_TIME = '17:30';
     const PROFILE_MESSAGES_STORAGE_KEY = 'face_app_profile_messages_v1';
 
     const GREETING_PRESETS_KNOWN = [
@@ -1393,6 +1562,9 @@
       voiceParticle: 'ค่ะ',
       knownGreetingTemplate: DEFAULT_KNOWN_GREETING_TEMPLATE,
       unknownGreetingText: DEFAULT_UNKNOWN_GREETING_TEXT,
+      workStartTime: DEFAULT_WORK_START_TIME,
+      workEndTime: DEFAULT_WORK_END_TIME,
+      todayAttendance: {},
       profileMessages: {},
       activeMessageModalProfile: null,
       speechUnlocked: false,
@@ -2081,13 +2253,24 @@
             state.bellChimeEnabled = !!s.bellChimeEnabled;
             changed = true;
           }
+          if (s.workStartTime && s.workStartTime.trim()) {
+            state.workStartTime = s.workStartTime.trim();
+          }
+          if (s.workEndTime && s.workEndTime.trim()) {
+            state.workEndTime = s.workEndTime.trim();
+          }
+          const startInput = document.getElementById('settingWorkStartTime');
+          if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
+          const endInput = document.getElementById('settingWorkEndTime');
+          if (endInput) endInput.value = state.workEndTime || DEFAULT_WORK_END_TIME;
+
           if (changed) {
             saveVoiceSettingsToStorage();
             syncVoiceControlsUI();
           }
           const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
           updateGreetingSyncBadge('synced', 'ค่าคงที่ระบบ (' + timeStr + ')');
-          logStatus('[SYNC] โหลดข้อความทักทายค่าคงที่ถาวรจาก Google Sheets สำเร็จ');
+          logStatus('[SYNC] โหลดค่าคงที่ระบบจาก Google Sheets สำเร็จ (เข้างาน: ' + state.workStartTime + ', เลิกงาน: ' + state.workEndTime + ')');
           if (isManual) {
             showToast('โหลดค่าคงที่ถาวรจาก Google Sheets เรียบร้อยแล้ว', 'success');
           }
@@ -2130,7 +2313,9 @@
         knownGreetingTemplate: state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
         voiceParticle: state.voiceParticle || 'ค่ะ',
-        bellChimeEnabled: state.bellChimeEnabled !== false
+        bellChimeEnabled: state.bellChimeEnabled !== false,
+        workStartTime: state.workStartTime || DEFAULT_WORK_START_TIME,
+        workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME
       };
 
       const finishSave = function(success, msg) {
@@ -2142,8 +2327,8 @@
           const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
           updateGreetingSyncBadge('synced', 'บันทึกค่าคงที่แล้ว (' + timeStr + ')');
           saveVoiceSettingsToStorage();
-          showToast('บันทึกข้อความทักทายเป็นค่าคงที่ถาวรของระบบเรียบร้อยแล้ว', 'success');
-          logStatus('[SYNC] บันทึกข้อความทักทายค่าคงที่ถาวรลง Google Sheets สำเร็จ');
+          showToast('บันทึกข้อความทักทายและเวลาทำงานเป็นค่าคงที่ถาวรเรียบร้อยแล้ว', 'success');
+          logStatus('[SYNC] บันทึกค่าคงที่ระบบลง Google Sheets สำเร็จ');
         } else {
           updateGreetingSyncBadge('local', 'บันทึกล้มเหลว');
           showToast('ไม่สามารถบันทึกค่าคงที่ได้: ' + msg, 'error');
@@ -2188,29 +2373,406 @@
       }
     }
 
-    function buildGreetingMessage(type, personName) {
+    // --- Thai Date, Time & Speech Formatting ---
+    function formatTimeForSpeech(d) {
+      const dateObj = d || new Date();
+      const h = dateObj.getHours();
+      const m = dateObj.getMinutes();
+      if (m === 0) {
+        return h + ' นาฬิกาตรง';
+      }
+      return h + ' นาฬิกา ' + m + ' นาที';
+    }
+
+    function formatHHMM(d) {
+      const dateObj = d || new Date();
+      const h = String(dateObj.getHours()).padStart(2, '0');
+      const m = String(dateObj.getMinutes()).padStart(2, '0');
+      return h + ':' + m;
+    }
+
+    function formatThaiDateTimeForSpeech(d) {
+      const dateObj = d || new Date();
+      const thaiMonths = [
+        'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+        'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+      ];
+      const day = dateObj.getDate();
+      const month = thaiMonths[dateObj.getMonth()];
+      const yearBE = dateObj.getFullYear() + 543;
+      const timeSpeech = formatTimeForSpeech(dateObj);
+      return 'วันที่ ' + day + ' ' + month + ' ' + yearBE + ' เวลา ' + timeSpeech;
+    }
+
+    function buildGreetingMessage(type, personName, personType) {
       const particle = state.voiceParticle || 'ค่ะ';
       if (type === 'known') {
-        const rawTemplate = (state.knownGreetingTemplate && state.knownGreetingTemplate.trim())
-          ? state.knownGreetingTemplate
-          : DEFAULT_KNOWN_GREETING_TEMPLATE;
+        const isVip = (personType === 'vip');
         const safeName = (personName || 'ธนกร').trim();
 
-        let msg = rawTemplate.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle);
-
-        const hasNameTag = /\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi.test(msg);
-        if (hasNameTag) {
-          msg = msg.replace(/\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi, safeName);
+        if (isVip) {
+          // VIP format: สวัสดี{particle}คุณ {name}
+          const rawTemplate = (state.knownGreetingTemplate && state.knownGreetingTemplate.trim())
+            ? state.knownGreetingTemplate
+            : DEFAULT_KNOWN_GREETING_TEMPLATE;
+          let msg = rawTemplate.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle);
+          const hasNameTag = /\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi.test(msg);
+          if (hasNameTag) {
+            msg = msg.replace(/\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi, safeName);
+          } else {
+            msg = msg.trim() + ' ' + safeName;
+          }
+          return msg.trim();
         } else {
-          msg = msg.trim() + ' ' + safeName;
+          // พนักงาน (Employee) format: สวัสดี{particle}คุณ {name} วันนี้วันที่ {วันที่ เดือน(ไทย) ปี(พ.ศ.) เวลา(24 ชั่วโมง)}
+          const dtText = formatThaiDateTimeForSpeech(new Date());
+          const baseGreeting = 'สวัสดี' + particle + 'คุณ ' + safeName;
+          return (baseGreeting + ' วันนี้' + dtText).trim();
         }
-        return msg.trim();
       }
 
       const rawUnknown = (state.unknownGreetingText && state.unknownGreetingText.trim())
         ? state.unknownGreetingText
         : DEFAULT_UNKNOWN_GREETING_TEXT;
       return rawUnknown.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle).trim();
+    }
+
+    // --- Employee Attendance Evaluation & Synchronization ---
+    function evaluateEmployeeAttendance(profile, cleanName, now) {
+      const dateObj = now || new Date();
+      const empKey = (profile && profile.id) ? profile.id : cleanName;
+      if (!state.todayAttendance) state.todayAttendance = {};
+
+      let record = state.todayAttendance[empKey] || state.todayAttendance[cleanName];
+      if (!record) {
+        record = { checkIn: null, checkOut: null };
+        state.todayAttendance[empKey] = record;
+        state.todayAttendance[cleanName] = record;
+      }
+
+      const currentTimeStr = formatHHMM(dateObj);
+      const workStart = state.workStartTime || DEFAULT_WORK_START_TIME;
+      const workEnd = state.workEndTime || DEFAULT_WORK_END_TIME;
+      const particle = state.voiceParticle || 'ค่ะ';
+      const timeSpeech = formatTimeForSpeech(dateObj);
+
+      // Case 1: First scan of today -> Record Check-In
+      if (!record.checkIn) {
+        const isOntime = (currentTimeStr <= workStart);
+        const status = isOntime ? 'ตรงเวลา' : 'สาย';
+        const logData = {
+          profileId: (profile && profile.id) || '',
+          name: cleanName,
+          logType: 'CHECK_IN',
+          time: currentTimeStr,
+          status: status,
+          workSchedule: workStart + ' - ' + workEnd
+        };
+        record.checkIn = logData;
+        recordAttendanceLogToBackend(logData);
+
+        const announcement = 'บันทึกเข้างานสำเร็จ เวลา ' + timeSpeech + ' ' + particle;
+        showToast('บันทึกเข้างานสำเร็จ (' + currentTimeStr + ' น. - ' + status + ')', isOntime ? 'success' : 'warning');
+        return announcement;
+      }
+
+      // Case 2: Already checked in, evaluate check-out
+      // Rule from user: "บันทึกออกงานเฉพาะ เวลา >= workEndTime เท่านั้น"
+      if (!record.checkOut) {
+        if (currentTimeStr >= workEnd) {
+          const logData = {
+            profileId: (profile && profile.id) || '',
+            name: cleanName,
+            logType: 'CHECK_OUT',
+            time: currentTimeStr,
+            status: 'เลิกงานตามเวลา',
+            workSchedule: workStart + ' - ' + workEnd
+          };
+          record.checkOut = logData;
+          recordAttendanceLogToBackend(logData);
+
+          const announcement = 'บันทึกออกงานสำเร็จ เวลา ' + timeSpeech + ' ' + particle;
+          showToast('บันทึกออกงานสำเร็จ (' + currentTimeStr + ' น. - เลิกงานตามเวลา)', 'success');
+          return announcement;
+        } else {
+          // Current time < workEndTime: Do not record check-out; announce normal employee greeting only
+          logStatus('[ATTEND] คุณ ' + cleanName + ' สแกนระหว่างวัน (' + currentTimeStr + ' < ' + workEnd + ') ไม่บันทึกออกงาน');
+          return null;
+        }
+      }
+
+      // Case 3: Already checked in AND checked out today -> No duplicate attendance log
+      return null;
+    }
+
+    function recordAttendanceLogToBackend(payload) {
+      logStatus('[ATTEND] บันทึกเวลา: ' + payload.name + ' (' + payload.logType + ' ' + payload.time + ' ' + payload.status + ')');
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            logStatus('[ATTEND] บันทึก AttendanceLogs สำเร็จ');
+            loadTodayAttendanceFromBackend(false);
+          })
+          .withFailureHandler(function(err) {
+            logStatus('[WARN] บันทึก AttendanceLogs ล้มเหลว: ' + (err ? err.message : err), true);
+          })
+          .recordAttendanceLog(payload);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'recordAttendance', payload: payload })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res && res.success) {
+            logStatus('[ATTEND] บันทึก AttendanceLogs สำเร็จ');
+            loadTodayAttendanceFromBackend(false);
+          }
+        })
+        .catch(function(err) {
+          logStatus('[WARN] บันทึก AttendanceLogs ข้อผิดพลาด: ' + (err ? err.message : err), true);
+        });
+      }
+    }
+
+    function loadTodayAttendanceFromBackend(isManual) {
+      const refreshIcon = document.getElementById('refreshAttendanceModalBtn');
+      if (refreshIcon && isManual) refreshIcon.classList.add('animate-spin');
+
+      const dateBadge = document.getElementById('attendanceDateBadge');
+      if (dateBadge) {
+        const today = new Date();
+        dateBadge.textContent = today.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+      }
+
+      const handleSuccess = function(res) {
+        if (refreshIcon && isManual) refreshIcon.classList.remove('animate-spin');
+        if (res && res.success && Array.isArray(res.logs)) {
+          state.todayAttendance = {};
+          res.logs.forEach(function(log) {
+            const profKey = (log.profileId || '').trim();
+            const nameKey = (log.name || '').trim();
+            const key = profKey || nameKey;
+            if (!state.todayAttendance[key]) {
+              state.todayAttendance[key] = { checkIn: null, checkOut: null };
+            }
+            if (nameKey && !state.todayAttendance[nameKey]) {
+              state.todayAttendance[nameKey] = state.todayAttendance[key];
+            }
+            if (log.logType === 'CHECK_IN' && !state.todayAttendance[key].checkIn) {
+              state.todayAttendance[key].checkIn = log;
+            } else if (log.logType === 'CHECK_OUT' && !state.todayAttendance[key].checkOut) {
+              state.todayAttendance[key].checkOut = log;
+            }
+          });
+          renderAttendanceModalTable(res.logs);
+          if (isManual) showToast('รีเฟรชข้อมูลลงเวลาทำงานล่าสุดแล้ว', 'success');
+        } else {
+          renderAttendanceModalTable([]);
+        }
+      };
+
+      const handleError = function(err) {
+        if (refreshIcon && isManual) refreshIcon.classList.remove('animate-spin');
+        if (isManual) showToast('โหลดข้อมูลลงเวลาไม่สำเร็จ: ' + (err ? err.message : err), 'error');
+        renderAttendanceModalTable([]);
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleError)
+          .getTodayAttendance();
+      } else {
+        fetch(GAS_API_URL + '?action=getTodayAttendance', { redirect: 'follow' })
+          .then(function(r) { return r.json(); })
+          .then(handleSuccess)
+          .catch(handleError);
+      }
+    }
+
+    function renderAttendanceModalTable(logs) {
+      const tbody = document.getElementById('modalAttendanceTableBody');
+      if (!tbody) return;
+
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-[#8C877B]">ยังไม่มีรายการลงเวลาทำงานในวันนี้</td></tr>';
+        return;
+      }
+
+      let html = '';
+      logs.forEach(function(item) {
+        const isCheckIn = (item.logType === 'CHECK_IN');
+        const typeBadge = isCheckIn
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">🟢 เข้างาน</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FEF6E6] text-[#D9822B] border border-[#F5DFB0]">🔴 ออกงาน</span>';
+
+        let statusBadge = '';
+        if (item.status === 'ตรงเวลา') {
+          statusBadge = '<span class="text-[#1E824C] font-bold">✓ ตรงเวลา</span>';
+        } else if (item.status === 'สาย') {
+          statusBadge = '<span class="text-[#D94338] font-bold">⚠️ สาย</span>';
+        } else {
+          statusBadge = '<span class="text-[#5C5950] font-medium">' + (item.status || '-') + '</span>';
+        }
+
+        html += '<tr class="hover:bg-[#F7F5EE]/80 transition">' +
+          '<td class="px-4 py-3 font-mono font-bold text-[#1F1E1B]">' + (item.time || '-') + ' น.</td>' +
+          '<td class="px-4 py-3 font-bold text-[#1F1E1B]">' + (item.name || '-') + '</td>' +
+          '<td class="px-4 py-3">' + typeBadge + '</td>' +
+          '<td class="px-4 py-3 text-xs">' + statusBadge + '</td>' +
+          '<td class="px-4 py-3 text-xs text-[#6E6B62] font-mono">' + (item.workSchedule || '-') + '</td>' +
+        '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    // --- System Settings Modal Controllers ---
+    function openSystemSettingsModal() {
+      const modal = document.getElementById('systemSettingsModal');
+      if (!modal) return;
+      const startInput = document.getElementById('settingWorkStartTime');
+      const endInput = document.getElementById('settingWorkEndTime');
+      if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
+      if (endInput) endInput.value = state.workEndTime || DEFAULT_WORK_END_TIME;
+
+      switchSettingsModalTab('schedule');
+      modal.classList.remove('hidden');
+      loadTodayAttendanceFromBackend(false);
+    }
+
+    function closeSystemSettingsModal() {
+      const modal = document.getElementById('systemSettingsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchSettingsModalTab(tabId) {
+      const btnSched = document.getElementById('modalTabBtn_schedule');
+      const btnAttend = document.getElementById('modalTabBtn_attendance');
+      const contentSched = document.getElementById('modalTabContent_schedule');
+      const contentAttend = document.getElementById('modalTabContent_attendance');
+
+      if (tabId === 'schedule') {
+        if (btnSched) btnSched.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#28AE60] text-white shadow-xs cursor-pointer';
+        if (btnAttend) btnAttend.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#F7F5EE] text-[#5C5950] hover:bg-[#EAE6DA] cursor-pointer';
+        if (contentSched) contentSched.classList.remove('hidden');
+        if (contentAttend) contentAttend.classList.add('hidden');
+      } else {
+        if (btnSched) btnSched.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#F7F5EE] text-[#5C5950] hover:bg-[#EAE6DA] cursor-pointer';
+        if (btnAttend) btnAttend.className = 'px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 bg-[#28AE60] text-white shadow-xs cursor-pointer';
+        if (contentSched) contentSched.classList.add('hidden');
+        if (contentAttend) contentAttend.classList.remove('hidden');
+        loadTodayAttendanceFromBackend(false);
+      }
+    }
+
+    function saveWorkScheduleFromModal() {
+      const startInput = document.getElementById('settingWorkStartTime');
+      const endInput = document.getElementById('settingWorkEndTime');
+      const btn = document.getElementById('saveWorkScheduleBtn');
+      const icon = document.getElementById('saveWorkScheduleIcon');
+      const text = document.getElementById('saveWorkScheduleText');
+      const statusEl = document.getElementById('modalScheduleSaveStatus');
+
+      const startTime = (startInput ? startInput.value : '').trim() || DEFAULT_WORK_START_TIME;
+      const endTime = (endInput ? endInput.value : '').trim() || DEFAULT_WORK_END_TIME;
+
+      state.workStartTime = startTime;
+      state.workEndTime = endTime;
+
+      if (btn) btn.disabled = true;
+      if (icon) icon.textContent = '⏳';
+      if (text) text.textContent = 'กำลังบันทึก...';
+      if (statusEl) statusEl.textContent = 'กำลังบันทึกค่าลง Google Sheets...';
+
+      const payload = {
+        knownGreetingTemplate: state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
+        unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
+        voiceParticle: state.voiceParticle || 'ค่ะ',
+        bellChimeEnabled: state.bellChimeEnabled !== false,
+        workStartTime: state.workStartTime,
+        workEndTime: state.workEndTime
+      };
+
+      const finish = function(success, err) {
+        if (btn) btn.disabled = false;
+        if (icon) icon.textContent = '💾';
+        if (text) text.textContent = 'บันทึกเวลาทำงาน';
+        if (success) {
+          if (statusEl) statusEl.textContent = '✓ บันทึกสำเร็จ (' + startTime + ' - ' + endTime + ')';
+          showToast('บันทึกเวลาเข้า-เลิกงานเรียบร้อยแล้ว', 'success');
+          setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+        } else {
+          if (statusEl) statusEl.textContent = '❌ บันทึกล้มเหลว';
+          showToast('บันทึกไม่สำเร็จ: ' + err, 'error');
+        }
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) finish(true);
+            else finish(false, res ? res.message : 'Error');
+          })
+          .withFailureHandler(function(e) {
+            finish(false, e ? e.message : e);
+          })
+          .saveSystemSettings(payload);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'saveSettings', settings: payload })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res && res.success) finish(true);
+          else finish(false, res ? res.message : 'Error');
+        })
+        .catch(function(e) { finish(false, e ? e.message : e); });
+      }
+    }
+
+    function handlePersonTypeChange(type) {
+      const empLabel = document.getElementById('typeLabelEmployee');
+      const vipLabel = document.getElementById('typeLabelVip');
+      if (type === 'employee') {
+        if (empLabel) empLabel.className = 'relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#28AE60] bg-[#EAF7EF]/60 shadow-xs';
+        if (vipLabel) vipLabel.className = 'relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#DDD7C5] bg-[#F7F5EE] hover:bg-white shadow-xs';
+      } else {
+        if (empLabel) empLabel.className = 'relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#DDD7C5] bg-[#F7F5EE] hover:bg-white shadow-xs';
+        if (vipLabel) vipLabel.className = 'relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition select-none border-[#F1C40F] bg-[#FEF9E7] shadow-xs';
+      }
+    }
+
+    function toggleProfileType(profileId, newType) {
+      const profile = (state.profiles || []).find(p => p.id === profileId);
+      if (!profile) return;
+      profile.personType = newType;
+      renderProfilesList();
+      try {
+        localStorage.setItem('cached_face_profiles', JSON.stringify(state.profiles));
+      } catch(e) {}
+      showToast('เปลี่ยนประเภทคุณ ' + profile.name + ' เป็น ' + (newType === 'vip' ? 'VIP' : 'พนักงาน') + ' แล้ว', 'info');
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function() {
+            logStatus('[SYNC] อัปเดตประเภทโปรไฟล์ ' + profile.name + ' เป็น ' + newType + ' สำเร็จ');
+          })
+          .updateProfileType(profileId, newType);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'updateProfileType', profileId: profileId, personType: newType })
+        }).catch(function(e) { console.warn('Update profile type error:', e); });
+      }
     }
 
     // Synthesize warm, crystal-clear 2-tone melodic bell chime ("Ding-Dong") via Web Audio API
@@ -3146,7 +3708,14 @@
     }
 
     function drawFaceBox(ctx, box, label, isKnown, distance) {
-      const color = isKnown ? '#28AE60' : '#D9822B';
+      let isVip = false;
+      if (isKnown) {
+        const cleanLabel = (label || '').trim();
+        const p = (state.profiles || []).find(x => (x.name || '').trim() === cleanLabel);
+        if (p && p.personType === 'vip') isVip = true;
+      }
+
+      const color = isKnown ? (isVip ? '#D4AC0D' : '#28AE60') : '#D9822B';
       ctx.strokeStyle = color;
       ctx.lineWidth = 3.5;
 
@@ -3158,7 +3727,9 @@
         ctx.strokeRect(box.x, box.y, box.width, box.height);
       }
 
-      const displayText = isKnown ? ('คุณ ' + label) : 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
+      const displayText = isKnown
+        ? ((isVip ? '⭐ VIP: ' : '💼 ') + 'คุณ ' + label)
+        : 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
       ctx.font = 'bold 15px "Plus Jakarta Sans", "Sarabun", sans-serif';
       const textWidth = ctx.measureText(displayText).width;
       const badgeWidth = textWidth + 24;
@@ -3185,16 +3756,27 @@
         state.trackedPersons.set(name, { lastSeen: now, hasGreeted: true });
 
         const cleanName = (name || '').trim();
-        const greetingMsg = buildGreetingMessage('known', cleanName);
         const profile = (state.profiles || []).find(p => (p.name || '').trim() === cleanName) ||
                         (state.profiles || []).find(p => {
                           const pName = (p.name || '').trim();
                           return pName && (cleanName.includes(pName) || pName.includes(cleanName));
                         });
         const profileId = profile ? profile.id : null;
+        const personType = (profile && profile.personType) ? String(profile.personType).toLowerCase() : 'employee';
+
+        const greetingMsg = buildGreetingMessage('known', cleanName, personType);
         const messages = getProfileMessages(profileId, cleanName);
 
         const phrases = [greetingMsg];
+
+        // Attendance evaluation for employees (Check-In or Check-Out)
+        if (personType === 'employee') {
+          const attendancePhrase = evaluateEmployeeAttendance(profile, cleanName, new Date());
+          if (attendancePhrase) {
+            phrases.push(attendancePhrase);
+          }
+        }
+
         if (messages && messages.length > 0) {
           const particle = state.voiceParticle || 'ค่ะ';
           phrases.push('คุณมี ' + messages.length + ' ข้อความ' + particle);
@@ -3211,7 +3793,7 @@
           phrases: phrases,
           withChime: true
         });
-        logStatus('[GREET] ตรวจพบใบหน้า: คุณ ' + cleanName + ' (บันทึกลงคิวทักทาย)');
+        logStatus('[GREET] ตรวจพบใบหน้า: คุณ ' + cleanName + ' (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ') (บันทึกลงคิวทักทาย)');
         recordScanLog(cleanName, 'KNOWN', confidence);
       } else {
         person.lastSeen = now;
@@ -3894,6 +4476,9 @@
         return;
       }
 
+      const typeRadio = document.querySelector('input[name="regPersonType"]:checked');
+      const personType = typeRadio ? typeRadio.value : 'employee';
+
       const saveBtn = document.getElementById('saveProfileBtn');
       saveBtn.disabled = true;
       saveBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span> กำลังบันทึกข้อมูล...';
@@ -3901,7 +4486,8 @@
       const payload = {
         name: name,
         descriptor: state.capturedDescriptor,
-        imageBase64: state.capturedImageBase64
+        imageBase64: state.capturedImageBase64,
+        personType: personType
       };
 
       var handleSaveSuccess = function(response) {
@@ -3909,8 +4495,10 @@
         saveBtn.innerHTML = '<span>💾 บันทึกข้อมูลใบหน้าเข้าระบบ</span>';
 
         if (response && response.success) {
-          showToast('ลงทะเบียนคุณ "' + name + '" สำเร็จเรียบร้อย', 'success');
+          showToast('ลงทะเบียนคุณ "' + name + '" (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ') สำเร็จเรียบร้อย', 'success');
           nameInput.value = '';
+          const empRadio = document.querySelector('input[name="regPersonType"][value="employee"]');
+          if (empRadio) { empRadio.checked = true; handlePersonTypeChange('employee'); }
           retakePhotoForRegistration();
 
           loadProfilesFromBackend();
@@ -3996,9 +4584,18 @@
       state.profiles.forEach(p => {
         var safeName = (p.name || '').replace(/"/g, '&quot;');
         var safeUrl = (p.imageUrl || '');
+        var isVip = (p.personType === 'vip');
+        var imgBorderColor = isVip ? 'border-[#F1C40F]' : 'border-[#28AE60]';
         var imgDisplay = safeUrl
-          ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-16 h-16 ch-squircle object-cover border-2 border-[#28AE60] flex-shrink-0 shadow-sm" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=EAF7EF&color=1E824C\'">'
-          : '<div class="w-16 h-16 ch-squircle bg-[#EAF7EF] flex items-center justify-center text-xl font-extrabold text-[#1E824C] border-2 border-[#28AE60] flex-shrink-0 shadow-sm">' + safeName.charAt(0) + '</div>';
+          ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-16 h-16 ch-squircle object-cover border-2 ' + imgBorderColor + ' flex-shrink-0 shadow-sm" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=EAF7EF&color=1E824C\'">'
+          : '<div class="w-16 h-16 ch-squircle bg-[#EAF7EF] flex items-center justify-center text-xl font-extrabold text-[#1E824C] border-2 ' + imgBorderColor + ' flex-shrink-0 shadow-sm">' + safeName.charAt(0) + '</div>';
+
+        var typeBadge = isVip
+          ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF9E7] text-[#9A7D0A] border border-[#FAD7A0] text-[10px] font-extrabold shadow-xs">⭐ VIP</span>'
+          : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-extrabold shadow-xs">💼 พนักงาน</span>';
+
+        var switchTypeTarget = isVip ? 'employee' : 'vip';
+        var switchBtn = '<button type="button" onclick="toggleProfileType(\'' + p.id + '\', \'' + switchTypeTarget + '\')" class="text-[10px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-lg bg-[#F7F5EE] hover:bg-[#EAE6DA] border border-[#DDD7C5] transition shadow-xs cursor-pointer" title="สลับเป็น ' + (isVip ? 'พนักงาน' : 'VIP') + '">🔄 ' + (isVip ? 'เป็นพนักงาน' : 'เป็น VIP') + '</button>';
 
         var msgs = getProfileMessages(p.id, p.name);
         var msgCount = msgs.length;
@@ -4012,8 +4609,17 @@
         html += '<div class="glass-card rounded-[24px] p-4 flex flex-col justify-between hover:border-[#28AE60]/60 transition shadow-sm space-y-3">' +
           '<div class="flex items-center justify-between">' +
             '<div class="flex items-center space-x-3.5 overflow-hidden">' +
-              '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] text-[#28AE60] font-bold shadow">✓</span></div>' +
-              '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">วันที่ลงทะเบียน: ' + (p.createdAt || '-') + '</p></div>' +
+              '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] text-[#28AE60] font-bold shadow">' + (isVip ? '⭐' : '✓') + '</span></div>' +
+              '<div class="truncate space-y-1">' +
+                '<div class="flex items-center gap-1.5 flex-wrap">' +
+                  '<h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4>' +
+                  typeBadge +
+                '</div>' +
+                '<div class="flex items-center gap-2">' +
+                  '<span class="text-[11px] text-[#6E6B62] font-medium">' + (p.createdAt || '-') + '</span>' +
+                  switchBtn +
+                '</div>' +
+              '</div>' +
             '</div>' +
             '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบข้อมูล">' +
               '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
@@ -4354,6 +4960,8 @@
           // เริ่มต้นการทำงานเบื้องหลังเมื่อล็อกอินสำเร็จ
           initSpeech();
           loadProfilesFromBackend();
+          loadSystemSettingsFromBackend();
+          loadTodayAttendanceFromBackend();
           ensureFaceApiLoaded().then(loadFaceModels).catch(function(err) {
             logStatus('[ERROR] โมเดล AI: ' + (err ? err.message : err), true);
           });
@@ -4715,6 +5323,21 @@
     window.clearSpeechQueue = clearSpeechQueue;
     window.processSpeechQueue = processSpeechQueue;
 
+    // Window exports for Attendance and System Settings
+    window.openSystemSettingsModal = openSystemSettingsModal;
+    window.closeSystemSettingsModal = closeSystemSettingsModal;
+    window.switchSettingsModalTab = switchSettingsModalTab;
+    window.saveWorkScheduleFromModal = saveWorkScheduleFromModal;
+    window.loadTodayAttendanceFromBackend = loadTodayAttendanceFromBackend;
+    window.renderAttendanceModalTable = renderAttendanceModalTable;
+    window.handlePersonTypeChange = handlePersonTypeChange;
+    window.toggleProfileType = toggleProfileType;
+    window.formatTimeForSpeech = formatTimeForSpeech;
+    window.formatHHMM = formatHHMM;
+    window.formatThaiDateTimeForSpeech = formatThaiDateTimeForSpeech;
+    window.evaluateEmployeeAttendance = evaluateEmployeeAttendance;
+    window.recordAttendanceLogToBackend = recordAttendanceLogToBackend;
+
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
     (async function startApplicationNow() {
@@ -4734,6 +5357,10 @@
 
       // 2. ดึงข้อมูลโปรไฟล์จากแคชในเครื่องทันที 0ms และซิงค์ Google Sheets
       loadProfilesFromBackend();
+
+      // 2.5 โหลดค่าคงที่ระบบและรายการลงเวลาทำงานวันนี้
+      loadSystemSettingsFromBackend();
+      loadTodayAttendanceFromBackend();
 
       // 3. เริ่มโหลดไลบรารีและโมเดล AI ในพื้นหลัง (ไม่บล็อก UI และกล้อง)
       try {
