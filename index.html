@@ -247,18 +247,6 @@
   <!-- Main Container -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 space-y-5">
 
-    <!-- Diagnostic Log Console (Warm Sand Note Box) -->
-    <div id="diagnosticContainer" class="p-3.5 rounded-2xl bg-[#EAE6DA]/85 border border-[#DCD6C4] text-xs font-mono shadow-inner">
-      <div class="flex items-center justify-between mb-1.5 pb-1 border-b border-[#DCD6C4]">
-        <span class="text-[#5C5950] font-bold flex items-center gap-1.5 font-sans">
-          <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
-          บันทึกสถานะการทำงานของระบบ (System Activity Log):
-        </span>
-        <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-full hover:bg-[#DDD7C5]/50 transition">ล้างข้อความ</button>
-      </div>
-      <div id="diagnosticLogList" class="space-y-1 max-h-24 overflow-y-auto pr-2"></div>
-    </div>
-
     <!-- Tab Navigation & Sound Bar (Clubhouse Pill Selector) -->
     <div class="flex flex-wrap items-center justify-between gap-4 pb-2">
       <div class="flex flex-wrap items-center gap-1.5 bg-[#EAE6DA] p-1.5 rounded-full border border-[#DCD6C4]">
@@ -274,6 +262,10 @@
           <span>📋</span>
           <span>ทะเบียนประวัติใบหน้า</span>
           <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
+        </button>
+        <button id="tabBtn_voicesettings" onclick="switchTab('voicesettings')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+          <span>🎙️</span>
+          <span>ตั้งค่าเสียงกล่าวทักทาย</span>
         </button>
         <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
           <span>🛡️</span>
@@ -402,80 +394,10 @@
           </div>
         </div>
 
-        <!-- Right Side: Voice Settings & Rules Cards -->
+        <!-- Right Side: Detection Rules & System Activity Log Cards -->
         <div class="space-y-4">
 
-          <!-- Voice Selection & Customization Card -->
-          <div class="glass-card rounded-[28px] p-5 space-y-3.5">
-            <div class="flex items-center justify-between">
-              <h3 class="font-extrabold text-[#1F1E1B] text-sm flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-                🎙️ การตั้งค่าเสียงกล่าวทักทาย
-              </h3>
-              <button onclick="resetVoiceSettings()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-full hover:bg-[#EAE6DA] transition" title="คืนค่าเสียงเริ่มต้น">
-                รีเซ็ตค่า
-              </button>
-            </div>
-
-            <!-- Voice Profile / Device Voice Select -->
-            <div class="space-y-1">
-              <label for="voiceSelectDropdown" class="block text-[11px] font-bold text-[#5C5950]">รูปแบบเสียง / เอนจินเสียงพูด</label>
-              <select id="voiceSelectDropdown" onchange="handleVoiceSelectionChange(this.value, true)" class="w-full px-3 py-2 rounded-xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs font-bold focus:outline-none focus:border-[#28AE60] transition cursor-pointer">
-                <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
-                  <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
-                  <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
-                  <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
-                  <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
-                  <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
-                  <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
-                </optgroup>
-                <optgroup id="deviceVoicesOptGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
-                </optgroup>
-              </select>
-            </div>
-
-            <!-- Polite Particle Toggle (ค่ะ / ครับ) -->
-            <div class="space-y-1">
-              <label class="block text-[11px] font-bold text-[#5C5950]">คำลงท้ายประโยคทักทาย</label>
-              <div class="grid grid-cols-2 gap-1.5 bg-[#EAE6DA] p-1 rounded-full border border-[#DCD6C4]">
-                <button type="button" id="particleBtn_ka" onclick="setVoiceParticle('ค่ะ', true)" class="py-1.5 px-2.5 rounded-full text-xs font-bold bg-[#28AE60] text-white shadow-sm transition">
-                  👩 ลงท้าย "ค่ะ"
-                </button>
-                <button type="button" id="particleBtn_krub" onclick="setVoiceParticle('ครับ', true)" class="py-1.5 px-2.5 rounded-full text-xs font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition">
-                  👨 ลงท้าย "ครับ"
-                </button>
-              </div>
-            </div>
-
-            <!-- Speech Rate & Pitch Sliders -->
-            <div class="grid grid-cols-2 gap-3 pt-1">
-              <div>
-                <div class="flex justify-between text-[11px] font-bold text-[#5C5950] mb-1">
-                  <span>ความเร็ว</span>
-                  <span id="voiceRateLabel" class="text-[#28AE60]">0.95x</span>
-                </div>
-                <input id="voiceRateSlider" type="range" min="0.70" max="1.30" step="0.05" value="0.95" oninput="updateVoiceSlider('rate', this.value)" class="w-full accent-[#28AE60] cursor-pointer h-1.5 bg-[#EAE6DA] rounded-lg">
-              </div>
-              <div>
-                <div class="flex justify-between text-[11px] font-bold text-[#5C5950] mb-1">
-                  <span>โทนเสียง</span>
-                  <span id="voicePitchLabel" class="text-[#28AE60]">1.05</span>
-                </div>
-                <input id="voicePitchSlider" type="range" min="0.55" max="1.40" step="0.05" value="1.05" oninput="updateVoiceSlider('pitch', this.value)" class="w-full accent-[#28AE60] cursor-pointer h-1.5 bg-[#EAE6DA] rounded-lg">
-              </div>
-            </div>
-
-            <!-- Quick Preview Buttons -->
-            <div class="grid grid-cols-2 gap-2 pt-1">
-              <button type="button" onclick="testGreetingSpeech('known')" class="py-2 px-2.5 rounded-full bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] text-[11px] font-bold transition flex items-center justify-center gap-1">
-                <span>🔊</span> <span>ฟังเสียงทักสมาชิก</span>
-              </button>
-              <button type="button" onclick="testGreetingSpeech('unknown')" class="py-2 px-2.5 rounded-full bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] text-[11px] font-bold transition flex items-center justify-center gap-1">
-                <span>🔊</span> <span>ฟังเสียงทักผู้มาติดต่อ</span>
-              </button>
-            </div>
-          </div>
-
+          <!-- Detection Rules Card -->
           <div class="glass-card rounded-[28px] p-5 space-y-4">
             <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
@@ -513,6 +435,19 @@
             </div>
 
           </div>
+
+          <!-- Diagnostic Log Console (System Activity Log) -->
+          <div id="diagnosticContainer" class="glass-card rounded-[28px] p-5 space-y-3 font-mono">
+            <div class="flex items-center justify-between pb-2 border-b border-[#EFECE2]">
+              <span class="text-[#5C5950] font-bold flex items-center gap-2 font-sans text-xs">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60] animate-ping"></span>
+                บันทึกสถานะการทำงาน (System Activity Log):
+              </span>
+              <button onclick="document.getElementById('diagnosticLogList').innerHTML=''" class="text-[11px] font-sans font-semibold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-0.5 rounded-full bg-[#EAE6DA] hover:bg-[#DDD7C5] transition">ล้างข้อความ</button>
+            </div>
+            <div id="diagnosticLogList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1 text-[11px]"></div>
+          </div>
+
         </div>
 
       </div>
@@ -646,6 +581,194 @@
 
       <!-- Profiles Grid Container -->
       <div id="profilesListContainer" class="min-h-[250px]"></div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB: Voice & Speech Synthesis Settings Pane -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_voicesettings" class="hidden space-y-6">
+      
+      <!-- Voice Settings Header -->
+      <div class="glass-card rounded-[28px] p-6 sm:p-7 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+          <div class="w-12 h-12 ch-squircle bg-[#EAF7EF] border border-[#BEE6CE] flex items-center justify-center text-2xl shadow-inner flex-shrink-0">
+            🎙️
+          </div>
+          <div>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">VOICE & SPEECH SYNTHESIS SETTINGS</span>
+            <h2 class="text-xl font-extrabold text-[#1F1E1B]">การตั้งค่าเสียงกล่าวทักทาย</h2>
+            <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบเสียง คำลงท้าย ความเร็ว และระดับโทนเสียงสำหรับการกล่าวทักทายอัตโนมัติ</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="resetVoiceSettings()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#5C5950] hover:text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          <span>คืนค่าเสียงเริ่มต้น</span>
+        </button>
+      </div>
+
+      <!-- Settings & Previews Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Voice Configuration (7 Cols) -->
+        <div class="lg:col-span-7 space-y-5">
+
+          <!-- Voice Profile Selection -->
+          <div class="glass-card rounded-[28px] p-6 space-y-4">
+            <div>
+              <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                รูปแบบเสียงและเอนจินเสียงพูด (Voice Model)
+              </h3>
+              <p class="text-xs text-[#6E6B62] mt-1">เลือกโทนเสียงที่ต้องการ ระบบจะปรับแต่งคลื่นเสียงให้อัตโนมัติ</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="voiceSelectDropdown" class="block text-xs font-bold text-[#5C5950]">เลือกรูปแบบเสียง</label>
+              <select id="voiceSelectDropdown" onchange="handleVoiceSelectionChange(this.value, true)" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-sm font-bold focus:outline-none focus:border-[#28AE60] focus:bg-white transition cursor-pointer shadow-sm">
+                <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
+                  <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
+                  <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
+                  <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
+                  <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
+                  <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
+                  <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
+                </optgroup>
+                <optgroup id="deviceVoicesOptGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- Polite Particle Selection -->
+          <div class="glass-card rounded-[28px] p-6 space-y-4">
+            <div>
+              <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                คำลงท้ายประโยคทักทาย (Polite Particle)
+              </h3>
+              <p class="text-xs text-[#6E6B62] mt-1">กำหนดคำลงท้ายประโยคที่ระบบจะกล่าวทักทายอัตโนมัติ</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-[#EAE6DA] p-1.5 rounded-2xl border border-[#DCD6C4]">
+              <button type="button" id="particleBtn_ka" onclick="setVoiceParticle('ค่ะ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2">
+                <span>👩</span>
+                <span>ลงท้าย "ค่ะ"</span>
+              </button>
+              <button type="button" id="particleBtn_krub" onclick="setVoiceParticle('ครับ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2">
+                <span>👨</span>
+                <span>ลงท้าย "ครับ"</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Speed & Pitch Sliders -->
+          <div class="glass-card rounded-[28px] p-6 space-y-5">
+            <div>
+              <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                ความเร็วและระดับความสูงของเสียง (Rate & Pitch)
+              </h3>
+              <p class="text-xs text-[#6E6B62] mt-1">ปรับระดับความเร็วและโทนเสียงให้เข้ากับสภาพแวดล้อมของหน่วยงาน</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-1">
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold text-[#5C5950]">
+                  <span>ความเร็วในการพูด (Rate)</span>
+                  <span id="voiceRateLabel" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold">0.95x</span>
+                </div>
+                <input id="voiceRateSlider" type="range" min="0.70" max="1.30" step="0.05" value="0.95" oninput="updateVoiceSlider('rate', this.value)" class="w-full accent-[#28AE60] cursor-pointer h-2 bg-[#EAE6DA] rounded-lg">
+                <div class="flex justify-between text-[10px] text-[#8C877B]">
+                  <span>ช้า (0.70x)</span>
+                  <span>ปกติ (1.00x)</span>
+                  <span>เร็ว (1.30x)</span>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs font-bold text-[#5C5950]">
+                  <span>ระดับโทนเสียง (Pitch)</span>
+                  <span id="voicePitchLabel" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold">1.05</span>
+                </div>
+                <input id="voicePitchSlider" type="range" min="0.55" max="1.40" step="0.05" value="1.05" oninput="updateVoiceSlider('pitch', this.value)" class="w-full accent-[#28AE60] cursor-pointer h-2 bg-[#EAE6DA] rounded-lg">
+                <div class="flex justify-between text-[10px] text-[#8C877B]">
+                  <span>ทุ้มต่ำ (0.55)</span>
+                  <span>ธรรมชาติ (1.00)</span>
+                  <span>แหลมสูง (1.40)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Testing & Live Greeting Preview (5 Cols) -->
+        <div class="lg:col-span-5 space-y-5">
+
+          <!-- Speech Preview & Testing Card -->
+          <div class="glass-card rounded-[28px] p-6 space-y-4">
+            <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+              ทดสอบเสียงพูด (Audio Preview)
+            </h3>
+            <p class="text-xs text-[#6E6B62]">
+              กดปุ่มเพื่อฟังตัวอย่างเสียงพูดทักทายตามค่าที่กำหนดไว้ในปัจจุบัน
+            </p>
+
+            <div class="space-y-3 pt-1">
+              <button type="button" onclick="testGreetingSpeech('known')" class="w-full py-3 px-4 rounded-2xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] font-bold text-sm transition flex items-center justify-center space-x-2 shadow-sm">
+                <span class="text-base">🔊</span>
+                <span>ทดสอบเสียง: สมาชิกที่มีข้อมูลในระบบ</span>
+              </button>
+
+              <button type="button" onclick="testGreetingSpeech('unknown')" class="w-full py-3 px-4 rounded-2xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] font-bold text-sm transition flex items-center justify-center space-x-2 shadow-sm">
+                <span class="text-base">🔊</span>
+                <span>ทดสอบเสียง: ลูกค้าหรือผู้มาติดต่อทั่วไป</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Greeting Text Preview Card -->
+          <div class="glass-card rounded-[28px] p-6 space-y-3.5">
+            <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+              ข้อความทักทายจริงของระบบ
+            </h3>
+
+            <div class="p-3.5 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
+              <div class="text-[11px] font-bold text-[#1E824C] flex items-center gap-1.5">
+                <span>🟢</span> <span>สมาชิกหรือบุคลากร:</span>
+              </div>
+              <p id="voicePreviewKnownText" class="text-sm font-extrabold text-[#1F1E1B]">"สวัสดีค่ะคุณ ธนกร"</p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
+              <div class="text-[11px] font-bold text-[#9C6214] flex items-center gap-1.5">
+                <span>🟡</span> <span>ผู้มาติดต่อทั่วไป:</span>
+              </div>
+              <p id="voicePreviewUnknownText" class="text-sm font-extrabold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</p>
+            </div>
+          </div>
+
+          <!-- Speech Engine Notice -->
+          <div class="glass-card rounded-[28px] p-5 space-y-2 text-xs text-[#6E6B62]">
+            <div class="flex items-center space-x-2 text-[#1F1E1B] font-bold">
+              <span>💡</span>
+              <span>กลไกระบบเสียงอัจฉริยะ (Smart Speech Architecture)</span>
+            </div>
+            <p class="leading-relaxed">
+              • รองรับเอนจินเสียงผู้หญิงคุณภาพสูงผ่านสตรีมเสียง Cloud TTS และปรับระดับความถี่คลื่นเสียง (Acoustic Formant Shift) แบบเรียลไทม์<br>
+              • มีระบบล็อกช่องสัญญาณเสียงเดี่ยว (Single Speech Session Lock) ป้องกันการส่งเสียงพูดทับซ้อนกันขณะทำงาน
+            </p>
+          </div>
+
+        </div>
+
+      </div>
 
     </div>
 
@@ -1174,11 +1297,11 @@
       const btnKrub = document.getElementById('particleBtn_krub');
       if (btnKa && btnKrub) {
         if (state.voiceParticle === 'ครับ') {
-          btnKrub.className = 'py-1.5 px-2.5 rounded-full text-xs font-bold bg-[#28AE60] text-white shadow-sm transition';
-          btnKa.className = 'py-1.5 px-2.5 rounded-full text-xs font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition';
+          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2';
+          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2';
         } else {
-          btnKa.className = 'py-1.5 px-2.5 rounded-full text-xs font-bold bg-[#28AE60] text-white shadow-sm transition';
-          btnKrub.className = 'py-1.5 px-2.5 rounded-full text-xs font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition';
+          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2';
+          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2';
         }
       }
 
@@ -1189,6 +1312,15 @@
       }
       if (unknownRuleEl) {
         unknownRuleEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณลูกค้า วันนี้รับอะไรดี' + state.voiceParticle + '"';
+      }
+
+      const previewKnownEl = document.getElementById('voicePreviewKnownText');
+      const previewUnknownEl = document.getElementById('voicePreviewUnknownText');
+      if (previewKnownEl) {
+        previewKnownEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณ ธนกร"';
+      }
+      if (previewUnknownEl) {
+        previewUnknownEl.textContent = '"สวัสดี' + state.voiceParticle + 'คุณลูกค้า วันนี้รับอะไรดี' + state.voiceParticle + '"';
       }
 
       updateVoiceStatusBadge();
@@ -2199,7 +2331,7 @@
 
     function switchTab(tabName) {
       state.currentTab = tabName;
-      ['scanner', 'register', 'profiles', 'users'].forEach(t => {
+      ['scanner', 'register', 'profiles', 'voicesettings', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
         const pane = document.getElementById('tabPane_' + t);
         if (!btn || !pane) return;
@@ -2214,6 +2346,7 @@
           pane.classList.add('hidden');
         }
       });
+      if (tabName === 'voicesettings') syncVoiceControlsUI();
       if (tabName === 'profiles') renderProfilesList();
       if (tabName === 'users') loadSystemUsers();
       if (tabName === 'register') {
