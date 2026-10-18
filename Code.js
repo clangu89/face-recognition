@@ -354,7 +354,11 @@ function deleteFaceProfile(profileId) {
             DriveApp.getFileById(fileId).setTrashed(true);
           } catch (e) {}
         }
+        var profileName = data[i][1];
         sheet.deleteRow(i + 1);
+        try {
+          clearProfileMessages(profileId, profileName);
+        } catch (eMsg) {}
         return {
           success: true,
           message: "ลบโปรไฟล์รหัส " + profileId + " เรียบร้อยแล้ว"
@@ -772,7 +776,7 @@ function saveProfileMessage(payload) {
 }
 
 /**
- * ลบข้อความฝากตาม Message ID
+ * ลบข้อความฝากตาม Message ID (ลบทุกแถวที่ตรงกันแบบย้อนหลังจากล่างขึ้นบน)
  */
 function deleteProfileMessage(messageId) {
   try {
@@ -780,12 +784,19 @@ function deleteProfileMessage(messageId) {
     var ss = getDatabaseSpreadsheet();
     var sheet = getOrCreateProfileMessagesSheet(ss);
     var data = sheet.getDataRange().getValues();
+    var targetId = String(messageId).trim().toLowerCase();
+    var deletedCount = 0;
 
-    for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === String(messageId).trim()) {
+    for (var i = data.length - 1; i >= 1; i--) {
+      var rowId = String(data[i][0] || '').trim().toLowerCase();
+      if (rowId === targetId) {
         sheet.deleteRow(i + 1);
-        return { success: true, message: "ลบข้อความเรียบร้อยแล้ว" };
+        deletedCount++;
       }
+    }
+
+    if (deletedCount > 0) {
+      return { success: true, count: deletedCount, message: "ลบข้อความเรียบร้อยแล้ว (" + deletedCount + " แถว)" };
     }
     return { success: false, message: "ไม่พบข้อความที่ต้องการลบ" };
   } catch (error) {
@@ -801,17 +812,19 @@ function clearProfileMessages(profileId, personName) {
     var ss = getDatabaseSpreadsheet();
     var sheet = getOrCreateProfileMessagesSheet(ss);
     var data = sheet.getDataRange().getValues();
-    var cleanId = String(profileId || "").trim();
-    var cleanName = String(personName || "").trim();
+    var cleanId = String(profileId || "").trim().toLowerCase();
+    var cleanName = String(personName || "").trim().toLowerCase();
+    var deletedCount = 0;
 
     for (var i = data.length - 1; i >= 1; i--) {
-      var rowProfId = String(data[i][1]).trim();
-      var rowName = String(data[i][2]).trim();
+      var rowProfId = String(data[i][1] || '').trim().toLowerCase();
+      var rowName = String(data[i][2] || '').trim().toLowerCase();
       if ((cleanId && rowProfId === cleanId) || (cleanName && rowName === cleanName)) {
         sheet.deleteRow(i + 1);
+        deletedCount++;
       }
     }
-    return { success: true, message: "ล้างข้อความทั้งหมดเรียบร้อยแล้ว" };
+    return { success: true, count: deletedCount, message: "ล้างข้อความทั้งหมดเรียบร้อยแล้ว (" + deletedCount + " แถว)" };
   } catch (error) {
     return { success: false, message: error.toString() };
   }

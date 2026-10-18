@@ -587,11 +587,11 @@
           <p class="text-xs text-[#6E6B62]">ข้อมูลเวกเตอร์ใบหน้าจัดเก็บบน Google Sheets และรูปภาพอ้างอิงบน Google Drive</p>
         </div>
 
-        <button onclick="loadProfilesFromBackend()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition">
-          <svg class="w-4 h-4 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="refreshProfilesBtn" onclick="loadProfilesFromBackend(true)" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition cursor-pointer">
+          <svg id="refreshProfilesIcon" class="w-4 h-4 text-[#28AE60] transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
-          <span>รีเฟรชข้อมูล</span>
+          <span id="refreshProfilesText">รีเฟรชข้อมูล</span>
         </button>
       </div>
 
@@ -1288,43 +1288,33 @@
       if (!state.profileMessages || typeof state.profileMessages !== 'object') {
         state.profileMessages = {};
       }
-      const cleanName = (personName || '').trim().toLowerCase();
       const cleanId = (profileId || '').trim();
+      const cleanName = (personName || '').trim().toLowerCase();
+      if (!cleanId && !cleanName) return [];
 
-      // 1. Direct key match by profileId
-      if (cleanId && Array.isArray(state.profileMessages[cleanId]) && state.profileMessages[cleanId].length > 0) {
-        return state.profileMessages[cleanId];
-      }
+      const msgMap = new Map();
 
-      // 2. Direct key match by personName
-      if (personName && Array.isArray(state.profileMessages[personName]) && state.profileMessages[personName].length > 0) {
-        return state.profileMessages[personName];
-      }
-
-      // 3. Case & whitespace-insensitive key search
-      for (let k in state.profileMessages) {
-        if (!Array.isArray(state.profileMessages[k])) continue;
-        if (cleanId && k.trim() === cleanId && state.profileMessages[k].length > 0) {
-          return state.profileMessages[k];
-        }
-        if (cleanName && k.trim().toLowerCase() === cleanName && state.profileMessages[k].length > 0) {
-          return state.profileMessages[k];
-        }
-      }
-
-      // 4. Deep search inside arrays for items tagged with profileId or personName
-      for (let k in state.profileMessages) {
+      // รวบรวมข้อความจากทุกคีย์ใน state.profileMessages และคัดกรองเฉพาะที่ตรงกับ profileId หรือ personName
+      Object.keys(state.profileMessages).forEach(k => {
         const arr = state.profileMessages[k];
-        if (Array.isArray(arr) && arr.length > 0) {
-          const matched = arr.filter(m => 
-            (cleanId && m.profileId && m.profileId.trim() === cleanId) ||
-            (cleanName && m.personName && m.personName.trim().toLowerCase() === cleanName)
-          );
-          if (matched.length > 0) return matched;
-        }
-      }
+        if (!Array.isArray(arr)) return;
+        const keyTrim = k.trim();
+        const keyLower = keyTrim.toLowerCase();
+        const isKeyMatch = (cleanId && keyTrim === cleanId) || (cleanName && keyLower === cleanName);
 
-      return [];
+        arr.forEach(m => {
+          if (!m || !m.id) return;
+          const mProfId = (m.profileId || '').trim();
+          const mName = (m.personName || '').trim().toLowerCase();
+          if (isKeyMatch || 
+              (cleanId && mProfId === cleanId) || 
+              (cleanName && mName === cleanName)) {
+            msgMap.set(String(m.id).trim(), m);
+          }
+        });
+      });
+
+      return Array.from(msgMap.values());
     }
 
     function addProfileMessage(profileId, personName, text) {
@@ -1411,21 +1401,18 @@
     function deleteProfileMessage(profileId, personName, messageId) {
       const cleanId = (profileId || '').trim();
       const cleanName = (personName || '').trim();
-      const keys = [cleanId, cleanName].filter(Boolean);
+      const targetId = String(messageId || '').trim().toLowerCase();
       let deleted = false;
 
-      keys.forEach(k => {
-        if (state.profileMessages[k] && Array.isArray(state.profileMessages[k])) {
-          const beforeLen = state.profileMessages[k].length;
-          state.profileMessages[k] = state.profileMessages[k].filter(m => m.id !== messageId);
-          if (state.profileMessages[k].length < beforeLen) deleted = true;
-        }
-      });
-
-      // Also clean in any other key where this messageId might exist
+      // ลบข้อความออกจากทุกคีย์ใน state.profileMessages ทันที
       for (let k in state.profileMessages) {
         if (Array.isArray(state.profileMessages[k])) {
-          state.profileMessages[k] = state.profileMessages[k].filter(m => m.id !== messageId);
+          const beforeLen = state.profileMessages[k].length;
+          state.profileMessages[k] = state.profileMessages[k].filter(m => {
+            if (!m || !m.id) return false;
+            return String(m.id).trim().toLowerCase() !== targetId;
+          });
+          if (state.profileMessages[k].length < beforeLen) deleted = true;
         }
       }
 
@@ -1437,21 +1424,28 @@
             .withSuccessHandler(function() {
               logStatus('[SYNC] ลบข้อความออกจาก Google Sheets สำเร็จ');
             })
+            .withFailureHandler(function(err) {
+              logStatus('[WARN] ลบข้อความจาก Google Sheets ไม่สำเร็จ: ' + (err ? err.message : err), true);
+            })
             .deleteProfileMessage(messageId);
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'deleteMessage', id: messageId })
+            body: JSON.stringify({ action: 'deleteMessage', id: messageId, messageId: messageId })
           })
           .then(function(r) { return r.json(); })
           .then(function(res) {
             if (res && res.success) {
               logStatus('[SYNC] ลบข้อความออกจาก Google Sheets สำเร็จ');
+            } else {
+              logStatus('[WARN] Google Sheets ไม่สามารถลบข้อความได้: ' + (res ? res.message : 'Unknown error'), true);
             }
           })
-          .catch(function() {});
+          .catch(function(err) {
+            logStatus('[WARN] ข้อผิดพลาดซิงค์ลบข้อความ Google Sheets: ' + (err ? err.message : err), true);
+          });
         }
       } catch (e) {}
 
@@ -1460,15 +1454,23 @@
 
     function clearAllProfileMessages(profileId, personName) {
       const cleanId = (profileId || '').trim();
-      const cleanName = (personName || '').trim();
-      if (cleanId && state.profileMessages[cleanId]) state.profileMessages[cleanId] = [];
-      if (cleanName && state.profileMessages[cleanName]) state.profileMessages[cleanName] = [];
+      const cleanName = (personName || '').trim().toLowerCase();
 
+      // ล้างข้อมูลใน state.profileMessages ทุกคีย์
       for (let k in state.profileMessages) {
         if (Array.isArray(state.profileMessages[k])) {
-          state.profileMessages[k] = state.profileMessages[k].filter(m => 
-            (cleanId && m.profileId === cleanId) ? false : (cleanName && m.personName === cleanName ? false : true)
-          );
+          state.profileMessages[k] = state.profileMessages[k].filter(m => {
+            if (!m) return false;
+            const mProfId = (m.profileId || '').trim();
+            const mName = (m.personName || '').trim().toLowerCase();
+            if (cleanId && mProfId === cleanId) return false;
+            if (cleanName && mName === cleanName) return false;
+            const kTrim = k.trim();
+            const kLower = kTrim.toLowerCase();
+            if (cleanId && kTrim === cleanId) return false;
+            if (cleanName && kLower === cleanName) return false;
+            return true;
+          });
         }
       }
 
@@ -1480,21 +1482,28 @@
             .withSuccessHandler(function() {
               logStatus('[SYNC] ล้างข้อความทั้งหมดออกจาก Google Sheets สำเร็จ');
             })
-            .clearProfileMessages(cleanId, cleanName);
+            .withFailureHandler(function(err) {
+              logStatus('[WARN] ล้างข้อความ Google Sheets ไม่สำเร็จ: ' + (err ? err.message : err), true);
+            })
+            .clearProfileMessages(cleanId, personName || '');
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'clearMessages', profileId: cleanId, personName: cleanName })
+            body: JSON.stringify({ action: 'clearMessages', profileId: cleanId, personName: personName || '' })
           })
           .then(function(r) { return r.json(); })
           .then(function(res) {
             if (res && res.success) {
               logStatus('[SYNC] ล้างข้อความทั้งหมดออกจาก Google Sheets สำเร็จ');
+            } else {
+              logStatus('[WARN] Google Sheets ไม่สามารถล้างข้อความได้: ' + (res ? res.message : 'Unknown error'), true);
             }
           })
-          .catch(function() {});
+          .catch(function(err) {
+            logStatus('[WARN] ข้อผิดพลาดซิงค์ล้างข้อความ Google Sheets: ' + (err ? err.message : err), true);
+          });
         }
       } catch (e) {}
     }
@@ -2433,21 +2442,48 @@
     }
 
     // --- Backend Profiles Sync (Instant Local Cache + Background Sync) ---
-    function loadProfilesFromBackend() {
-      // 1. อ่านข้อมูลจาก Local Cache ทันทีใน 0 ms
-      try {
-        const cachedRaw = localStorage.getItem('cached_face_profiles');
-        if (cachedRaw) {
-          const cachedProfiles = JSON.parse(cachedRaw);
-          if (Array.isArray(cachedProfiles) && cachedProfiles.length > 0) {
-            state.profiles = cachedProfiles;
-            updateFaceMatcher();
-            renderProfilesList();
-            document.getElementById('profileCountBadge').textContent = state.profiles.length + ' คน';
-            logStatus('[CACHE] โหลดข้อมูลใบหน้าจากแคชทันที (' + state.profiles.length + ' คน)');
+    // --- Backend Profiles Sync (Instant Local Cache + Background Sync) ---
+    function loadProfilesFromBackend(isManual) {
+      const refreshBtn = document.getElementById('refreshProfilesBtn');
+      const refreshIcon = document.getElementById('refreshProfilesIcon');
+      const refreshText = document.getElementById('refreshProfilesText');
+
+      if (isManual && refreshIcon) {
+        refreshIcon.classList.add('animate-spin');
+        if (refreshBtn) refreshBtn.disabled = true;
+        if (refreshText) refreshText.textContent = 'กำลังโหลด...';
+      }
+
+      let pendingTasks = 2;
+      const checkAllDone = function() {
+        pendingTasks--;
+        if (pendingTasks <= 0) {
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          if (refreshBtn) refreshBtn.disabled = false;
+          if (refreshText) refreshText.textContent = 'รีเฟรชข้อมูล';
+          if (isManual) {
+            showToast('โหลดข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว', 'success');
           }
         }
-      } catch (e) {}
+      };
+
+      // 1. อ่านข้อมูลจาก Local Cache ทันทีใน 0 ms (เฉพาะเมื่อไม่ใช่ manual refresh)
+      if (!isManual) {
+        try {
+          const cachedRaw = localStorage.getItem('cached_face_profiles');
+          if (cachedRaw) {
+            const cachedProfiles = JSON.parse(cachedRaw);
+            if (Array.isArray(cachedProfiles) && cachedProfiles.length > 0) {
+              state.profiles = cachedProfiles;
+              updateFaceMatcher();
+              renderProfilesList();
+              const badge = document.getElementById('profileCountBadge');
+              if (badge) badge.textContent = state.profiles.length + ' คน';
+              logStatus('[CACHE] โหลดข้อมูลใบหน้าจากแคชทันที (' + state.profiles.length + ' คน)');
+            }
+          }
+        } catch (e) {}
+      }
 
       // 2. ซิงค์กับ Google Sheets ในพื้นหลัง
       logStatus('[SYNC] กำลังซิงค์ข้อมูลกับ Google Sheets...');
@@ -2460,15 +2496,21 @@
           } catch (e) {}
           updateFaceMatcher();
           renderProfilesList();
-          document.getElementById('profileCountBadge').textContent = state.profiles.length + ' คน';
+          if (state.activeMessageModalProfile) {
+            renderProfileMessagesModalList();
+          }
+          const badge = document.getElementById('profileCountBadge');
+          if (badge) badge.textContent = state.profiles.length + ' คน';
           logStatus('[OK] ซิงค์ Google Sheets เรียบร้อยแล้ว (พบ ' + state.profiles.length + ' คน)');
         } else {
           logStatus('[WARN] ข้อมูลโปรไฟล์: ' + (response ? response.message : ''), true);
         }
+        checkAllDone();
       };
 
       var handleProfilesError = function(err) {
         logStatus('[WARN] ซิงค์กับ Google Sheets: ' + (err ? err.message : err), true);
+        checkAllDone();
       };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -2480,12 +2522,18 @@
         google.script.run
           .withSuccessHandler(function(res) {
             if (res && res.success && res.messages) {
-              state.profileMessages = Object.assign({}, res.messages, state.profileMessages);
+              state.profileMessages = res.messages || {};
               saveProfileMessagesToStorage();
               renderProfilesList();
+              if (state.activeMessageModalProfile) {
+                renderProfileMessagesModalList();
+              }
             }
+            checkAllDone();
           })
-          .withFailureHandler(function() {})
+          .withFailureHandler(function() {
+            checkAllDone();
+          })
           .getProfileMessages();
       } else {
         // Direct REST API (GitHub Pages / Standalone HTTPS)
@@ -2498,19 +2546,24 @@
           .then(function(r) { return r.json(); })
           .then(function(res) {
             if (res && res.success && res.messages) {
-              state.profileMessages = Object.assign({}, res.messages, state.profileMessages);
+              state.profileMessages = res.messages || {};
               saveProfileMessagesToStorage();
               renderProfilesList();
+              if (state.activeMessageModalProfile) {
+                renderProfileMessagesModalList();
+              }
               const count = Object.keys(res.messages).length;
               if (count > 0) {
-                logStatus('[SYNC] โหลดข้อความฝากจาก Google Sheets สำเร็จ (' + count + ' รายการ)');
+                logStatus('[SYNC] โหลดข้อความฝากจาก Google Sheets สำเร็จ (' + count + ' บุคคล)');
               }
             } else if (res && !res.success && res.message === 'Invalid action') {
               logStatus('[WARN] Google Apps Script ยังไม่รองรับ action=getMessages (กรุณาอัปเดต Code.js ใน Apps Script และ Deploy New Version)', true);
             }
+            checkAllDone();
           })
           .catch(function(e) {
             logStatus('[WARN] ไม่สามารถดึงข้อความจาก Google Sheets: ' + (e ? e.message : e), true);
+            checkAllDone();
           });
       }
     }
@@ -2978,6 +3031,7 @@
       showToast('กำลังลบข้อมูล ' + name + '...', 'info');
       var handleDeleteSuccess = function(response) {
         if (response && response.success) {
+          try { clearAllProfileMessages(id, name); } catch (e) {}
           showToast('ลบข้อมูล ' + name + ' เรียบร้อยแล้ว', 'success');
           loadProfilesFromBackend();
         } else {
