@@ -1010,6 +1010,29 @@ function getOrCreateSystemSettingsSheet(ss) {
 }
 
 /**
+ * แปลงค่าเวลาทุกรูปแบบ (Date, String 1899, 'HH:mm) ให้เป็น "HH:mm" อย่างแม่นยำ
+ * โดยใช้ getHours/getMinutes เพื่อเลี่ยงปัญหา Local Mean Time +06:42 ของปี 1899 ที่ทำให้เวลาเลื่อน 17 นาที
+ */
+function normalizeTimeHHMM_(val) {
+  if (val === null || val === undefined || val === "") return "";
+  if (val instanceof Date) {
+    var h = val.getHours();
+    var m = val.getMinutes();
+    return ("0" + h).slice(-2) + ":" + ("0" + m).slice(-2);
+  }
+  var s = String(val).trim();
+  if (s.charAt(0) === "'") s = s.substring(1);
+  if (s.includes("1899") || s.includes("GMT")) {
+    var d = new Date(s);
+    if (!isNaN(d.getTime())) {
+      return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+    }
+  }
+  var match = s.match(/(\d{1,2}):(\d{2})/);
+  return match ? ("0" + match[1]).slice(-2) + ":" + match[2] : s;
+}
+
+/**
  * ดึงการตั้งค่าระบบและข้อความทักทายที่เป็นค่าคงที่ถาวร
  */
 function getSystemSettings() {
@@ -1040,9 +1063,9 @@ function getSystemSettings() {
         } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
           settings.bellChimeEnabled = (String(val).trim().toLowerCase() === "true");
         } else if (key === "WORK_START_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
-          settings.workStartTime = String(val).trim();
+          settings.workStartTime = normalizeTimeHHMM_(val) || "08:30";
         } else if (key === "WORK_END_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
-          settings.workEndTime = String(val).trim();
+          settings.workEndTime = normalizeTimeHHMM_(val) || "17:30";
         }
       }
     }
@@ -1106,14 +1129,16 @@ function saveSystemSettings(payload) {
     }
     if (payload.workStartTime !== undefined) {
       updateMap["WORK_START_TIME"] = {
-        value: String(payload.workStartTime).trim(),
-        desc: "เวลาเริ่มเข้างานพนักงาน (HH:mm)"
+        value: normalizeTimeHHMM_(payload.workStartTime) || "08:30",
+        desc: "เวลาเริ่มเข้างานพนักงาน (HH:mm)",
+        isText: true
       };
     }
     if (payload.workEndTime !== undefined) {
       updateMap["WORK_END_TIME"] = {
-        value: String(payload.workEndTime).trim(),
-        desc: "เวลาเลิกงานพนักงาน (HH:mm)"
+        value: normalizeTimeHHMM_(payload.workEndTime) || "17:30",
+        desc: "เวลาเลิกงานพนักงาน (HH:mm)",
+        isText: true
       };
     }
 
@@ -1122,7 +1147,12 @@ function saveSystemSettings(payload) {
     for (var i = 1; i < data.length; i++) {
       var rowKey = String(data[i][0] || "").trim().toUpperCase();
       if (updateMap[rowKey]) {
-        sheet.getRange(i + 1, 2).setValue(updateMap[rowKey].value);
+        var cell = sheet.getRange(i + 1, 2);
+        if (updateMap[rowKey].isText) {
+          cell.setNumberFormat("@").setValue("'" + updateMap[rowKey].value);
+        } else {
+          cell.setValue(updateMap[rowKey].value);
+        }
         sheet.getRange(i + 1, 4).setValue(nowStr);
         foundKeys[rowKey] = true;
       }
@@ -1131,9 +1161,16 @@ function saveSystemSettings(payload) {
     // เพิ่มคีย์ใหม่ที่ยังไม่มีในตาราง
     for (var key in updateMap) {
       if (!foundKeys[key]) {
-        sheet.appendRow([key, updateMap[key].value, updateMap[key].desc, nowStr]);
+        var valToStore = updateMap[key].isText ? ("'" + updateMap[key].value) : updateMap[key].value;
+        sheet.appendRow([key, valToStore, updateMap[key].desc, nowStr]);
+        if (updateMap[key].isText) {
+          sheet.getRange(sheet.getLastRow(), 2).setNumberFormat("@");
+        }
       }
     }
+
+    // สั่ง flush ลงแผ่นงานทันที
+    SpreadsheetApp.flush();
 
     // บันทึกลง Script Properties เพื่อการอ่านที่รวดเร็ว
     try {
@@ -1267,24 +1304,8 @@ function getTodayAttendance(targetDate) {
       }
 
       if (rDate === dateQuery) {
-        // Normalize Time cleanly to HH:mm
-        var rTime = "";
-        if (row[6] instanceof Date) {
-          rTime = Utilities.formatDate(row[6], "GMT+7", "HH:mm");
-        } else {
-          var rawT = String(row[6] || "").trim();
-          if (rawT.indexOf("'") === 0) rawT = rawT.substring(1);
-          if (rawT.includes("1899") || rawT.includes("GMT")) {
-            var dt = new Date(rawT);
-            rTime = !isNaN(dt.getTime()) ? Utilities.formatDate(dt, "GMT+7", "HH:mm") : rawT;
-          } else {
-            if (rawT.length > 5 && rawT.indexOf(':') === 2) {
-              rTime = rawT.substring(0, 5);
-            } else {
-              rTime = rawT;
-            }
-          }
-        }
+        // Normalize Time cleanly to HH:mm (avoids 1899 LMT +06:42 17-minute shift)
+        var rTime = normalizeTimeHHMM_(row[6]);
 
         var actType = String(row[5] || "CHECK_IN").toUpperCase();
         var wStatus = String(row[7] || "ตรงเวลา").trim();

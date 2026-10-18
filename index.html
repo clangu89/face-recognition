@@ -2368,6 +2368,26 @@
       }
     }
 
+    function normalizeTimeValue(val, fallback) {
+      if (!val) return fallback || '';
+      if (val instanceof Date) {
+        return String(val.getHours()).padStart(2, '0') + ':' + String(val.getMinutes()).padStart(2, '0');
+      }
+      let s = String(val).trim();
+      if (s.startsWith("'")) s = s.substring(1);
+      if (s.includes('1899') || s.includes('GMT')) {
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+          return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+      }
+      const m = s.match(/(\d{1,2}):(\d{2})/);
+      if (m) {
+        return m[1].padStart(2, '0') + ':' + m[2];
+      }
+      return fallback || s;
+    }
+
     function loadSystemSettingsFromBackend(isManual, onDone) {
       const handleResult = function(res) {
         if (res && res.success && res.settings) {
@@ -2389,11 +2409,11 @@
             state.bellChimeEnabled = !!s.bellChimeEnabled;
             changed = true;
           }
-          if (s.workStartTime && s.workStartTime.trim()) {
-            state.workStartTime = s.workStartTime.trim();
+          if (s.workStartTime) {
+            state.workStartTime = normalizeTimeValue(s.workStartTime, DEFAULT_WORK_START_TIME);
           }
-          if (s.workEndTime && s.workEndTime.trim()) {
-            state.workEndTime = s.workEndTime.trim();
+          if (s.workEndTime) {
+            state.workEndTime = normalizeTimeValue(s.workEndTime, DEFAULT_WORK_END_TIME);
           }
           const startInput = document.getElementById('settingWorkStartTime');
           if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
@@ -2682,17 +2702,7 @@
 
     function formatLogTime(val) {
       if (!val) return '-';
-      if (typeof val === 'string') {
-        const match = val.match(/(\d{1,2}:\d{2})(?::\d{2})?/);
-        if (match) return match[1];
-        return val;
-      }
-      if (val instanceof Date) {
-        const hh = String(val.getHours()).padStart(2, '0');
-        const mm = String(val.getMinutes()).padStart(2, '0');
-        return hh + ':' + mm;
-      }
-      return String(val);
+      return normalizeTimeValue(val, '-');
     }
 
     function formatYMD(d) {
@@ -2983,12 +2993,13 @@
       if (!modal) return;
       const startInput = document.getElementById('settingWorkStartTime');
       const endInput = document.getElementById('settingWorkEndTime');
-      if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
-      if (endInput) endInput.value = state.workEndTime || DEFAULT_WORK_END_TIME;
+      if (startInput) startInput.value = normalizeTimeValue(state.workStartTime, DEFAULT_WORK_START_TIME);
+      if (endInput) endInput.value = normalizeTimeValue(state.workEndTime, DEFAULT_WORK_END_TIME);
 
       switchSettingsModalTab('schedule');
       modal.classList.remove('hidden');
       loadTodayAttendanceFromBackend(false);
+      loadSystemSettingsFromBackend(false);
     }
 
     function closeSystemSettingsModal() {
@@ -3024,11 +3035,13 @@
       const text = document.getElementById('saveWorkScheduleText');
       const statusEl = document.getElementById('modalScheduleSaveStatus');
 
-      const startTime = (startInput ? startInput.value : '').trim() || DEFAULT_WORK_START_TIME;
-      const endTime = (endInput ? endInput.value : '').trim() || DEFAULT_WORK_END_TIME;
+      const startTime = normalizeTimeValue(startInput ? startInput.value : '', DEFAULT_WORK_START_TIME);
+      const endTime = normalizeTimeValue(endInput ? endInput.value : '', DEFAULT_WORK_END_TIME);
 
       state.workStartTime = startTime;
       state.workEndTime = endTime;
+      if (startInput) startInput.value = startTime;
+      if (endInput) endInput.value = endTime;
 
       if (btn) btn.disabled = true;
       if (icon) icon.textContent = '⏳';
@@ -5741,6 +5754,7 @@
     window.onAttendanceSearchInput = onAttendanceSearchInput;
     window.clearAttendanceSearch = clearAttendanceSearch;
     window.formatLogTime = formatLogTime;
+    window.normalizeTimeValue = normalizeTimeValue;
     window.handlePersonTypeChange = handlePersonTypeChange;
     window.toggleProfileType = toggleProfileType;
     window.formatTimeForSpeech = formatTimeForSpeech;
