@@ -1258,19 +1258,53 @@
     }
 
     function getProfileMessages(profileId, personName) {
-      if (!state.profileMessages) state.profileMessages = {};
-      let list = [];
-      if (profileId && state.profileMessages[profileId]) {
-        list = state.profileMessages[profileId];
-      } else if (personName && state.profileMessages[personName]) {
-        list = state.profileMessages[personName];
+      if (!state.profileMessages || typeof state.profileMessages !== 'object') {
+        state.profileMessages = {};
       }
-      return Array.isArray(list) ? list : [];
+      const cleanName = (personName || '').trim().toLowerCase();
+      const cleanId = (profileId || '').trim();
+
+      // 1. Direct key match by profileId
+      if (cleanId && Array.isArray(state.profileMessages[cleanId]) && state.profileMessages[cleanId].length > 0) {
+        return state.profileMessages[cleanId];
+      }
+
+      // 2. Direct key match by personName
+      if (personName && Array.isArray(state.profileMessages[personName]) && state.profileMessages[personName].length > 0) {
+        return state.profileMessages[personName];
+      }
+
+      // 3. Case & whitespace-insensitive key search
+      for (let k in state.profileMessages) {
+        if (!Array.isArray(state.profileMessages[k])) continue;
+        if (cleanId && k.trim() === cleanId && state.profileMessages[k].length > 0) {
+          return state.profileMessages[k];
+        }
+        if (cleanName && k.trim().toLowerCase() === cleanName && state.profileMessages[k].length > 0) {
+          return state.profileMessages[k];
+        }
+      }
+
+      // 4. Deep search inside arrays for items tagged with profileId or personName
+      for (let k in state.profileMessages) {
+        const arr = state.profileMessages[k];
+        if (Array.isArray(arr) && arr.length > 0) {
+          const matched = arr.filter(m => 
+            (cleanId && m.profileId && m.profileId.trim() === cleanId) ||
+            (cleanName && m.personName && m.personName.trim().toLowerCase() === cleanName)
+          );
+          if (matched.length > 0) return matched;
+        }
+      }
+
+      return [];
     }
 
     function addProfileMessage(profileId, personName, text) {
       if (!text || !text.trim()) return null;
-      const key = profileId || personName;
+      const cleanId = (profileId || '').trim();
+      const cleanName = (personName || '').trim();
+      const key = cleanId || cleanName;
       if (!key) return null;
 
       if (!state.profileMessages) state.profileMessages = {};
@@ -1284,40 +1318,103 @@
 
       const newMsg = {
         id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        profileId: cleanId,
+        personName: cleanName,
         text: text.trim(),
         createdAt: timeStr
       };
 
       state.profileMessages[key].push(newMsg);
-      // Sync by name too if profileId was used, for robust lookup
-      if (personName && personName !== key) {
-        state.profileMessages[personName] = state.profileMessages[key];
+      // Also map under cleanName for cross-reference lookup
+      if (cleanName && cleanName !== key) {
+        state.profileMessages[cleanName] = state.profileMessages[key];
       }
       saveProfileMessagesToStorage();
+
+      // Background sync to GAS
+      try {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.saveProfileMessage({ id: newMsg.id, profileId: cleanId, personName: cleanName, text: newMsg.text, createdAt: newMsg.createdAt });
+        } else {
+          fetch(GAS_API_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'saveMessage', id: newMsg.id, profileId: cleanId, personName: cleanName, text: newMsg.text, createdAt: newMsg.createdAt })
+          }).catch(function() {});
+        }
+      } catch (e) {}
+
       return newMsg;
     }
 
     function deleteProfileMessage(profileId, personName, messageId) {
-      const key = (profileId && state.profileMessages[profileId]) ? profileId : personName;
-      if (!key || !state.profileMessages[key]) return false;
-      const initialLen = state.profileMessages[key].length;
-      state.profileMessages[key] = state.profileMessages[key].filter(m => m.id !== messageId);
-      if (personName && state.profileMessages[personName]) {
-        state.profileMessages[personName] = state.profileMessages[key];
+      const cleanId = (profileId || '').trim();
+      const cleanName = (personName || '').trim();
+      const keys = [cleanId, cleanName].filter(Boolean);
+      let deleted = false;
+
+      keys.forEach(k => {
+        if (state.profileMessages[k] && Array.isArray(state.profileMessages[k])) {
+          const beforeLen = state.profileMessages[k].length;
+          state.profileMessages[k] = state.profileMessages[k].filter(m => m.id !== messageId);
+          if (state.profileMessages[k].length < beforeLen) deleted = true;
+        }
+      });
+
+      // Also clean in any other key where this messageId might exist
+      for (let k in state.profileMessages) {
+        if (Array.isArray(state.profileMessages[k])) {
+          state.profileMessages[k] = state.profileMessages[k].filter(m => m.id !== messageId);
+        }
       }
+
       saveProfileMessagesToStorage();
-      return state.profileMessages[key].length < initialLen;
+
+      try {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.deleteProfileMessage(messageId);
+        } else {
+          fetch(GAS_API_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'deleteMessage', id: messageId })
+          }).catch(function() {});
+        }
+      } catch (e) {}
+
+      return deleted;
     }
 
     function clearAllProfileMessages(profileId, personName) {
-      const key = (profileId && state.profileMessages[profileId]) ? profileId : personName;
-      if (key && state.profileMessages[key]) {
-        state.profileMessages[key] = [];
+      const cleanId = (profileId || '').trim();
+      const cleanName = (personName || '').trim();
+      if (cleanId && state.profileMessages[cleanId]) state.profileMessages[cleanId] = [];
+      if (cleanName && state.profileMessages[cleanName]) state.profileMessages[cleanName] = [];
+
+      for (let k in state.profileMessages) {
+        if (Array.isArray(state.profileMessages[k])) {
+          state.profileMessages[k] = state.profileMessages[k].filter(m => 
+            (cleanId && m.profileId === cleanId) ? false : (cleanName && m.personName === cleanName ? false : true)
+          );
+        }
       }
-      if (personName && state.profileMessages[personName]) {
-        state.profileMessages[personName] = [];
-      }
+
       saveProfileMessagesToStorage();
+
+      try {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.clearProfileMessages(cleanId, cleanName);
+        } else {
+          fetch(GAS_API_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'clearMessages', profileId: cleanId, personName: cleanName })
+          }).catch(function() {});
+        }
+      } catch (e) {}
     }
 
     // Global pool to prevent Chrome V8 Garbage Collector from destroying active Utterances mid-speech
@@ -1777,9 +1874,11 @@
     }
 
     // Play genuine Thai Female Cloud TTS with Acoustic Formant/Pitch Shifting and strict Session Lock
-    function playOnlineThaiTTS(text, preset, onErrorFallback, onComplete) {
-      stopActiveAudioPlayback();
-      const sessionId = state.speechSessionId;
+    function playOnlineThaiTTS(text, preset, onErrorFallback, onComplete, sequenceSessionId) {
+      if (!sequenceSessionId) {
+        stopActiveAudioPlayback();
+      }
+      const sessionId = sequenceSessionId || state.speechSessionId;
 
       try {
         const encoded = encodeURIComponent(text);
@@ -1892,16 +1991,18 @@
       }
     }
 
-    function playFallbackAudioTTS(text, onComplete) {
-      playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'], null, onComplete);
+    function playFallbackAudioTTS(text, onComplete, sequenceSessionId) {
+      playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'], null, onComplete, sequenceSessionId);
     }
 
-    function speakWithDeviceSynthesis(text, preferredVoice, onComplete) {
-      stopActiveAudioPlayback();
-      const sessionId = state.speechSessionId;
+    function speakWithDeviceSynthesis(text, preferredVoice, onComplete, sequenceSessionId) {
+      if (!sequenceSessionId) {
+        stopActiveAudioPlayback();
+      }
+      const sessionId = sequenceSessionId || state.speechSessionId;
 
       if (!('speechSynthesis' in window)) {
-        playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+        playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete, sequenceSessionId);
         return;
       }
 
@@ -1955,7 +2056,7 @@
             if (sessionId !== state.speechSessionId) return;
             if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') {
               try { window.speechSynthesis.cancel(); } catch (e) {}
-              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete, sequenceSessionId);
             } else if (typeof onComplete === 'function') {
               onComplete();
             }
@@ -1965,14 +2066,14 @@
             if (sessionId !== state.speechSessionId) return;
             if (!started && state.soundEnabled && !window.speechSynthesis.speaking) {
               try { window.speechSynthesis.cancel(); } catch (e) {}
-              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete, sequenceSessionId);
             }
           }, 1500);
 
           window.speechSynthesis.speak(utterance);
         } catch (e) {
           if (sessionId === state.speechSessionId) {
-            playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+            playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete, sequenceSessionId);
           } else if (typeof onComplete === 'function') {
             onComplete();
           }
@@ -1982,7 +2083,7 @@
       state.speechTimer = setTimeout(executeSpeak, 60);
     }
 
-    function speakSinglePhrase(text, onComplete) {
+    function speakSinglePhrase(text, onComplete, sequenceSessionId) {
       if (!state.soundEnabled || !text) {
         if (typeof onComplete === 'function') onComplete();
         return;
@@ -1995,7 +2096,7 @@
 
       // Case 1: User explicitly selected a specific Device System Voice from the dropdown
       if (state.voiceSelection && state.voiceSelection.indexOf('device:') === 0) {
-        speakWithDeviceSynthesis(text, state.thaiVoice, onComplete);
+        speakWithDeviceSynthesis(text, state.thaiVoice, onComplete, sequenceSessionId);
         return;
       }
 
@@ -2003,10 +2104,10 @@
       if (activePreset && activePreset.engine === 'native_male_or_formant') {
         const maleDeviceVoice = getMaleDeviceVoice();
         if (maleDeviceVoice) {
-          speakWithDeviceSynthesis(text, maleDeviceVoice, onComplete);
+          speakWithDeviceSynthesis(text, maleDeviceVoice, onComplete, sequenceSessionId);
           return;
         }
-        playOnlineThaiTTS(text, activePreset, null, onComplete);
+        playOnlineThaiTTS(text, activePreset, null, onComplete, sequenceSessionId);
         return;
       }
 
@@ -2014,11 +2115,11 @@
       const femaleDeviceFallback = getFemaleDeviceVoice();
       playOnlineThaiTTS(text, activePreset || VOICE_PRESETS['preset:female_polite'], function() {
         if (femaleDeviceFallback) {
-          speakWithDeviceSynthesis(text, femaleDeviceFallback, onComplete);
+          speakWithDeviceSynthesis(text, femaleDeviceFallback, onComplete, sequenceSessionId);
         } else if (typeof onComplete === 'function') {
           onComplete();
         }
-      }, onComplete);
+      }, onComplete, sequenceSessionId);
     }
 
     function speakPhrasesSequence(phrases, onFinished) {
@@ -2046,7 +2147,7 @@
           if (currentSessionId === state.speechSessionId) {
             setTimeout(playNext, 280);
           }
-        });
+        }, currentSessionId);
       }
       playNext();
     }
@@ -2419,10 +2520,15 @@
       if (!person) {
         state.trackedPersons.set(name, { lastSeen: now, hasGreeted: true });
 
-        const greetingMsg = buildGreetingMessage('known', name);
-        const profile = (state.profiles || []).find(p => p.name === name);
+        const cleanName = (name || '').trim();
+        const greetingMsg = buildGreetingMessage('known', cleanName);
+        const profile = (state.profiles || []).find(p => (p.name || '').trim() === cleanName) ||
+                        (state.profiles || []).find(p => {
+                          const pName = (p.name || '').trim();
+                          return pName && (cleanName.includes(pName) || pName.includes(cleanName));
+                        });
         const profileId = profile ? profile.id : null;
-        const messages = getProfileMessages(profileId, name);
+        const messages = getProfileMessages(profileId, cleanName);
 
         const phrases = [greetingMsg];
         if (messages && messages.length > 0) {
@@ -2431,12 +2537,12 @@
           messages.forEach((m, idx) => {
             phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
           });
-          logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + name);
+          logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + cleanName + ' (กำลังอ่านตามลำดับ)');
         }
 
         speakPhrasesSequence(phrases);
-        logStatus('[GREET] ทักทายผู้ใช้: คุณ ' + name);
-        recordScanLog(name, 'KNOWN', confidence);
+        logStatus('[GREET] ทักทายผู้ใช้: คุณ ' + cleanName);
+        recordScanLog(cleanName, 'KNOWN', confidence);
       } else {
         person.lastSeen = now;
       }
