@@ -273,6 +273,11 @@
           <span>ทะเบียนประวัติใบหน้า</span>
           <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
         </button>
+        <button id="tabBtn_attendance" onclick="switchTab('attendance')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+          <span>📊</span>
+          <span>ประวัติการลงเวลา</span>
+          <span id="attendanceCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 รายการ</span>
+        </button>
         <button id="tabBtn_voicesettings" onclick="switchTab('voicesettings')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
           <span>🎙️</span>
           <span>ตั้งค่าเสียงกล่าวทักทาย</span>
@@ -728,6 +733,133 @@
 
       <!-- Profiles Grid Container -->
       <div id="profilesListContainer" class="min-h-[250px]"></div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: Attendance History Pane (ประวัติการลงเวลาทำงาน) -->
+    <!-- ========================================================================= -->
+    <div id="tabPane_attendance" class="hidden space-y-4">
+      
+      <!-- Attendance Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-extrabold text-[#1F1E1B] flex items-center gap-2">
+            <span>ประวัติการลงเวลาทำงาน (Attendance History)</span>
+            <span id="attendanceMainDateBadge" class="text-xs px-3 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold"></span>
+          </h2>
+          <p class="text-xs text-[#6E6B62]">บันทึกเวลาเข้า-ออกงานของพนักงานจากการสแกนใบหน้า จัดเก็บบน Google Sheets</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="openSystemSettingsModal(); switchSettingsModalTab('schedule');" class="px-4 py-2 rounded-full font-bold bg-white hover:bg-[#F7F5EE] text-[#1F1E1B] border border-[#DCD6C4] shadow-sm transition flex items-center space-x-1.5 text-xs cursor-pointer">
+            <svg class="w-4 h-4 text-[#5C5950]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>ตั้งเวลาทำงาน</span>
+          </button>
+
+          <button id="refreshAttendanceMainBtn" onclick="loadTodayAttendanceFromBackend(true, state.attendanceFilterDate)" class="px-4 py-2 rounded-full bg-[#28AE60] hover:bg-[#229954] text-xs font-bold text-white shadow-sm flex items-center space-x-1.5 transition cursor-pointer">
+            <svg id="refreshAttendanceMainIcon" class="w-4 h-4 text-white transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span>รีเฟรชข้อมูล</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Attendance Stats Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
+          <div>
+            <div class="text-xs text-[#6E6B62] font-semibold">รายการทั้งหมด</div>
+            <div id="statAttendanceTotal" class="text-2xl font-extrabold text-[#1F1E1B] mt-1">0</div>
+          </div>
+          <div class="w-11 h-11 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-xl">
+            📊
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
+          <div>
+            <div class="text-xs text-[#6E6B62] font-semibold">เข้างานตรงเวลา</div>
+            <div id="statAttendanceOnTime" class="text-2xl font-extrabold text-[#28AE60] mt-1">0</div>
+          </div>
+          <div class="w-11 h-11 ch-squircle bg-[#EAF7EF] border border-[#BEE6CE] flex items-center justify-center text-xl">
+            🟢
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
+          <div>
+            <div class="text-xs text-[#6E6B62] font-semibold">เข้างานสาย</div>
+            <div id="statAttendanceLate" class="text-2xl font-extrabold text-[#D94338] mt-1">0</div>
+          </div>
+          <div class="w-11 h-11 ch-squircle bg-[#FDF2F2] border border-[#F8D7DA] flex items-center justify-center text-xl">
+            ⚠️
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-[24px] flex items-center justify-between">
+          <div>
+            <div class="text-xs text-[#6E6B62] font-semibold">ออกงาน (Check-out)</div>
+            <div id="statAttendanceCheckedOut" class="text-2xl font-extrabold text-[#D9822B] mt-1">0</div>
+          </div>
+          <div class="w-11 h-11 ch-squircle bg-[#FEF6E6] border border-[#F5DFB0] flex items-center justify-center text-xl">
+            🔴
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="glass-card p-3 sm:p-4 rounded-[24px] flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="text-xs font-bold text-[#5C5950] flex items-center gap-1.5">
+            <span>📅 เลือกวันที่:</span>
+            <input type="date" id="attendanceDatePicker" onchange="onAttendanceDateChange(this.value)" class="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#1F1E1B] border border-[#DCD6C4] focus:outline-none focus:ring-2 focus:ring-[#28AE60]/40 shadow-xs cursor-pointer">
+          </label>
+          <button type="button" onclick="setAttendanceFilterShortcut('today')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#EAF7EF] text-[#1E824C] hover:bg-[#D5EEDD] border border-[#BEE6CE] transition cursor-pointer">
+            วันนี้
+          </button>
+          <button type="button" onclick="setAttendanceFilterShortcut('yesterday')" class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#F7F5EE] text-[#5C5950] hover:bg-[#EAE6DA] border border-[#DCD6C4] transition cursor-pointer">
+            เมื่อวาน
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <div class="relative flex-1 sm:w-64">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#8C877B]">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="attendanceSearchInput" oninput="onAttendanceSearchInput(this.value)" placeholder="ค้นหาชื่อพนักงาน..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-full bg-white text-[#1F1E1B] border border-[#DCD6C4] placeholder-[#8C877B] focus:outline-none focus:ring-2 focus:ring-[#28AE60]/40 shadow-xs">
+          </div>
+          <button type="button" onclick="clearAttendanceSearch()" class="text-xs font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-1.5 rounded-full hover:bg-[#EAE6DA] transition cursor-pointer">
+            ล้างค้นหา
+          </button>
+        </div>
+      </div>
+
+      <!-- Attendance Table Container -->
+      <div class="glass-card rounded-[28px] overflow-hidden">
+        <div class="overflow-x-auto min-h-[280px]">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-[#F7F5EE] text-xs font-bold text-[#5C5950] uppercase tracking-wider border-b border-[#E5E0D0]">
+              <tr>
+                <th class="px-5 py-3.5">ลำดับ</th>
+                <th class="px-5 py-3.5">เวลาที่บันทึก</th>
+                <th class="px-5 py-3.5">ชื่อ - นามสกุลพนักงาน</th>
+                <th class="px-5 py-3.5">ประเภทการลงเวลา</th>
+                <th class="px-5 py-3.5">สถานะ</th>
+                <th class="px-5 py-3.5">เวลาทำงานกำหนด</th>
+                <th class="px-5 py-3.5">รหัสโปรไฟล์</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceMainTableBody" class="divide-y divide-[#EFECE2] text-[#1F1E1B]">
+              <tr>
+                <td colspan="7" class="px-5 py-12 text-center text-[#8C877B]">กำลังโหลดข้อมูลประวัติการลงเวลา...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
     </div>
 
@@ -1565,6 +1697,9 @@
       workStartTime: DEFAULT_WORK_START_TIME,
       workEndTime: DEFAULT_WORK_END_TIME,
       todayAttendance: {},
+      allAttendanceLogs: [],
+      attendanceFilterDate: '',
+      attendanceSearchTerm: '',
       profileMessages: {},
       activeMessageModalProfile: null,
       speechUnlocked: false,
@@ -2506,6 +2641,12 @@
     }
 
     function recordAttendanceLogToBackend(payload) {
+      if (!payload) return;
+      payload.actionType = payload.actionType || payload.logType;
+      payload.logType = payload.logType || payload.actionType;
+      payload.workStatus = payload.workStatus || payload.status;
+      payload.status = payload.status || payload.workStatus;
+
       logStatus('[ATTEND] บันทึกเวลา: ' + payload.name + ' (' + payload.logType + ' ' + payload.time + ' ' + payload.status + ')');
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -2538,56 +2679,157 @@
       }
     }
 
-    function loadTodayAttendanceFromBackend(isManual) {
-      const refreshIcon = document.getElementById('refreshAttendanceModalBtn');
-      if (refreshIcon && isManual) refreshIcon.classList.add('animate-spin');
+    function formatLogTime(val) {
+      if (!val) return '-';
+      if (typeof val === 'string') {
+        const match = val.match(/(\d{1,2}:\d{2})(?::\d{2})?/);
+        if (match) return match[1];
+        return val;
+      }
+      if (val instanceof Date) {
+        const hh = String(val.getHours()).padStart(2, '0');
+        const mm = String(val.getMinutes()).padStart(2, '0');
+        return hh + ':' + mm;
+      }
+      return String(val);
+    }
 
-      const dateBadge = document.getElementById('attendanceDateBadge');
-      if (dateBadge) {
-        const today = new Date();
-        dateBadge.textContent = today.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    function formatYMD(d) {
+      const date = d || new Date();
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function formatThaiDateDisplay(dateStrOrObj) {
+      let d;
+      if (!dateStrOrObj) {
+        d = new Date();
+      } else if (typeof dateStrOrObj === 'string') {
+        const parts = dateStrOrObj.split('-');
+        if (parts.length === 3) {
+          d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+          d = new Date(dateStrOrObj);
+        }
+      } else {
+        d = dateStrOrObj;
+      }
+      return isNaN(d.getTime()) ? String(dateStrOrObj) : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function loadTodayAttendanceFromBackend(isManual, targetDate) {
+      const modalRefreshIcon = document.getElementById('refreshAttendanceModalBtn');
+      const mainRefreshIcon = document.getElementById('refreshAttendanceMainIcon');
+      if (isManual) {
+        if (modalRefreshIcon) modalRefreshIcon.classList.add('animate-spin');
+        if (mainRefreshIcon) mainRefreshIcon.classList.add('animate-spin');
       }
 
+      // กำหนดวันที่ต้องการสอบถาม
+      const todayYMD = formatYMD(new Date());
+      const queryDate = targetDate || state.attendanceFilterDate || todayYMD;
+      state.attendanceFilterDate = queryDate;
+
+      // ซิงค์ Date Picker และ Date Badges
+      const datePicker = document.getElementById('attendanceDatePicker');
+      if (datePicker && datePicker.value !== queryDate) {
+        datePicker.value = queryDate;
+      }
+      const formattedThaiDate = formatThaiDateDisplay(queryDate);
+      const modalDateBadge = document.getElementById('attendanceDateBadge');
+      if (modalDateBadge) modalDateBadge.textContent = formattedThaiDate;
+      const mainDateBadge = document.getElementById('attendanceMainDateBadge');
+      if (mainDateBadge) mainDateBadge.textContent = formattedThaiDate;
+
+      const stopSpinners = function() {
+        if (modalRefreshIcon) modalRefreshIcon.classList.remove('animate-spin');
+        if (mainRefreshIcon) mainRefreshIcon.classList.remove('animate-spin');
+      };
+
       const handleSuccess = function(res) {
-        if (refreshIcon && isManual) refreshIcon.classList.remove('animate-spin');
-        if (res && res.success && Array.isArray(res.logs)) {
+        stopSpinners();
+        const list = (res && (Array.isArray(res.logs) ? res.logs : (Array.isArray(res.attendance) ? res.attendance : []))) || [];
+        state.allAttendanceLogs = list;
+
+        // อัปเดตตัวนับบนแท็บหลัก
+        const badge = document.getElementById('attendanceCountBadge');
+        if (badge) badge.textContent = list.length + ' รายการ';
+
+        // คำนวณสรุปสถิติประจำวัน
+        let onTimeCount = 0;
+        let lateCount = 0;
+        let checkOutCount = 0;
+
+        list.forEach(function(item) {
+          const lType = (item.logType || item.actionType || '').toUpperCase();
+          const wStatus = (item.status || item.workStatus || '').trim();
+          if (lType === 'CHECK_OUT') {
+            checkOutCount++;
+          } else if (lType === 'CHECK_IN') {
+            if (wStatus === 'ตรงเวลา') onTimeCount++;
+            else if (wStatus === 'สาย') lateCount++;
+          }
+        });
+
+        const statTotal = document.getElementById('statAttendanceTotal');
+        const statOnTime = document.getElementById('statAttendanceOnTime');
+        const statLate = document.getElementById('statAttendanceLate');
+        const statCheckOut = document.getElementById('statAttendanceCheckedOut');
+        if (statTotal) statTotal.textContent = list.length;
+        if (statOnTime) statOnTime.textContent = onTimeCount;
+        if (statLate) statLate.textContent = lateCount;
+        if (statCheckOut) statCheckOut.textContent = checkOutCount;
+
+        // ซิงค์ state.todayAttendance สำหรับการตรวจเช็คในกล้องตรวจจับ (เฉพาะวันปัจจุบัน)
+        if (queryDate === todayYMD) {
           state.todayAttendance = {};
-          res.logs.forEach(function(log) {
+          list.forEach(function(log) {
             const profKey = (log.profileId || '').trim();
             const nameKey = (log.name || '').trim();
             const key = profKey || nameKey;
+            if (!key) return;
             if (!state.todayAttendance[key]) {
               state.todayAttendance[key] = { checkIn: null, checkOut: null };
             }
             if (nameKey && !state.todayAttendance[nameKey]) {
               state.todayAttendance[nameKey] = state.todayAttendance[key];
             }
-            if (log.logType === 'CHECK_IN' && !state.todayAttendance[key].checkIn) {
+            const lType = (log.logType || log.actionType || '').toUpperCase();
+            if (lType === 'CHECK_IN' && !state.todayAttendance[key].checkIn) {
               state.todayAttendance[key].checkIn = log;
-            } else if (log.logType === 'CHECK_OUT' && !state.todayAttendance[key].checkOut) {
+            } else if (lType === 'CHECK_OUT' && !state.todayAttendance[key].checkOut) {
               state.todayAttendance[key].checkOut = log;
             }
           });
-          renderAttendanceModalTable(res.logs);
-          if (isManual) showToast('รีเฟรชข้อมูลลงเวลาทำงานล่าสุดแล้ว', 'success');
-        } else {
-          renderAttendanceModalTable([]);
+        }
+
+        renderAttendanceModalTable(list);
+        renderAttendanceMainTable(list);
+
+        if (isManual) {
+          showToast('โหลดข้อมูลลงเวลาเรียบร้อยแล้ว (' + list.length + ' รายการ)', 'success');
         }
       };
 
       const handleError = function(err) {
-        if (refreshIcon && isManual) refreshIcon.classList.remove('animate-spin');
-        if (isManual) showToast('โหลดข้อมูลลงเวลาไม่สำเร็จ: ' + (err ? err.message : err), 'error');
+        stopSpinners();
+        if (isManual) {
+          showToast('โหลดข้อมูลลงเวลาไม่สำเร็จ: ' + (err ? err.message : err), 'error');
+        }
         renderAttendanceModalTable([]);
+        renderAttendanceMainTable([]);
       };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
           .withSuccessHandler(handleSuccess)
           .withFailureHandler(handleError)
-          .getTodayAttendance();
+          .getTodayAttendance(queryDate);
       } else {
-        fetch(GAS_API_URL + '?action=getTodayAttendance', { redirect: 'follow' })
+        const url = GAS_API_URL + '?action=getTodayAttendance' + (queryDate ? '&date=' + encodeURIComponent(queryDate) : '');
+        fetch(url, { redirect: 'follow' })
           .then(function(r) { return r.json(); })
           .then(handleSuccess)
           .catch(handleError);
@@ -2599,28 +2841,34 @@
       if (!tbody) return;
 
       if (!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-[#8C877B]">ยังไม่มีรายการลงเวลาทำงานในวันนี้</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-[#8C877B]">ยังไม่มีรายการลงเวลาทำงานในวันที่เลือก</td></tr>';
         return;
       }
 
       let html = '';
       logs.forEach(function(item) {
-        const isCheckIn = (item.logType === 'CHECK_IN');
+        const lType = (item.logType || item.actionType || '').toUpperCase();
+        const isCheckIn = (lType === 'CHECK_IN');
         const typeBadge = isCheckIn
           ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">🟢 เข้างาน</span>'
           : '<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#FEF6E6] text-[#D9822B] border border-[#F5DFB0]">🔴 ออกงาน</span>';
 
+        const statusStr = (item.status || item.workStatus || '').trim();
         let statusBadge = '';
-        if (item.status === 'ตรงเวลา') {
+        if (statusStr === 'ตรงเวลา') {
           statusBadge = '<span class="text-[#1E824C] font-bold">✓ ตรงเวลา</span>';
-        } else if (item.status === 'สาย') {
+        } else if (statusStr === 'สาย') {
           statusBadge = '<span class="text-[#D94338] font-bold">⚠️ สาย</span>';
+        } else if (statusStr === 'เลิกงานตามเวลา') {
+          statusBadge = '<span class="text-[#D9822B] font-bold">✓ เลิกงานตามเวลา</span>';
         } else {
-          statusBadge = '<span class="text-[#5C5950] font-medium">' + (item.status || '-') + '</span>';
+          statusBadge = '<span class="text-[#5C5950] font-medium">' + (statusStr || '-') + '</span>';
         }
 
+        const cleanTime = formatLogTime(item.time);
+
         html += '<tr class="hover:bg-[#F7F5EE]/80 transition">' +
-          '<td class="px-4 py-3 font-mono font-bold text-[#1F1E1B]">' + (item.time || '-') + ' น.</td>' +
+          '<td class="px-4 py-3 font-mono font-bold text-[#1F1E1B]">' + cleanTime + ' น.</td>' +
           '<td class="px-4 py-3 font-bold text-[#1F1E1B]">' + (item.name || '-') + '</td>' +
           '<td class="px-4 py-3">' + typeBadge + '</td>' +
           '<td class="px-4 py-3 text-xs">' + statusBadge + '</td>' +
@@ -2628,6 +2876,104 @@
         '</tr>';
       });
       tbody.innerHTML = html;
+    }
+
+    function renderAttendanceMainTable(logs) {
+      const tbody = document.getElementById('attendanceMainTableBody');
+      if (!tbody) return;
+
+      const sourceLogs = logs || state.allAttendanceLogs || [];
+      const term = (state.attendanceSearchTerm || '').trim().toLowerCase();
+
+      const filtered = term
+        ? sourceLogs.filter(function(item) {
+            const name = (item.name || '').toLowerCase();
+            const prof = (item.profileId || '').toLowerCase();
+            const stat = (item.status || item.workStatus || '').toLowerCase();
+            const type = (item.logType || item.actionType || '').toLowerCase();
+            return name.includes(term) || prof.includes(term) || stat.includes(term) || type.includes(term);
+          })
+        : sourceLogs;
+
+      if (!filtered || filtered.length === 0) {
+        const msg = term
+          ? 'ไม่พบข้อมูลลงเวลาที่ตรงกับคำค้นหา "' + state.attendanceSearchTerm + '"'
+          : 'ยังไม่มีรายการลงเวลาทำงานในวันที่เลือก';
+        tbody.innerHTML = '<tr><td colspan="7" class="px-5 py-12 text-center text-[#8C877B]">' +
+          '<div class="flex flex-col items-center justify-center space-y-2">' +
+          '<span class="text-3xl">📋</span>' +
+          '<p class="text-sm font-semibold">' + msg + '</p>' +
+          '</div></td></tr>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(function(item, idx) {
+        const lType = (item.logType || item.actionType || '').toUpperCase();
+        const isCheckIn = (lType === 'CHECK_IN');
+        const typeBadge = isCheckIn
+          ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">🟢 เข้างาน</span>'
+          : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-[#FEF6E6] text-[#D9822B] border border-[#F5DFB0]">🔴 ออกงาน</span>';
+
+        const statusStr = (item.status || item.workStatus || '').trim();
+        let statusBadge = '';
+        if (statusStr === 'ตรงเวลา') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">✓ ตรงเวลา</span>';
+        } else if (statusStr === 'สาย') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FDF2F2] text-[#D94338] border border-[#F8D7DA]">⚠️ เข้างานสาย</span>';
+        } else if (statusStr === 'เลิกงานตามเวลา') {
+          statusBadge = '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FEF6E6] text-[#D9822B] border border-[#F5DFB0]">✓ เลิกงานตามเวลา</span>';
+        } else {
+          statusBadge = '<span class="text-xs text-[#5C5950] font-medium">' + (statusStr || '-') + '</span>';
+        }
+
+        const cleanTime = formatLogTime(item.time);
+        const sched = item.workSchedule || (state.workStartTime + ' - ' + state.workEndTime);
+
+        html += '<tr class="hover:bg-[#F7F5EE]/70 transition">' +
+          '<td class="px-5 py-3.5 text-xs text-[#8C877B] font-mono font-bold">' + (idx + 1) + '</td>' +
+          '<td class="px-5 py-3.5 font-mono font-bold text-sm text-[#1F1E1B]">' + cleanTime + ' น.</td>' +
+          '<td class="px-5 py-3.5 font-bold text-[#1F1E1B] flex items-center gap-2">' +
+            '<span class="w-7 h-7 rounded-full bg-[#EAE6DA] flex items-center justify-center text-xs flex-shrink-0">👤</span>' +
+            '<span>' + (item.name || '-') + '</span>' +
+          '</td>' +
+          '<td class="px-5 py-3.5">' + typeBadge + '</td>' +
+          '<td class="px-5 py-3.5">' + statusBadge + '</td>' +
+          '<td class="px-5 py-3.5 text-xs text-[#6E6B62] font-mono">' + sched + '</td>' +
+          '<td class="px-5 py-3.5 text-xs text-[#8C877B] font-mono">' + (item.profileId || '-') + '</td>' +
+        '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    function onAttendanceDateChange(dateVal) {
+      if (!dateVal) return;
+      state.attendanceFilterDate = dateVal;
+      loadTodayAttendanceFromBackend(true, dateVal);
+    }
+
+    function setAttendanceFilterShortcut(type) {
+      const d = new Date();
+      if (type === 'yesterday') {
+        d.setDate(d.getDate() - 1);
+      }
+      const ymd = formatYMD(d);
+      state.attendanceFilterDate = ymd;
+      const datePicker = document.getElementById('attendanceDatePicker');
+      if (datePicker) datePicker.value = ymd;
+      loadTodayAttendanceFromBackend(true, ymd);
+    }
+
+    function onAttendanceSearchInput(query) {
+      state.attendanceSearchTerm = (query || '').trim().toLowerCase();
+      renderAttendanceMainTable(state.allAttendanceLogs);
+    }
+
+    function clearAttendanceSearch() {
+      state.attendanceSearchTerm = '';
+      const input = document.getElementById('attendanceSearchInput');
+      if (input) input.value = '';
+      renderAttendanceMainTable(state.allAttendanceLogs);
     }
 
     // --- System Settings Modal Controllers ---
@@ -4784,7 +5130,7 @@
 
     function switchTab(tabName) {
       state.currentTab = tabName;
-      ['scanner', 'register', 'profiles', 'voicesettings', 'users'].forEach(t => {
+      ['scanner', 'register', 'profiles', 'attendance', 'voicesettings', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
         const pane = document.getElementById('tabPane_' + t);
         if (!btn || !pane) return;
@@ -4801,6 +5147,9 @@
       });
       if (tabName === 'voicesettings') syncVoiceControlsUI();
       if (tabName === 'profiles') renderProfilesList();
+      if (tabName === 'attendance') {
+        loadTodayAttendanceFromBackend(false, state.attendanceFilterDate);
+      }
       if (tabName === 'users') loadSystemUsers();
       if (tabName === 'register') {
         const regVideo = document.getElementById('regWebcamVideo');
@@ -5330,6 +5679,12 @@
     window.saveWorkScheduleFromModal = saveWorkScheduleFromModal;
     window.loadTodayAttendanceFromBackend = loadTodayAttendanceFromBackend;
     window.renderAttendanceModalTable = renderAttendanceModalTable;
+    window.renderAttendanceMainTable = renderAttendanceMainTable;
+    window.onAttendanceDateChange = onAttendanceDateChange;
+    window.setAttendanceFilterShortcut = setAttendanceFilterShortcut;
+    window.onAttendanceSearchInput = onAttendanceSearchInput;
+    window.clearAttendanceSearch = clearAttendanceSearch;
+    window.formatLogTime = formatLogTime;
     window.handlePersonTypeChange = handlePersonTypeChange;
     window.toggleProfileType = toggleProfileType;
     window.formatTimeForSpeech = formatTimeForSpeech;

@@ -43,7 +43,7 @@ function doGet(e) {
     } else if (action === "saveSettings") {
       result = saveSystemSettings(e.parameter);
     } else if (action === "getTodayAttendance") {
-      result = getTodayAttendance(e.parameter.date);
+      result = getTodayAttendance(e.parameter.date || e.parameter.targetDate);
     } else if (action === "recordAttendance") {
       result = recordAttendanceLog(e.parameter);
     } else if (action === "updateProfileType") {
@@ -231,13 +231,19 @@ function initSheetAndFolder() {
         "Action_Type",
         "Action_Time",
         "Work_Status",
-        "Timestamp"
+        "Timestamp",
+        "Work_Schedule"
       ]);
-      attSheet.getRange(1, 1, 1, 9)
+      attSheet.getRange(1, 1, 1, 10)
         .setBackground("#1E293B")
         .setFontColor("#FFFFFF")
         .setFontWeight("bold");
       attSheet.setFrozenRows(1);
+    } else if (attSheet.getLastColumn() < 10) {
+      attSheet.getRange(1, 10).setValue("Work_Schedule")
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
     }
 
     // 7. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
@@ -782,7 +788,7 @@ function doPost(e) {
     } else if (action === "saveSettings") {
       result = saveSystemSettings(data.settings || data);
     } else if (action === "getTodayAttendance") {
-      result = getTodayAttendance(data.date || (e.parameter && e.parameter.date));
+      result = getTodayAttendance(data.date || data.targetDate || (e.parameter && (e.parameter.date || e.parameter.targetDate)));
     } else if (action === "recordAttendance") {
       result = recordAttendanceLog(data.payload || data);
     } else if (action === "updateProfileType") {
@@ -1117,14 +1123,25 @@ function recordAttendanceLog(payload) {
     var now = new Date();
     var nowStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy HH:mm:ss");
     var dateStr = payload.date || Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
-    var timeStr = payload.time || Utilities.formatDate(now, "GMT+7", "HH:mm:ss");
-    var actionType = (String(payload.actionType).toUpperCase() === 'CHECK_OUT') ? 'CHECK_OUT' : 'CHECK_IN';
-    var workStatus = payload.workStatus || (actionType === 'CHECK_IN' ? 'ตรงเวลา' : 'เลิกงานตามเวลา');
+
+    // Format clean HH:mm string
+    var rawTime = payload.time || Utilities.formatDate(now, "GMT+7", "HH:mm");
+    var timeStr = String(rawTime).trim();
+    if (timeStr.length > 5 && timeStr.indexOf(':') === 2) {
+      timeStr = timeStr.substring(0, 5);
+    }
+
+    var actionType = String(payload.actionType || payload.logType || "CHECK_IN").toUpperCase();
+    if (actionType !== 'CHECK_OUT') actionType = 'CHECK_IN';
+
+    var workStatus = String(payload.workStatus || payload.status || (actionType === 'CHECK_IN' ? 'ตรงเวลา' : 'เลิกงานตามเวลา')).trim();
+    var workSchedule = String(payload.workSchedule || "").trim();
     var logId = "ATT_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4).toUpperCase();
     var personName = String(payload.name).trim();
     var profileId = String(payload.profileId || "").trim();
     var personType = String(payload.personType || "พนักงาน").trim();
 
+    // Store with prepended single quote so Google Sheets doesn't convert to 1899 Date
     sheet.appendRow([
       logId,
       dateStr,
@@ -1132,23 +1149,33 @@ function recordAttendanceLog(payload) {
       personName,
       personType,
       actionType,
-      timeStr,
+      "'" + timeStr,
       workStatus,
-      nowStr
+      nowStr,
+      workSchedule
     ]);
+
+    var logData = {
+      id: logId,
+      date: dateStr,
+      profileId: profileId,
+      name: personName,
+      personType: personType,
+      actionType: actionType,
+      logType: actionType,
+      time: timeStr,
+      workStatus: workStatus,
+      status: workStatus,
+      workSchedule: workSchedule,
+      timestamp: nowStr
+    };
 
     return {
       success: true,
       message: "บันทึก " + (actionType === 'CHECK_IN' ? "เข้างาน" : "ออกงาน") + " สำเร็จ (" + timeStr + ")",
-      log: {
-        id: logId,
-        date: dateStr,
-        profileId: profileId,
-        name: personName,
-        actionType: actionType,
-        time: timeStr,
-        workStatus: workStatus
-      }
+      log: logData,
+      attendance: logData,
+      logs: [logData]
     };
   } catch (e) {
     return { success: false, message: e.toString() };
@@ -1162,37 +1189,85 @@ function getTodayAttendance(targetDate) {
   try {
     var ss = getDatabaseSpreadsheet();
     var sheet = ss.getSheetByName(SHEET_ATTENDANCE);
-    if (!sheet) return { success: true, attendance: [] };
+    if (!sheet) return { success: true, attendance: [], logs: [], count: 0 };
 
     var now = new Date();
     var dateQuery = targetDate || Utilities.formatDate(now, "GMT+7", "yyyy-MM-dd");
+    // Normalize dateQuery if passed as dd/MM/yyyy
+    if (dateQuery && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateQuery)) {
+      var qp = dateQuery.split('/');
+      dateQuery = qp[2] + '-' + qp[1].padStart(2, '0') + '-' + qp[0].padStart(2, '0');
+    }
+
     var data = sheet.getDataRange().getValues();
     var list = [];
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      var rDate = String(row[1] || "").trim();
+      if (!row[0] && !row[3]) continue;
+
+      // Normalize Date
+      var rDate = "";
       if (row[1] instanceof Date) {
         rDate = Utilities.formatDate(row[1], "GMT+7", "yyyy-MM-dd");
+      } else {
+        rDate = String(row[1] || "").trim();
+        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(rDate)) {
+          var dp = rDate.split('/');
+          rDate = dp[2] + '-' + dp[1].padStart(2, '0') + '-' + dp[0].padStart(2, '0');
+        }
       }
+
       if (rDate === dateQuery) {
+        // Normalize Time cleanly to HH:mm
+        var rTime = "";
+        if (row[6] instanceof Date) {
+          rTime = Utilities.formatDate(row[6], "GMT+7", "HH:mm");
+        } else {
+          var rawT = String(row[6] || "").trim();
+          if (rawT.indexOf("'") === 0) rawT = rawT.substring(1);
+          if (rawT.includes("1899") || rawT.includes("GMT")) {
+            var dt = new Date(rawT);
+            rTime = !isNaN(dt.getTime()) ? Utilities.formatDate(dt, "GMT+7", "HH:mm") : rawT;
+          } else {
+            if (rawT.length > 5 && rawT.indexOf(':') === 2) {
+              rTime = rawT.substring(0, 5);
+            } else {
+              rTime = rawT;
+            }
+          }
+        }
+
+        var actType = String(row[5] || "CHECK_IN").toUpperCase();
+        var wStatus = String(row[7] || "ตรงเวลา").trim();
+        var sched = String(row[9] || "").trim();
+
         list.push({
           id: String(row[0] || ""),
           date: rDate,
           profileId: String(row[2] || ""),
           name: String(row[3] || ""),
-          personType: String(row[4] || ""),
-          actionType: String(row[5] || ""),
-          time: String(row[6] || ""),
-          workStatus: String(row[7] || ""),
+          personType: String(row[4] || "พนักงาน"),
+          actionType: actType,
+          logType: actType,
+          time: rTime,
+          workStatus: wStatus,
+          status: wStatus,
+          workSchedule: sched,
           timestamp: String(row[8] || "")
         });
       }
     }
 
-    return { success: true, date: dateQuery, attendance: list };
+    return {
+      success: true,
+      date: dateQuery,
+      attendance: list,
+      logs: list,
+      count: list.length
+    };
   } catch (e) {
-    return { success: false, message: e.toString(), attendance: [] };
+    return { success: false, message: e.toString(), attendance: [], logs: [], count: 0 };
   }
 }
 
