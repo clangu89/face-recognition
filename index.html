@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>ระบบจดจำใบหน้าและทักทายด้วยเสียง (Face Recognition & Greeting)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
 
   <!-- 1. Early Boot Diagnostic Logger & Global Error Catcher (Must be first in <head>) -->
   <script>
@@ -293,13 +294,13 @@
         <div class="flex items-center bg-white rounded-full border border-[#E2DDD0] px-3 py-1.5 shadow-sm">
           <span class="text-xs mr-1.5">🎙️</span>
           <select id="quickVoiceSelect" onchange="handleVoiceSelectionChange(this.value, true)" aria-label="เลือกเสียงพูดทักทาย" class="bg-transparent text-xs font-bold text-[#1F1E1B] focus:outline-none cursor-pointer pr-1 max-w-[195px] sm:max-w-[230px] truncate">
-            <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน">
+            <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
               <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
               <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
               <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
-              <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (ทุ้มนุ่ม - ครับ)</option>
-              <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (เข้มแข็ง - ครับ)</option>
-              <option value="preset:online_tts">🌐 เสียงออนไลน์ Google TTS (ค่ะ)</option>
+              <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
+              <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
+              <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
             </optgroup>
             <optgroup id="quickDeviceVoicesGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
             </optgroup>
@@ -420,13 +421,13 @@
             <div class="space-y-1">
               <label for="voiceSelectDropdown" class="block text-[11px] font-bold text-[#5C5950]">รูปแบบเสียง / เอนจินเสียงพูด</label>
               <select id="voiceSelectDropdown" onchange="handleVoiceSelectionChange(this.value, true)" class="w-full px-3 py-2 rounded-xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs font-bold focus:outline-none focus:border-[#28AE60] transition cursor-pointer">
-                <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน">
+                <optgroup label="✨ รูปแบบโทนเสียงมาตรฐาน (หญิง/ชาย)">
                   <option value="preset:female_polite">👩 เสียงผู้หญิงนุ่มนวล (สุภาพ - ค่ะ)</option>
                   <option value="preset:female_bright">👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)</option>
                   <option value="preset:female_formal">👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)</option>
-                  <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (ทุ้มนุ่ม - ครับ)</option>
-                  <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (เข้มแข็ง - ครับ)</option>
-                  <option value="preset:online_tts">🌐 เสียงออนไลน์ Google TTS (ค่ะ)</option>
+                  <option value="preset:male_polite">👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)</option>
+                  <option value="preset:male_formal">👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)</option>
+                  <option value="preset:child_bright">🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)</option>
                 </optgroup>
                 <optgroup id="deviceVoicesOptGroup" label="🎙️ เสียงในอุปกรณ์ของคุณ (System Voices)">
                 </optgroup>
@@ -898,56 +899,68 @@
 
     const VOICE_PRESETS = {
       'preset:female_polite': {
-        label: 'เสียงผู้หญิงนุ่มนวล (ค่ะ)',
-        gender: 'female',
-        particle: 'ค่ะ',
-        rate: 0.95,
-        pitch: 1.05,
-        forceOnline: false
-      },
-      'preset:female_bright': {
-        label: 'เสียงประชาสัมพันธ์หญิง (ค่ะ)',
-        gender: 'female',
-        particle: 'ค่ะ',
-        rate: 1.02,
-        pitch: 1.18,
-        forceOnline: false
-      },
-      'preset:female_formal': {
-        label: 'เสียงผู้หญิงทางการ (ค่ะ)',
-        gender: 'female',
-        particle: 'ค่ะ',
-        rate: 0.90,
-        pitch: 0.92,
-        forceOnline: false
-      },
-      'preset:male_polite': {
-        label: 'เสียงผู้ชายสุภาพ (ครับ)',
-        gender: 'male',
-        particle: 'ครับ',
-        rate: 0.95,
-        pitch: 0.72,
-        forceOnline: false
-      },
-      'preset:male_formal': {
-        label: 'เสียงผู้ชายทางการ (ครับ)',
-        gender: 'male',
-        particle: 'ครับ',
-        rate: 0.92,
-        pitch: 0.62,
-        forceOnline: false
-      },
-      'preset:online_tts': {
-        label: 'เสียงออนไลน์ Google TTS (ค่ะ)',
+        label: '👩 เสียงผู้หญิงนุ่มนวล (ค่ะ)',
         gender: 'female',
         particle: 'ค่ะ',
         rate: 1.00,
         pitch: 1.00,
-        forceOnline: true
+        engine: 'cloud_female',
+        formantShift: false,
+        baseFrequencyRatio: 1.00
+      },
+      'preset:female_bright': {
+        label: '👩‍💼 เสียงประชาสัมพันธ์หญิง (สดใส - ค่ะ)',
+        gender: 'female',
+        particle: 'ค่ะ',
+        rate: 1.12,
+        pitch: 1.18,
+        engine: 'cloud_female',
+        formantShift: true,
+        baseFrequencyRatio: 1.15
+      },
+      'preset:female_formal': {
+        label: '👩‍🏫 เสียงผู้หญิงทางการ (สุขุม - ค่ะ)',
+        gender: 'female',
+        particle: 'ค่ะ',
+        rate: 0.90,
+        pitch: 0.88,
+        engine: 'cloud_female',
+        formantShift: true,
+        baseFrequencyRatio: 0.89
+      },
+      'preset:male_polite': {
+        label: '👨 เสียงผู้ชายสุภาพ (นุ่มนวล - ครับ)',
+        gender: 'male',
+        particle: 'ครับ',
+        rate: 1.02,
+        pitch: 1.05,
+        engine: 'native_male_or_formant',
+        formantShift: true,
+        baseFrequencyRatio: 0.77
+      },
+      'preset:male_formal': {
+        label: '👨‍💼 เสียงผู้ชายทางการ (ทุ้มเข้ม - ครับ)',
+        gender: 'male',
+        particle: 'ครับ',
+        rate: 0.84,
+        pitch: 0.62,
+        engine: 'formant_deep_male',
+        formantShift: true,
+        baseFrequencyRatio: 0.72
+      },
+      'preset:child_bright': {
+        label: '🧒 เสียงน้องต้อนรับ (ร่าเริงสดใส - ค่ะ)',
+        gender: 'female',
+        particle: 'ค่ะ',
+        rate: 1.22,
+        pitch: 1.30,
+        engine: 'cloud_female',
+        formantShift: true,
+        baseFrequencyRatio: 1.26
       }
     };
 
-    const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v1';
+    const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
 
     const state = {
       currentUser: null,
@@ -963,11 +976,12 @@
       thaiVoice: null,
       availableVoices: [],
       voiceSelection: 'preset:female_polite',
-      voiceRate: 0.95,
-      voicePitch: 1.05,
+      voiceRate: 1.00,
+      voicePitch: 1.00,
       voiceParticle: 'ค่ะ',
       speechUnlocked: false,
       activeUtterance: null,
+      activeAudio: null,
       speechTimer: null,
       audioCtx: null,
       trackedPersons: new Map(),
@@ -980,14 +994,28 @@
     // Global pool to prevent Chrome V8 Garbage Collector from destroying active Utterances mid-speech
     window._utterancePool = [];
 
-    // --- Voice & Speech Synthesis (High-Reliability Engine + Custom Voice Selector) ---
+    // --- Voice & Speech Synthesis (Dual-Engine Female/Male + Acoustic Formant Shift) ---
+    function isMaleVoiceName(name) {
+      return /pattara|niwat|male|ชาย|ผู้ชาย/i.test(name || '');
+    }
+
+    function isFemaleVoiceName(name) {
+      if (isMaleVoiceName(name)) return false;
+      return /premwadee|achara|kanya|narisa|female|หญิง|ผู้หญิง/i.test(name || '');
+    }
+
     function loadVoiceSettingsFromStorage() {
       try {
         const raw = localStorage.getItem(VOICE_SETTINGS_STORAGE_KEY);
         if (!raw) return;
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
-          if (parsed.voiceSelection) state.voiceSelection = parsed.voiceSelection;
+          if (parsed.voiceSelection) {
+            // Migrate legacy preset:online_tts if present
+            state.voiceSelection = (parsed.voiceSelection === 'preset:online_tts')
+              ? 'preset:child_bright'
+              : parsed.voiceSelection;
+          }
           if (typeof parsed.voiceRate === 'number' && !isNaN(parsed.voiceRate)) state.voiceRate = parsed.voiceRate;
           if (typeof parsed.voicePitch === 'number' && !isNaN(parsed.voicePitch)) state.voicePitch = parsed.voicePitch;
           if (parsed.voiceParticle === 'ค่ะ' || parsed.voiceParticle === 'ครับ') state.voiceParticle = parsed.voiceParticle;
@@ -1013,11 +1041,21 @@
         state.availableVoices = voices;
         return voices.filter(v =>
           (v.lang && v.lang.toLowerCase().includes('th')) ||
-          (v.name && (v.name.toLowerCase().includes('thai') || v.name.includes('ไทย') || v.name.includes('Premwadee') || v.name.includes('Niwat') || v.name.includes('Kanya')))
+          (v.name && (v.name.toLowerCase().includes('thai') || v.name.includes('ไทย') || v.name.includes('Premwadee') || v.name.includes('Niwat') || v.name.includes('Pattara') || v.name.includes('Kanya')))
         );
       } catch (e) {
         return [];
       }
+    }
+
+    function getMaleDeviceVoice() {
+      const thVoices = getThaiVoicesList();
+      return thVoices.find(v => isMaleVoiceName(v.name)) || null;
+    }
+
+    function getFemaleDeviceVoice() {
+      const thVoices = getThaiVoicesList();
+      return thVoices.find(v => isFemaleVoiceName(v.name)) || null;
     }
 
     function populateDeviceVoiceOptions() {
@@ -1027,7 +1065,7 @@
         if (voices.length === 0) return;
 
         const thVoices = getThaiVoicesList();
-        const otherVoices = voices.filter(v => !thVoices.includes(v)).slice(0, 8);
+        const otherVoices = voices.filter(v => !thVoices.includes(v)).slice(0, 6);
         const listToRender = thVoices.length > 0 ? thVoices : otherVoices;
 
         ['quickDeviceVoicesGroup', 'deviceVoicesOptGroup'].forEach(groupId => {
@@ -1038,16 +1076,22 @@
           if (listToRender.length === 0) {
             const opt = document.createElement('option');
             opt.disabled = true;
-            opt.textContent = 'ไม่พบเสียงเสริมในอุปกรณ์นี้';
+            opt.textContent = 'ไม่พบเสียงติดตั้งในอุปกรณ์นี้';
             groupEl.appendChild(opt);
             return;
           }
 
           listToRender.forEach(v => {
             const isThai = thVoices.includes(v);
+            let genderTag = '';
+            if (isMaleVoiceName(v.name)) {
+              genderTag = ' [เสียงผู้ชายในเครื่อง]';
+            } else if (isFemaleVoiceName(v.name)) {
+              genderTag = ' [เสียงผู้หญิงในเครื่อง]';
+            }
             const opt = document.createElement('option');
             opt.value = 'device:' + (v.voiceURI || v.name);
-            opt.textContent = (isThai ? '🇹🇭 ' : '🌐 ') + v.name + (v.lang ? ' (' + v.lang + ')' : '');
+            opt.textContent = (isThai ? '🇹🇭 ' : '🌐 ') + v.name + genderTag;
             groupEl.appendChild(opt);
           });
         });
@@ -1064,7 +1108,7 @@
 
         const thVoices = getThaiVoicesList();
 
-        // 1. If user explicitly picked a device voice
+        // 1. If user explicitly picked a device voice from the system voices group
         if (state.voiceSelection && state.voiceSelection.indexOf('device:') === 0) {
           const targetId = state.voiceSelection.replace('device:', '');
           const matchedDeviceVoice = voices.find(v => v.voiceURI === targetId || v.name === targetId);
@@ -1074,20 +1118,12 @@
           }
         }
 
-        // 2. If user picked a preset, match best gender/Thai voice if available
+        // 2. If user picked a preset, strictly match gender (NEVER assign male Pattara to female preset)
         const preset = VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'];
-        if (thVoices.length > 0) {
-          if (preset && preset.gender === 'male') {
-            const maleVoice = thVoices.find(v =>
-              /niwat|pattara|male|ชาย/i.test(v.name || '')
-            );
-            state.thaiVoice = maleVoice || thVoices[0];
-          } else {
-            const femaleVoice = thVoices.find(v =>
-              /premwadee|kanya|google|female|หญิง/i.test(v.name || '')
-            );
-            state.thaiVoice = femaleVoice || thVoices[0];
-          }
+        if (preset && preset.gender === 'male') {
+          state.thaiVoice = getMaleDeviceVoice() || thVoices[0] || null;
+        } else {
+          state.thaiVoice = getFemaleDeviceVoice() || null;
         }
         return state.thaiVoice;
       } catch (e) {
@@ -1105,7 +1141,7 @@
       } else if (state.thaiVoice) {
         activeLabel = state.thaiVoice.name;
       } else {
-        activeLabel = 'เสียงเริ่มต้นระบบ';
+        activeLabel = '👩 เสียงผู้หญิงนุ่มนวล (ค่ะ)';
       }
 
       voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียง: ' + activeLabel;
@@ -1168,15 +1204,14 @@
         state.voicePitch = preset.pitch;
         state.voiceParticle = preset.particle;
       } else if (state.voiceSelection.indexOf('device:') === 0) {
-        const voiceName = state.voiceSelection.toLowerCase();
-        if (voiceName.includes('niwat') || voiceName.includes('pattara') || voiceName.includes('male')) {
+        if (isMaleVoiceName(state.voiceSelection)) {
           state.voiceParticle = 'ครับ';
           state.voicePitch = 1.00;
-          state.voiceRate = 0.95;
+          state.voiceRate = 1.00;
         } else {
           state.voiceParticle = 'ค่ะ';
           state.voicePitch = 1.00;
-          state.voiceRate = 0.95;
+          state.voiceRate = 1.00;
         }
       }
 
@@ -1230,6 +1265,24 @@
       return 'สวัสดี' + particle + 'คุณลูกค้า วันนี้รับอะไรดี' + particle;
     }
 
+    function stopActiveAudioPlayback() {
+      clearTimeout(state.speechTimer);
+      if (state.activeAudio) {
+        try {
+          state.activeAudio.pause();
+          state.activeAudio.src = '';
+        } catch (e) {}
+        state.activeAudio = null;
+      }
+      if ('speechSynthesis' in window) {
+        try {
+          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+            window.speechSynthesis.cancel();
+          }
+        } catch (e) {}
+      }
+    }
+
     function unlockSpeechEngine() {
       if (state.speechUnlocked) return;
       try {
@@ -1278,10 +1331,8 @@
 
       const voiceBadge = document.getElementById('voiceStatusBadge');
       if (!('speechSynthesis' in window)) {
-        logStatus('[WARN] เบราว์เซอร์นี้ไม่มี SpeechSynthesis (ใช้ Web Audio แทน)', true);
         if (voiceBadge) {
-          voiceBadge.innerHTML = '<span class="text-[#D9822B]">●</span> ใช้เสียงออนไลน์ TTS';
-          voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold';
+          updateVoiceStatusBadge();
         }
         return;
       }
@@ -1292,9 +1343,12 @@
           refreshThaiVoice();
           syncVoiceControlsUI();
 
-          if (state.thaiVoice && !state._loggedThaiVoice) {
-            state._loggedThaiVoice = true;
-            logStatus('[OK] ระบบเสียงพร้อมทำงาน (' + state.thaiVoice.name + ')');
+          if (!state._loggedThaiVoice) {
+            const thList = getThaiVoicesList();
+            if (thList.length > 0) {
+              state._loggedThaiVoice = true;
+              logStatus('[OK] ระบบเสียงพร้อมทำงาน (รองรับเสียงผู้หญิง Cloud Neural + เสียงในเครื่อง ' + thList.length + ' รายการ)');
+            }
           }
         } catch (e) {
           logStatus('[WARN] Voice check: ' + (e ? e.message : e), true);
@@ -1310,62 +1364,106 @@
       setTimeout(detectVoices, 2500);
     }
 
-    function playFallbackAudioTTS(text) {
+    // Play genuine Thai Female Cloud TTS with Acoustic Formant/Pitch Shifting
+    function playOnlineThaiTTS(text, preset, onErrorFallback) {
       try {
-        const url = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encodeURIComponent(text);
-        const audio = new Audio(url);
-        audio.volume = 1.0;
-        audio.playbackRate = Math.min(1.5, Math.max(0.7, state.voiceRate || 1.0));
-        audio.play().catch(function(e) {
-          console.warn('Fallback TTS play error:', e);
-        });
-      } catch (e) {}
+        stopActiveAudioPlayback();
+
+        const encoded = encodeURIComponent(text);
+        const primaryUrl = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=th&client=gtx&q=' + encoded;
+        const backupUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encoded;
+
+        const configureAndPlay = function(url, isBackup) {
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.volume = 1.0;
+          audio.src = url;
+
+          // Calculate whether to shift acoustic formants (preservesPitch = false) or preserve natural female timbre
+          const userPitch = state.voicePitch || 1.0;
+          const userRate = state.voiceRate || 1.0;
+          const useFormantShift = (preset && preset.formantShift) || Math.abs(userPitch - 1.0) > 0.04;
+
+          let finalPlaybackRate = userRate;
+          if (useFormantShift) {
+            const baseRatio = (preset && preset.baseFrequencyRatio) ? preset.baseFrequencyRatio : userPitch;
+            const defaultPitch = (preset && preset.pitch) ? preset.pitch : 1.0;
+            const defaultRate = (preset && preset.rate) ? preset.rate : 1.0;
+            const pitchFactor = userPitch / defaultPitch;
+            const rateFactor = userRate / defaultRate;
+            finalPlaybackRate = Math.min(1.50, Math.max(0.62, baseRatio * ((pitchFactor * 0.68) + (rateFactor * 0.32))));
+          } else {
+            finalPlaybackRate = Math.min(1.45, Math.max(0.70, userRate));
+          }
+
+          const applyAudioProperties = function() {
+            try {
+              if ('preservesPitch' in audio) audio.preservesPitch = !useFormantShift;
+              if ('mozPreservesPitch' in audio) audio.mozPreservesPitch = !useFormantShift;
+              if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = !useFormantShift;
+              audio.playbackRate = finalPlaybackRate;
+            } catch (e) {}
+          };
+
+          applyAudioProperties();
+          audio.onloadedmetadata = applyAudioProperties;
+          audio.onplay = applyAudioProperties;
+
+          audio.onerror = function() {
+            if (!isBackup) {
+              configureAndPlay(backupUrl, true);
+            } else if (typeof onErrorFallback === 'function') {
+              onErrorFallback();
+            }
+          };
+
+          state.activeAudio = audio;
+          const playPromise = audio.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(function(err) {
+              if (!isBackup) {
+                configureAndPlay(backupUrl, true);
+              } else if (typeof onErrorFallback === 'function') {
+                onErrorFallback();
+              }
+            });
+          }
+        };
+
+        configureAndPlay(primaryUrl, false);
+      } catch (e) {
+        if (typeof onErrorFallback === 'function') {
+          onErrorFallback();
+        }
+      }
     }
 
-    function speakText(text) {
-      if (!state.soundEnabled || !text) return;
+    function playFallbackAudioTTS(text) {
+      playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'], null);
+    }
 
-      showGreetingBanner(text);
-
-      const activePreset = VOICE_PRESETS[state.voiceSelection];
-      if (!('speechSynthesis' in window) || (activePreset && activePreset.forceOnline)) {
-        playFallbackAudioTTS(text);
+    function speakWithDeviceSynthesis(text, preferredVoice) {
+      if (!('speechSynthesis' in window)) {
+        playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
         return;
       }
-
-      // Ensure latest Thai voice is selected even if voices loaded late
-      refreshThaiVoice();
 
       clearTimeout(state.speechTimer);
 
       const executeSpeak = function() {
         try {
-          // Wake up speechSynthesis in case Chrome suspended/paused it
           window.speechSynthesis.resume();
 
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = (state.thaiVoice && state.thaiVoice.lang) ? state.thaiVoice.lang : 'th-TH';
+          const voiceToUse = preferredVoice || state.thaiVoice;
+          utterance.lang = (voiceToUse && voiceToUse.lang) ? voiceToUse.lang : 'th-TH';
           utterance.volume = 1.0;
-          utterance.rate = state.voiceRate || 0.95;
-
-          // If user chose a male preset and the device already provided a native male Thai voice (e.g. Niwat), avoid double-lowering pitch
-          let effectivePitch = state.voicePitch || 1.05;
-          if (
-            activePreset &&
-            activePreset.gender === 'male' &&
-            state.thaiVoice &&
-            /niwat|pattara|male|ชาย/i.test(state.thaiVoice.name || '') &&
-            effectivePitch < 0.85
-          ) {
-            effectivePitch = 0.98;
-          }
-          utterance.pitch = effectivePitch;
-
-          if (state.thaiVoice) {
-            utterance.voice = state.thaiVoice;
+          utterance.rate = state.voiceRate || 1.00;
+          utterance.pitch = state.voicePitch || 1.00;
+          if (voiceToUse) {
+            utterance.voice = voiceToUse;
           }
 
-          // Keep strong reference to prevent Chrome GC from collecting utterance mid-speech
           state.activeUtterance = utterance;
           window._utterancePool.push(utterance);
 
@@ -1388,32 +1486,28 @@
           utterance.onerror = function(ev) {
             cleanupUtterance();
             if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') {
-              console.warn('SpeechSynthesis error, using fallback audio:', ev.error);
-              playFallbackAudioTTS(text);
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
             }
           };
 
-          // Watchdog: if Chrome speech engine is stuck in paused/pending state for >1200ms, kick or fallback
           utterance._watchdog = setTimeout(function() {
             if (!started && state.soundEnabled) {
               try {
                 window.speechSynthesis.resume();
               } catch (e) {}
               if (!window.speechSynthesis.speaking) {
-                playFallbackAudioTTS(text);
+                playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
               }
             }
           }, 1200);
 
           window.speechSynthesis.speak(utterance);
         } catch (e) {
-          console.warn('Speech error:', e);
-          playFallbackAudioTTS(text);
+          playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
         }
       };
 
       try {
-        // Avoid Chrome bug where cancel() + immediate speak() drops the new utterance
         if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
           window.speechSynthesis.cancel();
           state.speechTimer = setTimeout(executeSpeak, 80);
@@ -1423,6 +1517,42 @@
       } catch (e) {
         executeSpeak();
       }
+    }
+
+    function speakText(text) {
+      if (!state.soundEnabled || !text) return;
+
+      showGreetingBanner(text);
+      refreshThaiVoice();
+
+      const activePreset = VOICE_PRESETS[state.voiceSelection];
+
+      // Case 1: User explicitly selected a specific Device System Voice from the dropdown
+      if (state.voiceSelection && state.voiceSelection.indexOf('device:') === 0) {
+        stopActiveAudioPlayback();
+        speakWithDeviceSynthesis(text, state.thaiVoice);
+        return;
+      }
+
+      // Case 2: Preset "male_polite" -> Use native Male Thai voice (e.g., Microsoft Pattara / Niwat) if available on device, otherwise formant male
+      if (activePreset && activePreset.engine === 'native_male_or_formant') {
+        const maleDeviceVoice = getMaleDeviceVoice();
+        if (maleDeviceVoice) {
+          stopActiveAudioPlayback();
+          speakWithDeviceSynthesis(text, maleDeviceVoice);
+          return;
+        }
+        playOnlineThaiTTS(text, activePreset, function() {
+          speakWithDeviceSynthesis(text, state.thaiVoice);
+        });
+        return;
+      }
+
+      // Case 3: Female presets, Child preset, and Deep Formal Male preset -> Use Cloud Neural Female Stream + Acoustic Formant Shift
+      // (Guarantees genuine Female voices on Windows even when only male Microsoft Pattara is installed, and distinct timbre for each preset)
+      playOnlineThaiTTS(text, activePreset || VOICE_PRESETS['preset:female_polite'], function() {
+        speakWithDeviceSynthesis(text, state.thaiVoice);
+      });
     }
 
     function showGreetingBanner(text) {
@@ -2089,7 +2219,7 @@
         showToast('เปิดเสียงพูดแล้ว', 'info');
       } else {
         btn.innerHTML = '<svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg><span class="text-xs font-bold text-[#8C877B]">ปิดเสียงพูด</span>';
-        window.speechSynthesis && window.speechSynthesis.cancel();
+        stopActiveAudioPlayback();
         showToast('ปิดเสียงพูดแล้ว', 'info');
       }
     }
