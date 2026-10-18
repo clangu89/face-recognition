@@ -1266,19 +1266,24 @@
     }
 
     function stopActiveAudioPlayback() {
+      state.speechSessionId = (state.speechSessionId || 0) + 1;
       clearTimeout(state.speechTimer);
       if (state.activeAudio) {
         try {
-          state.activeAudio.pause();
-          state.activeAudio.src = '';
+          const oldAudio = state.activeAudio;
+          state.activeAudio = null;
+          oldAudio.onloadedmetadata = null;
+          oldAudio.onplay = null;
+          oldAudio.onerror = null;
+          oldAudio.onended = null;
+          oldAudio.pause();
+          oldAudio.removeAttribute('src');
+          oldAudio.load();
         } catch (e) {}
-        state.activeAudio = null;
       }
       if ('speechSynthesis' in window) {
         try {
-          if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-            window.speechSynthesis.cancel();
-          }
+          window.speechSynthesis.cancel();
         } catch (e) {}
       }
     }
@@ -1295,22 +1300,10 @@
           state.audioCtx.resume().catch(function() {});
         }
 
-        // 2. Warm up SpeechSynthesis on user gesture with silent utterance
+        // 2. Resume SpeechSynthesis without queueing an utterance that could collide
         if ('speechSynthesis' in window) {
           window.speechSynthesis.resume();
           refreshThaiVoice();
-          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
-            const warmUp = new SpeechSynthesisUtterance(' ');
-            warmUp.lang = 'th-TH';
-            warmUp.volume = 0;
-            warmUp.rate = 2.0;
-            window._utterancePool.push(warmUp);
-            warmUp.onend = function() {
-              const idx = window._utterancePool.indexOf(warmUp);
-              if (idx !== -1) window._utterancePool.splice(idx, 1);
-            };
-            window.speechSynthesis.speak(warmUp);
-          }
         }
         state.speechUnlocked = true;
         logStatus('[VOICE] ปลดล็อกระบบเสียงอัตโนมัติพร้อมทำงานทันที');
@@ -1364,20 +1357,23 @@
       setTimeout(detectVoices, 2500);
     }
 
-    // Play genuine Thai Female Cloud TTS with Acoustic Formant/Pitch Shifting
+    // Play genuine Thai Female Cloud TTS with Acoustic Formant/Pitch Shifting and strict Session Lock
     function playOnlineThaiTTS(text, preset, onErrorFallback) {
-      try {
-        stopActiveAudioPlayback();
+      stopActiveAudioPlayback();
+      const sessionId = state.speechSessionId;
 
+      try {
         const encoded = encodeURIComponent(text);
         const primaryUrl = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=th&client=gtx&q=' + encoded;
         const backupUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=th&client=tw-ob&q=' + encoded;
 
         const configureAndPlay = function(url, isBackup) {
+          if (sessionId !== state.speechSessionId) return;
+
+          let errorHandled = false;
           const audio = new Audio();
           audio.preload = 'auto';
           audio.volume = 1.0;
-          audio.src = url;
 
           // Calculate whether to shift acoustic formants (preservesPitch = false) or preserve natural female timbre
           const userPitch = state.voicePitch || 1.0;
@@ -1405,34 +1401,61 @@
             } catch (e) {}
           };
 
-          applyAudioProperties();
-          audio.onloadedmetadata = applyAudioProperties;
-          audio.onplay = applyAudioProperties;
+          const handleAudioFailure = function(err) {
+            if (errorHandled || sessionId !== state.speechSessionId) return;
+            if (err && (err.name === 'AbortError' || String(err).indexOf('AbortError') !== -1)) return;
+            errorHandled = true;
 
-          audio.onerror = function() {
+            try {
+              audio.onloadedmetadata = null;
+              audio.onplay = null;
+              audio.onerror = null;
+              audio.pause();
+            } catch (e) {}
+
             if (!isBackup) {
               configureAndPlay(backupUrl, true);
-            } else if (typeof onErrorFallback === 'function') {
+            } else if (typeof onErrorFallback === 'function' && sessionId === state.speechSessionId) {
               onErrorFallback();
             }
           };
 
+          audio.onloadedmetadata = function() {
+            if (sessionId !== state.speechSessionId) return;
+            applyAudioProperties();
+          };
+
+          audio.onplay = function() {
+            if (sessionId !== state.speechSessionId) {
+              try { audio.pause(); } catch (e) {}
+              return;
+            }
+            // Ensure speechSynthesis is completely silent while online audio plays
+            if ('speechSynthesis' in window) {
+              try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
+            applyAudioProperties();
+          };
+
+          audio.onerror = function() {
+            handleAudioFailure(null);
+          };
+
+          audio.src = url;
+          applyAudioProperties();
           state.activeAudio = audio;
+
           const playPromise = audio.play();
           if (playPromise && typeof playPromise.catch === 'function') {
             playPromise.catch(function(err) {
-              if (!isBackup) {
-                configureAndPlay(backupUrl, true);
-              } else if (typeof onErrorFallback === 'function') {
-                onErrorFallback();
-              }
+              handleAudioFailure(err);
             });
           }
         };
 
         configureAndPlay(primaryUrl, false);
       } catch (e) {
-        if (typeof onErrorFallback === 'function') {
+        if (typeof onErrorFallback === 'function' && sessionId === state.speechSessionId) {
           onErrorFallback();
         }
       }
@@ -1443,14 +1466,16 @@
     }
 
     function speakWithDeviceSynthesis(text, preferredVoice) {
+      stopActiveAudioPlayback();
+      const sessionId = state.speechSessionId;
+
       if (!('speechSynthesis' in window)) {
         playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
         return;
       }
 
-      clearTimeout(state.speechTimer);
-
       const executeSpeak = function() {
+        if (sessionId !== state.speechSessionId) return;
         try {
           window.speechSynthesis.resume();
 
@@ -1477,6 +1502,13 @@
           utterance.onstart = function() {
             started = true;
             clearTimeout(utterance._watchdog);
+            // If online audio somehow started, stop it so they never overlap
+            if (state.activeAudio) {
+              try {
+                state.activeAudio.pause();
+                state.activeAudio = null;
+              } catch (e) {}
+            }
           };
 
           utterance.onend = function() {
@@ -1485,38 +1517,30 @@
 
           utterance.onerror = function(ev) {
             cleanupUtterance();
+            if (sessionId !== state.speechSessionId) return;
             if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') {
+              try { window.speechSynthesis.cancel(); } catch (e) {}
               playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
             }
           };
 
           utterance._watchdog = setTimeout(function() {
-            if (!started && state.soundEnabled) {
-              try {
-                window.speechSynthesis.resume();
-              } catch (e) {}
-              if (!window.speechSynthesis.speaking) {
-                playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
-              }
+            if (sessionId !== state.speechSessionId) return;
+            if (!started && state.soundEnabled && !window.speechSynthesis.speaking) {
+              try { window.speechSynthesis.cancel(); } catch (e) {}
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
             }
-          }, 1200);
+          }, 1500);
 
           window.speechSynthesis.speak(utterance);
         } catch (e) {
-          playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+          if (sessionId === state.speechSessionId) {
+            playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+          }
         }
       };
 
-      try {
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-          window.speechSynthesis.cancel();
-          state.speechTimer = setTimeout(executeSpeak, 80);
-        } else {
-          executeSpeak();
-        }
-      } catch (e) {
-        executeSpeak();
-      }
+      state.speechTimer = setTimeout(executeSpeak, 60);
     }
 
     function speakText(text) {
@@ -1529,7 +1553,6 @@
 
       // Case 1: User explicitly selected a specific Device System Voice from the dropdown
       if (state.voiceSelection && state.voiceSelection.indexOf('device:') === 0) {
-        stopActiveAudioPlayback();
         speakWithDeviceSynthesis(text, state.thaiVoice);
         return;
       }
@@ -1538,20 +1561,20 @@
       if (activePreset && activePreset.engine === 'native_male_or_formant') {
         const maleDeviceVoice = getMaleDeviceVoice();
         if (maleDeviceVoice) {
-          stopActiveAudioPlayback();
           speakWithDeviceSynthesis(text, maleDeviceVoice);
           return;
         }
-        playOnlineThaiTTS(text, activePreset, function() {
-          speakWithDeviceSynthesis(text, state.thaiVoice);
-        });
+        playOnlineThaiTTS(text, activePreset, null);
         return;
       }
 
-      // Case 3: Female presets, Child preset, and Deep Formal Male preset -> Use Cloud Neural Female Stream + Acoustic Formant Shift
-      // (Guarantees genuine Female voices on Windows even when only male Microsoft Pattara is installed, and distinct timbre for each preset)
+      // Case 3: Female presets, Child preset, and Deep Formal Male preset -> Use Cloud Neural Stream + Acoustic Formant Shift exclusively
+      // (Never fall back to male Microsoft Pattara when a female preset is selected unless a genuine female device voice exists)
+      const femaleDeviceFallback = getFemaleDeviceVoice();
       playOnlineThaiTTS(text, activePreset || VOICE_PRESETS['preset:female_polite'], function() {
-        speakWithDeviceSynthesis(text, state.thaiVoice);
+        if (femaleDeviceFallback) {
+          speakWithDeviceSynthesis(text, femaleDeviceFallback);
+        }
       });
     }
 
