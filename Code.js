@@ -11,6 +11,7 @@ const SHEET_PROFILES = "FaceProfiles";
 const SHEET_LOGS = "ScanLogs";
 const SHEET_USERS = "SystemUsers";
 const SHEET_MESSAGES = "ProfileMessages";
+const SHEET_SETTINGS = "SystemSettings";
 const DRIVE_FOLDER_NAME = "FaceRecognition_Photos";
 const DB_SPREADSHEET_NAME = "AI_Face_Recognition_Database";
 
@@ -36,6 +37,10 @@ function doGet(e) {
       result = deleteProfileMessage(e.parameter.id || e.parameter.messageId);
     } else if (action === "clearMessages") {
       result = clearProfileMessages(e.parameter.profileId, e.parameter.personName);
+    } else if (action === "getSettings") {
+      result = getSystemSettings();
+    } else if (action === "saveSettings") {
+      result = saveSystemSettings(e.parameter);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -172,7 +177,30 @@ function initSheetAndFolder() {
       msgSheet.setFrozenRows(1);
     }
 
-    // 5. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
+    // 5. ตรวจสอบ Sheet การตั้งค่าระบบและค่าคงที่ (SystemSettings)
+    var settingsSheet = ss.getSheetByName(SHEET_SETTINGS);
+    if (!settingsSheet) {
+      settingsSheet = ss.insertSheet(SHEET_SETTINGS);
+      settingsSheet.appendRow([
+        "Setting_Key",
+        "Setting_Value",
+        "Description",
+        "Updated_At"
+      ]);
+      settingsSheet.getRange(1, 1, 1, 4)
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
+      settingsSheet.setFrozenRows(1);
+
+      var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+      settingsSheet.appendRow(["GREETING_KNOWN_TEMPLATE", "สวัสดี{particle}คุณ {name}", "ข้อความทักทายสมาชิกหรือบุคลากรในระบบ", nowStr]);
+      settingsSheet.appendRow(["GREETING_UNKNOWN_TEXT", "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}", "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป", nowStr]);
+      settingsSheet.appendRow(["VOICE_PARTICLE", "ค่ะ", "คำลงท้ายเสียงพูดทักทาย (ค่ะ/ครับ)", nowStr]);
+      settingsSheet.appendRow(["BELL_CHIME_ENABLED", "true", "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)", nowStr]);
+    }
+
+    // 6. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
     getOrCreateDriveFolder();
 
     return {
@@ -674,6 +702,10 @@ function doPost(e) {
       result = deleteProfileMessage(data.id || (e.parameter && e.parameter.id));
     } else if (action === "clearMessages") {
       result = clearProfileMessages(data.profileId || (e.parameter && e.parameter.profileId), data.personName);
+    } else if (action === "getSettings") {
+      result = getSystemSettings();
+    } else if (action === "saveSettings") {
+      result = saveSystemSettings(data.settings || data);
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -825,6 +857,142 @@ function clearProfileMessages(profileId, personName) {
       }
     }
     return { success: true, count: deletedCount, message: "ล้างข้อความทั้งหมดเรียบร้อยแล้ว (" + deletedCount + " แถว)" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * ดึงหรือสร้าง Sheet SystemSettings โดยอัตโนมัติพร้อมหัวตารางและค่าคงที่เริ่มต้น
+ */
+function getOrCreateSystemSettingsSheet(ss) {
+  var sheet = ss.getSheetByName(SHEET_SETTINGS);
+  if (!sheet) {
+    initSheetAndFolder();
+    sheet = ss.getSheetByName(SHEET_SETTINGS);
+  }
+  return sheet;
+}
+
+/**
+ * ดึงการตั้งค่าระบบและข้อความทักทายที่เป็นค่าคงที่ถาวร
+ */
+function getSystemSettings() {
+  try {
+    var ss = getDatabaseSpreadsheet();
+    var sheet = getOrCreateSystemSettingsSheet(ss);
+    var data = sheet.getDataRange().getValues();
+
+    var settings = {
+      knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
+      unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
+      voiceParticle: "ค่ะ",
+      bellChimeEnabled: true
+    };
+
+    if (data && data.length > 1) {
+      for (var i = 1; i < data.length; i++) {
+        var key = String(data[i][0] || "").trim().toUpperCase();
+        var val = data[i][1];
+        if (key === "GREETING_KNOWN_TEMPLATE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.knownGreetingTemplate = String(val).trim();
+        } else if (key === "GREETING_UNKNOWN_TEXT" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.unknownGreetingText = String(val).trim();
+        } else if (key === "VOICE_PARTICLE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.voiceParticle = String(val).trim();
+        } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
+          settings.bellChimeEnabled = (String(val).trim().toLowerCase() === "true");
+        }
+      }
+    }
+
+    return {
+      success: true,
+      settings: settings
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.toString(),
+      settings: {
+        knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
+        unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
+        voiceParticle: "ค่ะ",
+        bellChimeEnabled: true
+      }
+    };
+  }
+}
+
+/**
+ * บันทึกการตั้งค่าระบบและข้อความทักทายเป็นค่าคงที่ถาวรลงใน Google Sheets
+ */
+function saveSystemSettings(payload) {
+  try {
+    if (!payload) return { success: false, message: "ไม่มีข้อมูลการตั้งค่า" };
+    var ss = getDatabaseSpreadsheet();
+    var sheet = getOrCreateSystemSettingsSheet(ss);
+    var data = sheet.getDataRange().getValues();
+
+    var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+
+    var updateMap = {};
+    if (payload.knownGreetingTemplate !== undefined) {
+      updateMap["GREETING_KNOWN_TEMPLATE"] = {
+        value: String(payload.knownGreetingTemplate).trim(),
+        desc: "ข้อความทักทายสมาชิกหรือบุคลากรในระบบ"
+      };
+    }
+    if (payload.unknownGreetingText !== undefined) {
+      updateMap["GREETING_UNKNOWN_TEXT"] = {
+        value: String(payload.unknownGreetingText).trim(),
+        desc: "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป"
+      };
+    }
+    if (payload.voiceParticle !== undefined) {
+      updateMap["VOICE_PARTICLE"] = {
+        value: String(payload.voiceParticle).trim(),
+        desc: "คำลงท้ายเสียงพูดทักทาย (ค่ะ/ครับ)"
+      };
+    }
+    if (payload.bellChimeEnabled !== undefined) {
+      updateMap["BELL_CHIME_ENABLED"] = {
+        value: String(payload.bellChimeEnabled).trim().toLowerCase() === "true" ? "true" : "false",
+        desc: "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)"
+      };
+    }
+
+    // อัปเดตแถวที่มีอยู่เดิม
+    var foundKeys = {};
+    for (var i = 1; i < data.length; i++) {
+      var rowKey = String(data[i][0] || "").trim().toUpperCase();
+      if (updateMap[rowKey]) {
+        sheet.getRange(i + 1, 2).setValue(updateMap[rowKey].value);
+        sheet.getRange(i + 1, 4).setValue(nowStr);
+        foundKeys[rowKey] = true;
+      }
+    }
+
+    // เพิ่มคีย์ใหม่ที่ยังไม่มีในตาราง
+    for (var key in updateMap) {
+      if (!foundKeys[key]) {
+        sheet.appendRow([key, updateMap[key].value, updateMap[key].desc, nowStr]);
+      }
+    }
+
+    // บันทึกลง Script Properties เพื่อการอ่านที่รวดเร็ว
+    try {
+      var props = PropertiesService.getScriptProperties();
+      for (var k in updateMap) {
+        props.setProperty(k, String(updateMap[k].value));
+      }
+    } catch (eProp) {}
+
+    return {
+      success: true,
+      message: "บันทึกค่าคงที่ระบบถาวรเรียบร้อยแล้ว",
+      updatedAt: nowStr
+    };
   } catch (error) {
     return { success: false, message: error.toString() };
   }

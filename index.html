@@ -752,17 +752,32 @@
 
           <!-- Custom Greeting Messages Editor Card -->
           <div class="glass-card rounded-[28px] p-6 space-y-4">
-            <div class="flex items-center justify-between pb-2 border-b border-[#EFECE2]">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#EFECE2]">
               <div>
-                <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-                  ข้อความกล่าวทักทาย (Greeting Messages)
-                </h3>
-                <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบประโยคที่ระบบจะพูดทักทายอัตโนมัติ</p>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
+                    ข้อความกล่าวทักทาย (Greeting Messages)
+                  </h3>
+                  <span id="greetingSyncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60]"></span>
+                    <span>ค่าคงที่ถาวร (Google Sheets)</span>
+                  </span>
+                </div>
+                <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบประโยคที่ระบบจะพูดทักทายอัตโนมัติและจัดเก็บเป็นค่าคงที่ถาวร</p>
               </div>
-              <button type="button" onclick="resetGreetingTemplates()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-3 py-1 rounded-full bg-[#EAE6DA] hover:bg-[#DDD7C5] transition" title="คืนค่าข้อความเริ่มต้น">
-                คืนค่าเริ่มต้น
-              </button>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" id="saveSystemSettingsBtn" onclick="saveSystemSettingsToBackend()" class="px-3 py-1.5 rounded-xl bg-[#28AE60] hover:bg-[#219653] text-white text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm" title="บันทึกข้อความปัจจุบันเป็นค่าคงที่ถาวรของระบบบน Google Sheets">
+                  <span id="saveSystemSettingsIcon">💾</span>
+                  <span id="saveSystemSettingsText">บันทึกเป็นค่าคงที่ถาวร</span>
+                </button>
+                <button type="button" onclick="loadSystemSettingsFromBackend(true)" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#DDD7C5] transition flex items-center gap-1" title="ดึงค่าคงที่ล่าสุดจาก Google Sheets">
+                  <span>🔄</span> <span>ซิงค์ค่าระบบ</span>
+                </button>
+                <button type="button" onclick="resetGreetingTemplates()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#E5534B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#FCE8E8] transition" title="คืนค่าข้อความเริ่มต้น">
+                  คืนค่าเริ่มต้น
+                </button>
+              </div>
             </div>
 
             <!-- Known Member Greeting Input -->
@@ -778,8 +793,17 @@
               </div>
               <input type="text" id="greetingKnownInput" oninput="updateGreetingTemplate('known', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณ {name}">
               
+              <!-- Quick Preset Chips for Known Member -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบแนะนำ:</span>
+                <button type="button" onclick="applyGreetingPreset('known', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">มาตรฐาน</button>
+                <button type="button" onclick="applyGreetingPreset('known', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">ต้อนรับอบอุ่น</button>
+                <button type="button" onclick="applyGreetingPreset('known', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">อวยพรยามเช้า</button>
+                <button type="button" onclick="applyGreetingPreset('known', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">ทางการ</button>
+              </div>
+
               <!-- Live Preview for Known -->
-              <div class="p-2.5 rounded-xl bg-[#EAF7EF]/70 border border-[#BEE6CE] text-xs flex items-center gap-2">
+              <div class="p-2.5 rounded-xl bg-[#EAF7EF]/70 border border-[#BEE6CE] text-xs flex items-center gap-2 mt-1">
                 <span class="text-[10px] font-bold text-[#1E824C] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
                 <span id="voicePreviewKnownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณ ธนกร"</span>
               </div>
@@ -797,8 +821,17 @@
               </div>
               <input type="text" id="greetingUnknownInput" oninput="updateGreetingTemplate('unknown', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}">
               
+              <!-- Quick Preset Chips for Unknown Visitor -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบแนะนำ:</span>
+                <button type="button" onclick="applyGreetingPreset('unknown', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">ร้านค้า</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">สำนักงาน</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">บริการทั่วไป</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">ต้อนรับสั้น</button>
+              </div>
+
               <!-- Live Preview for Unknown -->
-              <div class="p-2.5 rounded-xl bg-[#FEF6E6]/70 border border-[#F5DFB0] text-xs flex items-center gap-2">
+              <div class="p-2.5 rounded-xl bg-[#FEF6E6]/70 border border-[#F5DFB0] text-xs flex items-center gap-2 mt-1">
                 <span class="text-[10px] font-bold text-[#9C6214] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
                 <span id="voicePreviewUnknownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
               </div>
@@ -1227,9 +1260,24 @@
     };
 
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
+    const SYSTEM_SETTINGS_STORAGE_KEY = 'face_app_system_settings_v1';
     const DEFAULT_KNOWN_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
     const DEFAULT_UNKNOWN_GREETING_TEXT = 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}';
     const PROFILE_MESSAGES_STORAGE_KEY = 'face_app_profile_messages_v1';
+
+    const GREETING_PRESETS_KNOWN = [
+      { label: 'มาตรฐาน', text: 'สวัสดี{particle}คุณ {name}' },
+      { label: 'ต้อนรับอบอุ่น', text: 'ยินดีต้อนรับ{particle}คุณ {name}' },
+      { label: 'อวยพรยามเช้า', text: 'สวัสดีตอนเช้า{particle}คุณ {name} ขอให้เป็นวันที่ดี{particle}' },
+      { label: 'ทางการ', text: 'ขอต้อนรับคุณ {name} เข้าสู่อาคาร{particle}' }
+    ];
+
+    const GREETING_PRESETS_UNKNOWN = [
+      { label: 'ร้านค้า', text: 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}' },
+      { label: 'สำนักงาน', text: 'ยินดีต้อนรับ{particle} กรุณาติดต่อเคาน์เตอร์ประชาสัมพันธ์{particle}' },
+      { label: 'บริการทั่วไป', text: 'สวัสดี{particle} ยินดีให้บริการ{particle}' },
+      { label: 'ต้อนรับสั้น', text: 'ยินดีต้อนรับ{particle}' }
+    ];
 
     const state = {
       currentUser: null,
@@ -1877,6 +1925,167 @@
       handleVoiceSelectionChange('preset:female_polite', true);
     }
 
+    function applyGreetingPreset(type, index) {
+      if (type === 'known') {
+        const item = GREETING_PRESETS_KNOWN[index];
+        if (!item) return;
+        const input = document.getElementById('greetingKnownInput');
+        if (input) input.value = item.text;
+        updateGreetingTemplate('known', item.text);
+        showToast('เลือกแม่แบบ: ' + item.label, 'info');
+      } else if (type === 'unknown') {
+        const item = GREETING_PRESETS_UNKNOWN[index];
+        if (!item) return;
+        const input = document.getElementById('greetingUnknownInput');
+        if (input) input.value = item.text;
+        updateGreetingTemplate('unknown', item.text);
+        showToast('เลือกแม่แบบ: ' + item.label, 'info');
+      }
+    }
+
+    function updateGreetingSyncBadge(status, text) {
+      const badge = document.getElementById('greetingSyncBadge');
+      if (!badge) return;
+      if (status === 'synced') {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#28AE60]"></span><span>' + (text || 'ค่าคงที่ระบบ (Google Sheets)') + '</span>';
+      } else if (status === 'saving') {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0]';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-ping"></span><span>' + (text || 'กำลังบันทึก...') + '</span>';
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#F4F3EE] text-[#5C5950] border border-[#DCD6C4]';
+        badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#8C877B]"></span><span>' + (text || 'ค่าคงที่แคชเครื่อง') + '</span>';
+      }
+    }
+
+    function loadSystemSettingsFromBackend(isManual, onDone) {
+      const handleResult = function(res) {
+        if (res && res.success && res.settings) {
+          const s = res.settings;
+          let changed = false;
+          if (s.knownGreetingTemplate && s.knownGreetingTemplate.trim()) {
+            state.knownGreetingTemplate = s.knownGreetingTemplate.trim();
+            changed = true;
+          }
+          if (s.unknownGreetingText && s.unknownGreetingText.trim()) {
+            state.unknownGreetingText = s.unknownGreetingText.trim();
+            changed = true;
+          }
+          if (s.voiceParticle === 'ค่ะ' || s.voiceParticle === 'ครับ') {
+            state.voiceParticle = s.voiceParticle;
+            changed = true;
+          }
+          if (s.bellChimeEnabled !== undefined) {
+            state.bellChimeEnabled = !!s.bellChimeEnabled;
+            changed = true;
+          }
+          if (changed) {
+            saveVoiceSettingsToStorage();
+            syncVoiceControlsUI();
+          }
+          const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+          updateGreetingSyncBadge('synced', 'ค่าคงที่ระบบ (' + timeStr + ')');
+          logStatus('[SYNC] โหลดข้อความทักทายค่าคงที่ถาวรจาก Google Sheets สำเร็จ');
+          if (isManual) {
+            showToast('โหลดค่าคงที่ถาวรจาก Google Sheets เรียบร้อยแล้ว', 'success');
+          }
+        } else {
+          updateGreetingSyncBadge('local', 'ใช้ค่าคงที่แคชเครื่อง');
+        }
+        if (typeof onDone === 'function') onDone();
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleResult)
+          .withFailureHandler(function(err) {
+            updateGreetingSyncBadge('local', 'ใช้ค่าคงที่แคชเครื่อง');
+            if (typeof onDone === 'function') onDone();
+          })
+          .getSystemSettings();
+      } else {
+        fetch(GAS_API_URL + '?action=getSettings', { redirect: 'follow' })
+          .then(function(r) { return r.json(); })
+          .then(handleResult)
+          .catch(function(e) {
+            updateGreetingSyncBadge('local', 'ใช้ค่าคงที่แคชเครื่อง');
+            if (typeof onDone === 'function') onDone();
+          });
+      }
+    }
+
+    function saveSystemSettingsToBackend() {
+      const saveBtn = document.getElementById('saveSystemSettingsBtn');
+      const saveIcon = document.getElementById('saveSystemSettingsIcon');
+      const saveText = document.getElementById('saveSystemSettingsText');
+
+      if (saveBtn) saveBtn.disabled = true;
+      if (saveIcon) saveIcon.textContent = '⏳';
+      if (saveText) saveText.textContent = 'กำลังบันทึก...';
+      updateGreetingSyncBadge('saving', 'กำลังบันทึกลง Google Sheets...');
+
+      const payload = {
+        knownGreetingTemplate: state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
+        unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
+        voiceParticle: state.voiceParticle || 'ค่ะ',
+        bellChimeEnabled: state.bellChimeEnabled !== false
+      };
+
+      const finishSave = function(success, msg) {
+        if (saveBtn) saveBtn.disabled = false;
+        if (saveIcon) saveIcon.textContent = '💾';
+        if (saveText) saveText.textContent = 'บันทึกเป็นค่าคงที่ถาวร';
+
+        if (success) {
+          const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+          updateGreetingSyncBadge('synced', 'บันทึกค่าคงที่แล้ว (' + timeStr + ')');
+          saveVoiceSettingsToStorage();
+          showToast('บันทึกข้อความทักทายเป็นค่าคงที่ถาวรของระบบเรียบร้อยแล้ว', 'success');
+          logStatus('[SYNC] บันทึกข้อความทักทายค่าคงที่ถาวรลง Google Sheets สำเร็จ');
+        } else {
+          updateGreetingSyncBadge('local', 'บันทึกล้มเหลว');
+          showToast('ไม่สามารถบันทึกค่าคงที่ได้: ' + msg, 'error');
+          logStatus('[WARN] บันทึกค่าคงที่ลง Google Sheets ล้มเหลว: ' + msg, true);
+        }
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              finishSave(true);
+            } else {
+              finishSave(false, res ? res.message : 'Unknown error');
+            }
+          })
+          .withFailureHandler(function(err) {
+            finishSave(false, err ? err.message : err);
+          })
+          .saveSystemSettings(payload);
+      } else {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'saveSettings',
+            settings: payload
+          })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          if (res && res.success) {
+            finishSave(true);
+          } else {
+            finishSave(false, res ? res.message : 'Unknown error');
+          }
+        })
+        .catch(function(err) {
+          finishSave(false, err ? err.message : err);
+        });
+      }
+    }
+
     function buildGreetingMessage(type, personName) {
       const particle = state.voiceParticle || 'ค่ะ';
       if (type === 'known') {
@@ -2047,6 +2256,7 @@
     function initSpeech() {
       loadVoiceSettingsFromStorage();
       syncVoiceControlsUI();
+      loadSystemSettingsFromBackend(false);
 
       const voiceBadge = document.getElementById('voiceStatusBadge');
       if (!('speechSynthesis' in window)) {
@@ -2454,7 +2664,7 @@
         if (refreshText) refreshText.textContent = 'กำลังโหลด...';
       }
 
-      let pendingTasks = 2;
+      let pendingTasks = 3;
       const checkAllDone = function() {
         pendingTasks--;
         if (pendingTasks <= 0) {
@@ -2566,6 +2776,9 @@
             checkAllDone();
           });
       }
+
+      // 3. ซิงค์ค่าคงที่ข้อความทักทายและเสียงพูดจาก Google Sheets
+      loadSystemSettingsFromBackend(false, checkAllDone);
     }
 
     function updateFaceMatcher() {
@@ -3757,6 +3970,9 @@
     window.updateGreetingTemplate = updateGreetingTemplate;
     window.insertGreetingTag = insertGreetingTag;
     window.resetGreetingTemplates = resetGreetingTemplates;
+    window.applyGreetingPreset = applyGreetingPreset;
+    window.loadSystemSettingsFromBackend = loadSystemSettingsFromBackend;
+    window.saveSystemSettingsToBackend = saveSystemSettingsToBackend;
     window.captureFaceForRegistration = captureFaceForRegistration;
     window.retakePhotoForRegistration = retakePhotoForRegistration;
     window.saveProfile = saveProfile;
