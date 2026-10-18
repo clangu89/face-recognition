@@ -193,50 +193,53 @@
   <!-- ========================================================================= -->
   <div id="mainAppView" class="hidden min-h-screen flex flex-col">
 
-  <!-- Top Navigation Header (Clubhouse Hallway Bar) -->
-  <header class="bg-[#F2EFE4]/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#E2DDD0] px-4 lg:px-8 py-3.5">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+  <!-- Top Navigation Header (Clubhouse Hallway Bar - Single Line) -->
+  <header class="bg-[#F2EFE4]/90 backdrop-blur-md sticky top-0 z-40 border-b border-[#E2DDD0] px-4 lg:px-8 py-2.5 sm:py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-nowrap">
       
       <!-- Brand Logo & Title -->
-      <div class="flex items-center space-x-3.5">
-        <div class="w-11 h-11 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-sm text-2xl">
+      <div class="flex items-center space-x-3 min-w-0 flex-shrink-0">
+        <div class="w-10 h-10 ch-squircle bg-[#F8D57E] border-2 border-white flex items-center justify-center shadow-sm text-xl flex-shrink-0">
           📷
         </div>
-        <div>
-          <div class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#6E6B62]">
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#6E6B62] leading-none mb-1">
             <span>SMART RECEPTION SYSTEM</span>
             <span>•</span>
-            <span class="px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#28AE60] border border-[#BEE6CE]">v3.0</span>
+            <span class="px-1.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#28AE60] border border-[#BEE6CE] font-extrabold">v3.0</span>
           </div>
-          <h1 class="text-lg font-extrabold tracking-tight text-[#1F1E1B]">
-            ระบบตรวจจับใบหน้าและทักทายอัจฉริยะ (AI Face Recognition)
+          <h1 class="text-sm sm:text-base lg:text-lg font-extrabold tracking-tight text-[#1F1E1B] truncate leading-tight">
+            ระบบตรวจจับใบหน้าและทักทายอัจฉริยะ <span class="hidden xl:inline text-xs font-semibold text-[#6E6B62]">(AI Face Recognition)</span>
           </h1>
         </div>
       </div>
 
-      <!-- Live Status Badges & User Profile Pill -->
-      <div class="flex flex-wrap items-center gap-2">
-        <span id="modelStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
-          ⏳ กำลังเตรียมโมเดล AI...
-        </span>
-        <span id="cameraStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
-          ⚪ กล้องปิดอยู่
-        </span>
-        <span id="voiceStatusBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium">
-          ⏳ ตรวจสอบเสียงไทย...
-        </span>
+      <!-- Live Status Badges & User Profile Pill (Single Line) -->
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- 3 Status Badges -->
+        <div class="hidden md:flex items-center gap-1.5 flex-shrink-0">
+          <span id="modelStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap">
+            ⏳ กำลังเตรียมโมเดล AI...
+          </span>
+          <span id="cameraStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap">
+            ⚪ กล้องปิดอยู่
+          </span>
+          <span id="voiceStatusBadge" class="text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap max-w-[190px] xl:max-w-[240px] truncate" title="สถานะเสียง">
+            ⏳ ตรวจสอบเสียงไทย...
+          </span>
+        </div>
 
         <!-- User Profile & Logout -->
-        <div class="flex items-center space-x-3 ml-2 pl-3 border-l border-[#DCD6C4]">
-          <div class="text-right">
-            <div id="headerUserName" class="text-xs font-bold text-[#1F1E1B]">Admin</div>
-            <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold">ผู้ดูแลระบบ (Administrator)</div>
+        <div class="flex items-center space-x-2.5 pl-2.5 border-l border-[#DCD6C4] flex-shrink-0">
+          <div class="text-right leading-tight hidden sm:block">
+            <div id="headerUserName" class="text-xs font-bold text-[#1F1E1B] truncate max-w-[110px]">Admin</div>
+            <div id="headerUserRole" class="text-[10px] text-[#28AE60] font-semibold truncate max-w-[140px]">ผู้ดูแลระบบ (Administrator)</div>
           </div>
-          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3.5 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm">
+          <button onclick="logoutUser()" title="ออกจากระบบ" class="px-3 py-1.5 rounded-full bg-[#FDECEB] hover:bg-[#FADBD8] text-[#E5534B] border border-[#F5C2C0] transition flex items-center space-x-1.5 text-xs font-bold shadow-sm flex-shrink-0">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
-            <span class="hidden sm:inline">ออกจากระบบ</span>
+            <span class="hidden md:inline">ออกจากระบบ</span>
           </button>
         </div>
       </div>
@@ -1267,8 +1270,9 @@
         activeLabel = '👩 เสียงผู้หญิงนุ่มนวล (ค่ะ)';
       }
 
-      voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> เสียง: ' + activeLabel;
-      voiceBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
+      voiceBadge.innerHTML = '<span class="text-[#28AE60]">●</span> <span class="truncate">เสียง: ' + activeLabel + '</span>';
+      voiceBadge.title = 'เสียง: ' + activeLabel;
+      voiceBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold whitespace-nowrap max-w-[190px] xl:max-w-[240px] inline-flex items-center gap-1';
     }
 
     function syncVoiceControlsUI() {
@@ -1730,7 +1734,7 @@
       const modelBadge = document.getElementById('modelStatusBadge');
       if (modelBadge) {
         modelBadge.innerHTML = '<span class="text-[#D9822B] animate-pulse">●</span> กำลังดาวน์โหลดโมเดล AI...';
-        modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold';
+        modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold whitespace-nowrap';
       }
 
       logStatus('[AI] กำลังโหลดโมเดล AI น้ำหนักเบาจาก Edge CDN...');
@@ -1751,7 +1755,7 @@
         state.modelsLoaded = true;
         if (modelBadge) {
           modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
-          modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
+          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold whitespace-nowrap';
         }
         logStatus('[OK] โมเดล AI ทั้งหมดพร้อมทำงาน 100%');
         showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
@@ -1762,7 +1766,7 @@
           state.modelsLoaded = true;
           if (modelBadge) {
             modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
-            modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
+            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold whitespace-nowrap';
           }
           logStatus('[OK] โมเดล AI โหลดสำเร็จจาก CDN สำรอง');
           showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
@@ -1770,7 +1774,7 @@
           logStatus('[ERROR] ไม่สามารถโหลดโมเดล AI: ' + (err2 ? err2.message : err2), true);
           if (modelBadge) {
             modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
-            modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
+            modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
           }
         }
       }
@@ -1893,7 +1897,7 @@
 
         state.cameraStarted = true;
         cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-pulse">●</span> กล้องกำลังทำงาน';
-        cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold';
+        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold whitespace-nowrap';
         document.getElementById('startCameraOverlay').classList.add('hidden');
         document.getElementById('stopCameraBtn').classList.remove('hidden');
         logStatus('[OK] กล้อง Webcam เปิดใช้งานแล้ว เริ่มการสแกนใบหน้า');
@@ -1909,7 +1913,7 @@
           showToast('ไม่สามารถเปิดกล้องได้: ' + errMsg, 'error');
         }
         cameraBadge.innerHTML = '<span class="text-[#E5534B]">●</span> กล้องไม่พร้อมใช้งาน';
-        cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
+        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
       }
     }
 
@@ -1934,7 +1938,7 @@
       document.getElementById('stopCameraBtn').classList.add('hidden');
       const cameraBadge = document.getElementById('cameraStatusBadge');
       cameraBadge.innerHTML = '<span class="text-[#8C877B]">●</span> กล้องปิดอยู่';
-      cameraBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium';
+      cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap';
       logStatus('[CAMERA] กล้อง Webcam ปิดการทำงานแล้ว');
     }
 
@@ -2857,7 +2861,7 @@
         const modelBadge = document.getElementById('modelStatusBadge');
         if (modelBadge) {
           modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
-          modelBadge.className = 'text-xs px-3 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold';
+          modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
         }
       }
     })();
