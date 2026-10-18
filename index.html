@@ -278,14 +278,40 @@
           <span>ประวัติการลงเวลา</span>
           <span id="attendanceCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 รายการ</span>
         </button>
-        <button id="tabBtn_voicesettings" onclick="switchTab('voicesettings')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
-          <span>🎙️</span>
-          <span>ตั้งค่าเสียงกล่าวทักทาย</span>
-        </button>
-        <button id="tabBtn_users" onclick="switchTab('users')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
-          <span>🛡️</span>
-          <span>จัดการบัญชีผู้ใช้งานระบบ</span>
-        </button>
+        <!-- Settings & Management Dropdown -->
+        <div class="relative inline-block" id="navDropdownContainer_settings">
+          <button type="button" id="navDropdownBtn_settings" onclick="toggleSettingsNavDropdown(event)" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-1.5 cursor-pointer">
+            <span>⚙️</span>
+            <span>ตั้งค่าและจัดการ</span>
+            <svg id="navDropdownChevron_settings" class="w-4 h-4 text-[#8C877A] transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+
+          <!-- Dropdown Menu Box -->
+          <div id="navDropdownMenu_settings" class="hidden absolute right-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-[#DCD6C4] p-1.5 z-50 transition-all">
+            <!-- Item 1: Voice Greeting Settings -->
+            <button type="button" id="navDropdownItem_voicesettings" onclick="selectSettingsDropdownTab('voicesettings')" class="w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#1F1E1B] hover:bg-[#F2EFE4] transition flex items-center justify-between group cursor-pointer">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-base">🎙️</span>
+                <span>ตั้งค่าเสียงกล่าวทักทาย</span>
+              </div>
+              <span id="navDropdownActive_voicesettings" class="hidden w-2 h-2 rounded-full bg-[#28AE60]"></span>
+            </button>
+
+            <!-- Item 2: User Account Management (Admin only) -->
+            <button type="button" id="navDropdownItem_users" onclick="selectSettingsDropdownTab('users')" class="hidden w-full text-left px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#1F1E1B] hover:bg-[#F2EFE4] transition flex items-center justify-between group cursor-pointer">
+              <div class="flex items-center space-x-2.5">
+                <span class="text-base">🛡️</span>
+                <span>จัดการบัญชีผู้ใช้งานระบบ</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="text-[10px] bg-[#EAF7EF] text-[#28AE60] font-bold px-2 py-0.5 rounded-full border border-[#28AE60]/20">Admin</span>
+                <span id="navDropdownActive_users" class="hidden w-2 h-2 rounded-full bg-[#28AE60]"></span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -5197,23 +5223,124 @@
       speakPhrasesSequence(phrases, null, true);
     }
 
+    // --- Navigation Dropdown Controllers (Settings & Management) ---
+    function toggleSettingsNavDropdown(event) {
+      if (event && typeof event.stopPropagation === 'function') {
+        event.stopPropagation();
+      }
+      var menu = document.getElementById('navDropdownMenu_settings');
+      var chevron = document.getElementById('navDropdownChevron_settings');
+      if (!menu) return;
+      var isHidden = menu.classList.contains('hidden');
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      } else {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    }
+
+    function closeSettingsNavDropdown() {
+      var menu = document.getElementById('navDropdownMenu_settings');
+      var chevron = document.getElementById('navDropdownChevron_settings');
+      if (menu) menu.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-180');
+    }
+
+    function selectSettingsDropdownTab(tabName) {
+      closeSettingsNavDropdown();
+      switchTab(tabName);
+    }
+
+    // Close settings dropdown when clicking outside or pressing Escape
+    document.addEventListener('click', function(e) {
+      var container = document.getElementById('navDropdownContainer_settings');
+      var menu = document.getElementById('navDropdownMenu_settings');
+      if (menu && !menu.classList.contains('hidden')) {
+        if (container && !container.contains(e.target)) {
+          closeSettingsNavDropdown();
+        }
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeSettingsNavDropdown();
+      }
+    });
+
     function switchTab(tabName) {
       state.currentTab = tabName;
       ['scanner', 'register', 'profiles', 'attendance', 'voicesettings', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
         const pane = document.getElementById('tabPane_' + t);
-        if (!btn || !pane) return;
+        if (pane) {
+          if (t === tabName) {
+            pane.classList.remove('hidden');
+          } else {
+            pane.classList.add('hidden');
+          }
+        }
 
-        if (t === tabName) {
-          btn.classList.add('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
-          btn.classList.remove('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
-          pane.classList.remove('hidden');
-        } else {
-          btn.classList.remove('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
-          btn.classList.add('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
-          pane.classList.add('hidden');
+        if (btn) {
+          if (t === tabName) {
+            btn.classList.add('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+            btn.classList.remove('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
+          } else {
+            btn.classList.remove('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+            btn.classList.add('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-semibold');
+          }
         }
       });
+
+      // Update Settings Dropdown button styling and child items active indicators
+      const dropdownBtn = document.getElementById('navDropdownBtn_settings');
+      const dropdownChevron = document.getElementById('navDropdownChevron_settings');
+      const itemVoice = document.getElementById('navDropdownItem_voicesettings');
+      const itemUsers = document.getElementById('navDropdownItem_users');
+      const dotVoice = document.getElementById('navDropdownActive_voicesettings');
+      const dotUsers = document.getElementById('navDropdownActive_users');
+
+      if (tabName === 'voicesettings' || tabName === 'users') {
+        if (dropdownBtn) {
+          dropdownBtn.classList.add('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+          dropdownBtn.classList.remove('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-medium');
+        }
+        if (dropdownChevron) {
+          dropdownChevron.classList.add('text-white');
+          dropdownChevron.classList.remove('text-[#8C877A]');
+        }
+      } else {
+        if (dropdownBtn) {
+          dropdownBtn.classList.remove('bg-[#28AE60]', 'text-white', 'shadow-sm', 'font-bold');
+          dropdownBtn.classList.add('text-[#5C5950]', 'hover:bg-[#F2EFE4]/70', 'font-medium');
+        }
+        if (dropdownChevron) {
+          dropdownChevron.classList.remove('text-white');
+          dropdownChevron.classList.add('text-[#8C877A]');
+        }
+      }
+
+      if (itemVoice) {
+        if (tabName === 'voicesettings') {
+          itemVoice.classList.add('bg-[#28AE60]/10', 'text-[#28AE60]', 'font-bold');
+          if (dotVoice) dotVoice.classList.remove('hidden');
+        } else {
+          itemVoice.classList.remove('bg-[#28AE60]/10', 'text-[#28AE60]', 'font-bold');
+          if (dotVoice) dotVoice.classList.add('hidden');
+        }
+      }
+
+      if (itemUsers) {
+        if (tabName === 'users') {
+          itemUsers.classList.add('bg-[#28AE60]/10', 'text-[#28AE60]', 'font-bold');
+          if (dotUsers) dotUsers.classList.remove('hidden');
+        } else {
+          itemUsers.classList.remove('bg-[#28AE60]/10', 'text-[#28AE60]', 'font-bold');
+          if (dotUsers) dotUsers.classList.add('hidden');
+        }
+      }
       if (tabName === 'voicesettings') syncVoiceControlsUI();
       if (tabName === 'profiles') renderProfilesList();
       if (tabName === 'attendance') {
@@ -5331,16 +5458,17 @@
         roleEl.className = user.role === 'admin' ? 'text-[10px] text-[#28AE60] font-bold' : 'text-[10px] text-[#6E6B62] font-semibold';
       }
 
-      // Show/hide Admin User Management Tab
+      // Show/hide Admin User Management Tab & Dropdown Item
       var userTabBtn = document.getElementById('tabBtn_users');
-      if (userTabBtn) {
-        if (user.role === 'admin') {
-          userTabBtn.classList.remove('hidden');
-          loadSystemUsers();
-        } else {
-          userTabBtn.classList.add('hidden');
-          if (state.currentTab === 'users') switchTab('scanner');
-        }
+      var userDropdownItem = document.getElementById('navDropdownItem_users');
+      if (user.role === 'admin') {
+        if (userTabBtn) userTabBtn.classList.remove('hidden');
+        if (userDropdownItem) userDropdownItem.classList.remove('hidden');
+        loadSystemUsers();
+      } else {
+        if (userTabBtn) userTabBtn.classList.add('hidden');
+        if (userDropdownItem) userDropdownItem.classList.add('hidden');
+        if (state.currentTab === 'users') switchTab('scanner');
       }
     }
 
@@ -5741,7 +5869,10 @@
     window.clearSpeechQueue = clearSpeechQueue;
     window.processSpeechQueue = processSpeechQueue;
 
-    // Window exports for Attendance and System Settings
+    // Window exports for Navigation Dropdown, Attendance and System Settings
+    window.toggleSettingsNavDropdown = toggleSettingsNavDropdown;
+    window.closeSettingsNavDropdown = closeSettingsNavDropdown;
+    window.selectSettingsDropdownTab = selectSettingsDropdownTab;
     window.openSystemSettingsModal = openSystemSettingsModal;
     window.closeSystemSettingsModal = closeSystemSettingsModal;
     window.switchSettingsModalTab = switchSettingsModalTab;
