@@ -473,101 +473,196 @@
     <!-- ========================================================================= -->
     <!-- TAB 2: Face Registration Pane -->
     <!-- ========================================================================= -->
+    <!-- TAB 2: Face Registration Pane (Enhanced HD Camera & Smart Auto-Capture) -->
+    <!-- ========================================================================= -->
     <div id="tabPane_register" class="hidden space-y-6">
       
-      <div class="max-w-3xl mx-auto glass-card rounded-[28px] p-6 sm:p-8 space-y-6">
+      <div class="max-w-5xl mx-auto glass-card rounded-[32px] p-6 sm:p-8 space-y-6">
+        <!-- Header -->
         <div class="flex items-start justify-between gap-4 border-b border-[#EFECE2] pb-4">
           <div>
-            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">FACE PROFILE REGISTRATION</span>
-            <h2 class="text-xl font-extrabold text-[#1F1E1B] mt-0.5">ลงทะเบียนข้อมูลใบหน้าบุคลากร / สมาชิก</h2>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60] bg-[#EAF7EF] px-2.5 py-0.5 rounded-full border border-[#BEE6CE]">AI FACE REGISTRATION</span>
+              <span class="text-[11px] font-bold text-[#8C877B]">ระบบตรวจจับและถ่ายภาพอัจฉริยะ</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-[#1F1E1B] mt-1">ลงทะเบียนข้อมูลใบหน้าบุคลากร / สมาชิก</h2>
             <p class="text-xs text-[#6E6B62] mt-1">
-              ถ่ายภาพใบหน้าหน้าตรงเพื่อสกัดเวกเตอร์ 128 มิติ และบันทึกข้อมูลเข้าสู่ฐานข้อมูลระบบ
+              จัดใบหน้าให้อยู่ในกรอบวงรี ระบบ AI จะแนะนำท่าทางและกดถ่ายภาพให้อัตโนมัติเมื่อคุณภาพผ่านเกณฑ์
             </p>
           </div>
           <div class="w-12 h-12 ch-squircle bg-[#F8D57E] flex items-center justify-center text-2xl shadow-inner flex-shrink-0">
-            📝
+            📸
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          <!-- Snapshot / Live Preview -->
-          <div class="space-y-3">
+          <!-- Column 1: Large HD Camera & Live Biometric Guide (7 cols) -->
+          <div class="lg:col-span-7 space-y-3.5">
             <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold uppercase tracking-wider text-[#5C5950]">
-                ตัวอย่างกล้องสด & ภาพถ่ายใบหน้า
+              <label class="block text-xs font-bold uppercase tracking-wider text-[#5C5950] flex items-center gap-1.5">
+                <span>📹</span><span>มุมมองกล้องสด (High-Definition Preview)</span>
               </label>
-              <span id="regLiveBadge" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span>
-                <span>กล้องสด (LIVE)</span>
-              </span>
+              <div class="flex items-center gap-2">
+                <span id="regAutoCaptureBadge" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1">
+                  <span>⚡</span><span>ถ่ายอัตโนมัติ: เปิด</span>
+                </span>
+                <span id="regLiveBadge" class="px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span>
+                  <span>LIVE</span>
+                </span>
+              </div>
             </div>
 
-            <div class="relative aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#DCD6C4] shadow-md flex items-center justify-center">
+            <!-- Large Camera Screen Viewport -->
+            <div class="relative w-full aspect-[4/3] min-h-[380px] sm:min-h-[460px] md:min-h-[500px] rounded-[26px] overflow-hidden bg-[#141413] border-2 border-[#DCD6C4] shadow-xl flex items-center justify-center">
               
-              <!-- Live Video Stream -->
+              <!-- Live Video Stream Container -->
               <div id="regVideoContainer" class="relative w-full h-full">
                 <video id="regWebcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
 
-                <!-- Face Positioning Oval Guide -->
+                <!-- Biometric Positioning Oval Guide -->
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div class="w-44 h-56 sm:w-52 sm:h-64 rounded-[50%] border-2 border-dashed border-[#28AE60]/80 shadow-[0_0_25px_rgba(40,174,96,0.3)] flex items-center justify-center">
-                    <span class="text-[11px] font-bold text-white bg-[#1F1E1B]/75 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow">
-                      จัดตำแหน่งใบหน้าให้อยู่ในกรอบ
+                  <div id="regOvalGuide" class="w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_20px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between py-6 transition-all duration-300">
+                    <span id="regOvalTopTag" class="text-[11px] font-bold text-white bg-[#1F1E1B]/80 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow transition-all">
+                      กรุณาจัดใบหน้าในกรอบ
+                    </span>
+                    <!-- Center reticle crosshair (fades out when ready) -->
+                    <div id="regCenterReticle" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 text-[10px] transition-opacity">
+                      +
+                    </div>
+                    <span id="regOvalBottomTag" class="text-[10px] font-bold text-[#DCD6C4] bg-[#1F1E1B]/60 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                      ดวงตาและคางอยู่ในวงรี
                     </span>
                   </div>
                 </div>
 
+                <!-- Auto-Capture Stability Progress Ring / Bar -->
+                <div id="regCountdownProgress" class="absolute top-4 inset-x-8 sm:inset-x-16 pointer-events-none opacity-0 transition-opacity duration-200 z-20">
+                  <div class="p-1 rounded-full bg-[#1F1E1B]/80 backdrop-blur-md border border-[#28AE60]/60 shadow-lg flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-[#28AE60] pl-2 flex items-center gap-1"><span>📸</span><span>ถือกล้องนิ่งๆ:</span></span>
+                    <div class="flex-1 h-2 rounded-full bg-white/20 overflow-hidden">
+                      <div id="regCountdownBar" class="h-full bg-[#28AE60] w-0 transition-all duration-75"></div>
+                    </div>
+                    <span id="regCountdownText" class="text-[11px] font-mono font-extrabold text-white pr-2">1.2s</span>
+                  </div>
+                </div>
+
+                <!-- Floating HUD Dynamic Guidance Prompt Bar -->
+                <div id="regGuidanceBar" class="absolute bottom-4 inset-x-4 pointer-events-none flex justify-center z-20">
+                  <div id="regGuidanceContent" class="px-4 py-2.5 rounded-2xl bg-[#1F1E1B]/85 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-bold shadow-xl flex items-center gap-2.5 transition-all">
+                    <span id="regGuidanceIcon" class="text-base sm:text-lg">🔲</span>
+                    <span id="regGuidanceText" class="leading-tight">กรุณาจัดตำแหน่งใบหน้าให้อยู่ในกรอบวงรี</span>
+                  </div>
+                </div>
+
+                <!-- Camera Shutter Flash Overlay -->
+                <div id="regShutterFlash" class="absolute inset-0 bg-white pointer-events-none opacity-0 transition-opacity duration-150 z-30"></div>
+
                 <!-- Fallback overlay if camera is not started -->
-                <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-sm p-4 text-center">
-                  <p class="text-xs font-semibold text-[#6E6B62] mb-3">กล้องยังไม่เปิดทำงาน</p>
-                  <button type="button" onclick="startCamera()" class="px-5 py-2.5 rounded-full text-xs font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-sm transition">
+                <div id="regCameraOffOverlay" class="absolute inset-0 hidden flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-sm p-4 text-center z-25">
+                  <div class="w-14 h-14 mx-auto mb-3 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-3xl">📷</div>
+                  <p class="text-sm font-bold text-[#1F1E1B] mb-1">กล้องยังไม่เปิดทำงาน</p>
+                  <p class="text-xs text-[#6E6B62] mb-4">กดปุ่มด้านล่างเพื่อเปิดกล้องสำหรับลงทะเบียนใบหน้า</p>
+                  <button type="button" onclick="startCamera()" class="px-6 py-2.5 rounded-full text-xs font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md transition cursor-pointer">
                     เปิดการทำงานกล้อง
                   </button>
                 </div>
               </div>
 
-              <!-- Captured Snapshot Preview (Hidden initially) -->
-              <img id="regPreviewImage" class="hidden w-full h-full object-cover">
+              <!-- Captured Snapshot Preview (Shown after capture) -->
+              <div id="regPreviewContainer" class="hidden relative w-full h-full flex items-center justify-center bg-black">
+                <img id="regPreviewImage" class="w-full h-full object-cover">
+                <div class="absolute bottom-4 inset-x-4 flex justify-center pointer-events-none">
+                  <div class="px-4 py-2 rounded-2xl bg-[#1E824C]/90 backdrop-blur-md border border-white/30 text-white text-xs font-bold shadow-lg flex items-center gap-2">
+                    <span>✓</span><span>ภาพถ่ายพร้อมใช้งานและสกัดเวกเตอร์เรียบร้อย</span>
+                  </div>
+                </div>
+              </div>
               <canvas id="snapshotCanvas" class="hidden"></canvas>
             </div>
 
-            <!-- Action Buttons: Capture & Retake -->
-            <div class="space-y-2">
-              <button id="captureForRegBtn" onclick="captureFaceForRegistration()" class="w-full py-3 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center justify-center space-x-2 text-sm">
-                <span>📸 ถ่ายภาพใบหน้าจากกล้อง</span>
+            <!-- Action Buttons: Manual Capture & Retake -->
+            <div class="space-y-2 pt-1">
+              <button id="captureForRegBtn" type="button" onclick="captureFaceForRegistration(false)" class="w-full py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/20 transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+                <span>📸</span><span>ถ่ายภาพใบหน้าทันที (Manual Capture)</span>
               </button>
 
-              <button id="retakeRegBtn" onclick="retakePhotoForRegistration()" class="hidden w-full py-2.5 rounded-full font-bold bg-[#EAE6DA] hover:bg-[#DFD9C8] text-[#1F1E1B] border border-[#DCD6C4] transition flex items-center justify-center space-x-2 text-sm">
-                <span>🔄 ถ่ายภาพใหม่ (Retake)</span>
+              <button id="retakeRegBtn" type="button" onclick="retakePhotoForRegistration()" class="hidden w-full py-3 rounded-full font-bold bg-[#EAE6DA] hover:bg-[#DFD9C8] text-[#1F1E1B] border border-[#DCD6C4] transition flex items-center justify-center space-x-2 text-sm cursor-pointer">
+                <span>🔄</span><span>ถ่ายภาพใหม่ (Retake)</span>
               </button>
             </div>
 
             <p id="regCaptureStatus" class="text-xs text-center font-medium min-h-[1.25rem]"></p>
           </div>
 
-          <!-- Registration Form Input -->
-          <div class="space-y-4">
-            <div>
-              <label for="regNameInput" class="block text-xs font-bold uppercase tracking-wider text-[#5C5950] mb-1.5">
+          <!-- Column 2: Form Input & Live Biometric Checklist (5 cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <!-- Name Input Field -->
+            <div class="glass-card rounded-[24px] p-5 border border-[#EAE6DA] space-y-2">
+              <label for="regNameInput" class="block text-xs font-bold uppercase tracking-wider text-[#5C5950]">
                 ชื่อ - นามสกุล หรือชื่อที่ใช้ทักทาย <span class="text-[#E5534B]">*</span>
               </label>
-              <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] placeholder-[#9C978B] focus:outline-none focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 text-sm transition">
-              <p class="text-xs text-[#8C877B] mt-1.5">ระบบจะกล่าวทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
+              <input type="text" id="regNameInput" placeholder="เช่น คุณสมชาย หรือ ดร.ประเสริฐ" class="w-full px-4 py-3 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] placeholder-[#9C978B] focus:outline-none focus:border-[#28AE60] focus:bg-white focus:ring-2 focus:ring-[#28AE60]/20 text-sm font-semibold transition">
+              <p class="text-[11px] text-[#8C877B]">ระบบจะกล่าวทักทายว่า "สวัสดีค่ะคุณ [ชื่อที่ระบุ]"</p>
             </div>
 
-            <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-2 text-xs text-[#5C5950]">
-              <h4 class="font-bold text-[#1F1E1B]">💡 ข้อแนะนำในการบันทึกภาพใบหน้า:</h4>
-              <ul class="list-disc list-inside space-y-1 text-[#6E6B62]">
-                <li>อยู่ในบริเวณที่มีแสงสว่างเพียงพอ ไม่ย้อนแสง</li>
-                <li>มองตรงไปที่กล้อง ถอดแว่นตาดำหรือหน้ากากอนามัย</li>
-                <li>มีใบหน้าอยู่ในกรอบเพียง 1 ท่านขณะกดถ่ายภาพ</li>
+            <!-- Auto-Capture Toggle Switch Card -->
+            <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-between gap-3">
+              <div class="flex items-center space-x-2.5">
+                <span class="w-8 h-8 rounded-xl bg-white border border-[#E0DBD0] flex items-center justify-center text-sm shadow-xs">⚡</span>
+                <div>
+                  <h4 class="text-xs font-bold text-[#1F1E1B]">ระบบถ่ายภาพอัตโนมัติ (Auto-Capture)</h4>
+                  <p class="text-[10px] text-[#8C877B]">กดชัตเตอร์ให้อัตโนมัติเมื่อใบหน้าตรงตามเกณฑ์</p>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input type="checkbox" id="regAutoCaptureToggle" checked onchange="toggleAutoCapture(this.checked)" class="sr-only peer">
+                <div class="w-11 h-6 bg-[#DCD6C4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#C4BEAF] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#28AE60]"></div>
+              </label>
+            </div>
+
+            <!-- Live Biometric Quality Checklist Card -->
+            <div class="p-4 rounded-2xl bg-[#F7F5EE] border border-[#E5E0D0] space-y-2.5">
+              <div class="flex items-center justify-between border-b border-[#E5E0D0] pb-2">
+                <h4 class="font-bold text-xs uppercase tracking-wider text-[#1F1E1B] flex items-center gap-1.5">
+                  <span>🎯</span><span>เกณฑ์คุณภาพภาพถ่าย (Live Biometrics)</span>
+                </h4>
+                <span id="regQualityScore" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAE6DA] text-[#6E6B62]">
+                  0 / 4 เกณฑ์
+                </span>
+              </div>
+
+              <ul class="space-y-1.5 text-xs">
+                <li id="check_face" class="flex items-center justify-between p-2 rounded-xl bg-white border border-[#EAE6DA] transition">
+                  <span class="flex items-center gap-2 font-medium text-[#5C5950]"><span>👤</span><span>ตรวจพบใบหน้าเดี่ยว (1 คน)</span></span>
+                  <span class="check-status font-bold text-[11px] text-[#8C877B]">รอสแกน</span>
+                </li>
+                <li id="check_center" class="flex items-center justify-between p-2 rounded-xl bg-white border border-[#EAE6DA] transition">
+                  <span class="flex items-center gap-2 font-medium text-[#5C5950]"><span>🎯</span><span>ตำแหน่งกึ่งกลางกรอบวงรี</span></span>
+                  <span class="check-status font-bold text-[11px] text-[#8C877B]">รอจัดท่า</span>
+                </li>
+                <li id="check_distance" class="flex items-center justify-between p-2 rounded-xl bg-white border border-[#EAE6DA] transition">
+                  <span class="flex items-center gap-2 font-medium text-[#5C5950]"><span>📏</span><span>ระยะห่างจากกล้องพอดี</span></span>
+                  <span class="check-status font-bold text-[11px] text-[#8C877B]">รอจัดท่า</span>
+                </li>
+                <li id="check_pose" class="flex items-center justify-between p-2 rounded-xl bg-white border border-[#EAE6DA] transition">
+                  <span class="flex items-center gap-2 font-medium text-[#5C5950]"><span>📐</span><span>ใบหน้าตั้งตรง มองตรงไปที่กล้อง</span></span>
+                  <span class="check-status font-bold text-[11px] text-[#8C877B]">รอจัดท่า</span>
+                </li>
+                <li id="check_steady" class="flex items-center justify-between p-2 rounded-xl bg-white border border-[#EAE6DA] transition">
+                  <span class="flex items-center gap-2 font-medium text-[#5C5950]"><span>⏳</span><span>ความนิ่งต่อเนื่อง (1.2 วินาที)</span></span>
+                  <span class="check-status font-bold text-[11px] text-[#8C877B]">-</span>
+                </li>
               </ul>
             </div>
 
-            <button id="saveProfileBtn" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] disabled:bg-[#EAE6DA] disabled:text-[#9C978B] disabled:cursor-not-allowed text-white shadow-md shadow-[#28AE60]/20 disabled:shadow-none transition text-sm flex items-center justify-center space-x-2">
-              <span>💾 บันทึกข้อมูลใบหน้าเข้าระบบ</span>
+            <!-- Save Profile Action Button -->
+            <button id="saveProfileBtn" type="button" onclick="saveProfile()" disabled class="w-full py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] disabled:bg-[#EAE6DA] disabled:text-[#9C978B] disabled:cursor-not-allowed text-white shadow-md shadow-[#28AE60]/20 disabled:shadow-none transition text-sm flex items-center justify-center space-x-2 cursor-pointer">
+              <span>💾</span><span>บันทึกข้อมูลใบหน้าเข้าระบบ</span>
             </button>
+
           </div>
 
         </div>
@@ -1314,7 +1409,11 @@
       unknownTracker: { lastSeen: 0, hasGreeted: false, confirmCount: 0 },
       EXIT_THRESHOLD_MS: 3000,
       capturedDescriptor: null,
-      capturedImageBase64: null
+      capturedImageBase64: null,
+      autoCaptureEnabled: true,
+      regGuideLoopRunning: false,
+      regAutoCaptureReadySince: 0,
+      regIsCapturing: false
     };
 
     function loadProfileMessagesFromStorage() {
@@ -2928,6 +3027,9 @@
         logStatus('[OK] กล้อง Webcam เปิดใช้งานแล้ว เริ่มการสแกนใบหน้า');
 
         startRecognitionLoop();
+        if (state.currentTab === 'register' && !state.capturedDescriptor) {
+          startRegistrationGuideLoop();
+        }
       } catch (err) {
         var errMsg = err ? (err.message || err.toString()) : 'Unknown error';
         logStatus('[ERROR] ไม่สามารถเปิดกล้องได้: ' + errMsg, true);
@@ -2943,6 +3045,7 @@
     }
 
     function stopCamera() {
+      stopRegistrationGuideLoop();
       if (state.stream) {
         state.stream.getTracks().forEach(track => track.stop());
         state.stream = null;
@@ -3164,19 +3267,515 @@
       }
     }
 
-    // --- Face Registration Logic ---
-    async function captureFaceForRegistration() {
+    // --- Camera Shutter Sound (Web Audio API Synthesizer) ---
+    function playCameraShutterSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!state.audioCtx) {
+          state.audioCtx = new AudioContext();
+        }
+        if (state.audioCtx.state === 'suspended') {
+          state.audioCtx.resume().catch(function() {});
+        }
+        const ctx = state.audioCtx;
+        const now = ctx.currentTime;
+
+        // Mechanical click 1
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(800, now);
+        osc1.frequency.exponentialRampToValueAtTime(120, now + 0.045);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.05);
+
+        // Mechanical click 2 (closing shutter 55ms later)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(600, now + 0.055);
+        osc2.frequency.exponentialRampToValueAtTime(80, now + 0.11);
+        gain2.gain.setValueAtTime(0.30, now + 0.055);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.055);
+        osc2.stop(now + 0.12);
+      } catch (e) {}
+    }
+
+    // --- Auto-Capture Switch & HUD Management ---
+    function toggleAutoCapture(enabled) {
+      state.autoCaptureEnabled = !!enabled;
+      const badge = document.getElementById('regAutoCaptureBadge');
+      if (badge) {
+        if (state.autoCaptureEnabled) {
+          badge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1';
+          badge.innerHTML = '<span>⚡</span><span>ถ่ายอัตโนมัติ: เปิด</span>';
+        } else {
+          badge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAE6DA] text-[#6E6B62] border border-[#DCD6C4] text-[10px] font-bold flex items-center gap-1';
+          badge.innerHTML = '<span>⏸️</span><span>ถ่ายอัตโนมัติ: ปิด</span>';
+        }
+      }
+      const toggle = document.getElementById('regAutoCaptureToggle');
+      if (toggle && toggle.checked !== state.autoCaptureEnabled) {
+        toggle.checked = state.autoCaptureEnabled;
+      }
+      if (!state.autoCaptureEnabled) {
+        hideRegCountdownUI();
+        state.regAutoCaptureReadySince = 0;
+      }
+    }
+
+    function setOvalGuideTheme(theme) {
+      const oval = document.getElementById('regOvalGuide');
+      const topTag = document.getElementById('regOvalTopTag');
+      const reticle = document.getElementById('regCenterReticle');
+      if (!oval || !topTag) return;
+
+      if (theme === 'ready') {
+        oval.className = 'w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3.5px] border-[#28AE60] shadow-[0_0_35px_rgba(40,174,96,0.65)] flex flex-col items-center justify-between py-6 transition-all duration-300 scale-102';
+        topTag.className = 'text-[11px] font-bold text-white bg-[#28AE60] px-3.5 py-1 rounded-full border border-white/40 shadow-lg';
+        topTag.textContent = '✓ ตำแหน่งสมบูรณ์แบบ';
+        if (reticle) reticle.className = 'w-8 h-8 rounded-full border border-[#28AE60] flex items-center justify-center text-[#28AE60] text-[10px] transition-opacity opacity-40';
+      } else {
+        oval.className = 'w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_20px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between py-6 transition-all duration-300';
+        topTag.className = 'text-[11px] font-bold text-white bg-[#1F1E1B]/80 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow';
+        topTag.textContent = 'กรุณาจัดใบหน้าในกรอบ';
+        if (reticle) reticle.className = 'w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 text-[10px] transition-opacity opacity-80';
+      }
+    }
+
+    function showRegCountdownUI(progressRatio, remainingSec) {
+      const progressEl = document.getElementById('regCountdownProgress');
+      const barEl = document.getElementById('regCountdownBar');
+      const textEl = document.getElementById('regCountdownText');
+      if (progressEl && state.autoCaptureEnabled) {
+        progressEl.classList.remove('opacity-0');
+        progressEl.classList.add('opacity-100');
+        if (barEl) barEl.style.width = Math.round(progressRatio * 100) + '%';
+        if (textEl) textEl.textContent = remainingSec + 's';
+      }
+    }
+
+    function hideRegCountdownUI() {
+      const progressEl = document.getElementById('regCountdownProgress');
+      const barEl = document.getElementById('regCountdownBar');
+      if (progressEl) {
+        progressEl.classList.add('opacity-0');
+        progressEl.classList.remove('opacity-100');
+      }
+      if (barEl) barEl.style.width = '0%';
+    }
+
+    function updateRegGuidanceHUD(icon, text, isSuccess) {
+      const iconEl = document.getElementById('regGuidanceIcon');
+      const textEl = document.getElementById('regGuidanceText');
+      const contentEl = document.getElementById('regGuidanceContent');
+      if (iconEl) iconEl.textContent = icon;
+      if (textEl) textEl.textContent = text;
+      if (contentEl) {
+        if (isSuccess) {
+          contentEl.className = 'px-4 py-2.5 rounded-2xl bg-[#1E824C]/95 backdrop-blur-md border border-[#28AE60] text-white text-xs sm:text-sm font-bold shadow-xl flex items-center gap-2.5 transition-all';
+        } else {
+          contentEl.className = 'px-4 py-2.5 rounded-2xl bg-[#1F1E1B]/85 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-bold shadow-xl flex items-center gap-2.5 transition-all';
+        }
+      }
+    }
+
+    function resetRegChecklistUI() {
+      const checkFace = document.querySelector('#check_face .check-status');
+      const checkCenter = document.querySelector('#check_center .check-status');
+      const checkDistance = document.querySelector('#check_distance .check-status');
+      const checkPose = document.querySelector('#check_pose .check-status');
+      const checkSteady = document.querySelector('#check_steady .check-status');
+      const scoreEl = document.getElementById('regQualityScore');
+
+      if (checkFace) { checkFace.innerHTML = 'รอสแกน'; checkFace.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+      if (checkCenter) { checkCenter.innerHTML = 'รอจัดท่า'; checkCenter.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+      if (checkDistance) { checkDistance.innerHTML = 'รอจัดท่า'; checkDistance.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+      if (checkPose) { checkPose.innerHTML = 'รอจัดท่า'; checkPose.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+      if (checkSteady) { checkSteady.innerHTML = '-'; checkSteady.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+      if (scoreEl) {
+        scoreEl.textContent = '0 / 4 เกณฑ์';
+        scoreEl.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAE6DA] text-[#6E6B62]';
+      }
+      updateRegGuidanceHUD('🔲', 'กรุณาจัดใบหน้าให้อยู่ในกรอบวงรี', false);
+      setOvalGuideTheme('normal');
+      hideRegCountdownUI();
+    }
+
+    function updateRegChecklistUI(checks) {
+      const checkFace = document.querySelector('#check_face .check-status');
+      const checkCenter = document.querySelector('#check_center .check-status');
+      const checkDistance = document.querySelector('#check_distance .check-status');
+      const checkPose = document.querySelector('#check_pose .check-status');
+      const scoreEl = document.getElementById('regQualityScore');
+
+      if (checkFace) {
+        if (checks.hasFace) {
+          checkFace.innerHTML = '✓ ผ่าน';
+          checkFace.className = 'check-status font-bold text-[11px] text-[#1E824C]';
+        } else {
+          checkFace.innerHTML = checks.faceLabel || '✗ ไม่พบ';
+          checkFace.className = 'check-status font-bold text-[11px] text-[#D94338]';
+        }
+      }
+
+      if (checkCenter) {
+        if (checks.isCentered) {
+          checkCenter.innerHTML = '✓ ตรงกลาง';
+          checkCenter.className = 'check-status font-bold text-[11px] text-[#1E824C]';
+        } else {
+          checkCenter.innerHTML = checks.centerLabel || 'จัดกึ่งกลาง';
+          checkCenter.className = 'check-status font-bold text-[11px] text-[#9C6214]';
+        }
+      }
+
+      if (checkDistance) {
+        if (checks.isGoodDistance) {
+          checkDistance.innerHTML = '✓ พอดี';
+          checkDistance.className = 'check-status font-bold text-[11px] text-[#1E824C]';
+        } else {
+          checkDistance.innerHTML = checks.distanceLabel || 'จัดระยะ';
+          checkDistance.className = 'check-status font-bold text-[11px] text-[#9C6214]';
+        }
+      }
+
+      if (checkPose) {
+        if (checks.isStraight) {
+          checkPose.innerHTML = '✓ หน้าตรง';
+          checkPose.className = 'check-status font-bold text-[11px] text-[#1E824C]';
+        } else {
+          checkPose.innerHTML = checks.poseLabel || 'จัดมุมหน้า';
+          checkPose.className = 'check-status font-bold text-[11px] text-[#9C6214]';
+        }
+      }
+
+      if (scoreEl) {
+        scoreEl.textContent = checks.score + ' / 4 เกณฑ์';
+        if (checks.score === 4) {
+          scoreEl.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]';
+        } else if (checks.score >= 2) {
+          scoreEl.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0]';
+        } else {
+          scoreEl.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAE6DA] text-[#6E6B62]';
+        }
+      }
+    }
+
+    // Evaluate single face biometric quality
+    function evaluateRegistrationFace(detection, vw, vh) {
+      const box = detection.detection ? detection.detection.box : detection.box;
+      const score = detection.detection ? detection.detection.score : (detection.score || 0.8);
+
+      let hasFace = (score >= 0.65);
+      let isCentered = false;
+      let centerLabel = 'จัดกึ่งกลาง';
+      let isGoodDistance = false;
+      let distanceLabel = 'จัดระยะ';
+      let isStraight = false;
+      let poseLabel = 'จัดมุมหน้า';
+      let guidanceIcon = '🎯';
+      let guidanceText = '';
+
+      // 1. Center alignment check
+      const cx = (box.x + box.width / 2) / vw;
+      const cy = (box.y + box.height / 2) / vh;
+
+      if (cy < 0.28) {
+        centerLabel = 'ขยับลง';
+        guidanceText = 'ขยับใบหน้าลงมาอีกนิด';
+      } else if (cy > 0.68) {
+        centerLabel = 'ขยับขึ้น';
+        guidanceText = 'ขยับใบหน้าขึ้นมาอีกนิด';
+      } else if (cx < 0.36) {
+        centerLabel = 'ขยับขวา';
+        guidanceText = 'ขยับใบหน้ามาทางกึ่งกลาง';
+      } else if (cx > 0.64) {
+        centerLabel = 'ขยับซ้าย';
+        guidanceText = 'ขยับใบหน้ามาทางกึ่งกลาง';
+      } else {
+        isCentered = true;
+      }
+
+      // 2. Distance / Size check
+      const faceRatio = box.width / vw;
+      if (faceRatio < 0.23) {
+        distanceLabel = 'ไกลเกินไป';
+        if (!guidanceText) {
+          guidanceIcon = '📏';
+          guidanceText = 'ขยับเข้าใกล้กล้องอีกนิด';
+        }
+      } else if (faceRatio > 0.60) {
+        distanceLabel = 'ใกล้เกินไป';
+        if (!guidanceText) {
+          guidanceIcon = '📏';
+          guidanceText = 'ถอยห่างจากกล้องอีกนิด';
+        }
+      } else {
+        isGoodDistance = true;
+      }
+
+      // 3. Head Pose & Straight angle check
+      if (detection.landmarks) {
+        try {
+          const leftEye = detection.landmarks.getLeftEye();
+          const rightEye = detection.landmarks.getRightEye();
+          const nose = detection.landmarks.getNose();
+
+          if (leftEye && rightEye && nose && leftEye.length > 0 && rightEye.length > 0 && nose.length > 0) {
+            const leftEyeCenter = leftEye.reduce((acc, p) => ({ x: acc.x + p.x / leftEye.length, y: acc.y + p.y / leftEye.length }), { x: 0, y: 0 });
+            const rightEyeCenter = rightEye.reduce((acc, p) => ({ x: acc.x + p.x / rightEye.length, y: acc.y + p.y / rightEye.length }), { x: 0, y: 0 });
+            const noseTip = nose[3] || nose[Math.floor(nose.length / 2)];
+
+            // Roll tilt
+            const dy = Math.abs(rightEyeCenter.y - leftEyeCenter.y);
+            const dx = Math.abs(rightEyeCenter.x - leftEyeCenter.x);
+            const rollAngle = (dx > 0) ? (Math.atan2(dy, dx) * (180 / Math.PI)) : 0;
+
+            // Yaw turn
+            const distLeft = Math.abs(noseTip.x - leftEyeCenter.x);
+            const distRight = Math.abs(rightEyeCenter.x - noseTip.x);
+            const yawRatio = (distRight > 0) ? (distLeft / distRight) : 1.0;
+
+            if (rollAngle > 10.0) {
+              poseLabel = 'เอียงศีรษะ';
+              if (!guidanceText) {
+                guidanceIcon = '📐';
+                guidanceText = 'ตั้งศีรษะให้ตรง (ไม่เอียงคอ)';
+              }
+            } else if (yawRatio < 0.55 || yawRatio > 1.80) {
+              poseLabel = 'หันหน้าหนี';
+              if (!guidanceText) {
+                guidanceIcon = '📐';
+                guidanceText = 'หันหน้ามองตรงมาที่กล้อง';
+              }
+            } else {
+              isStraight = true;
+            }
+          } else {
+            isStraight = true;
+          }
+        } catch (e) {
+          isStraight = true;
+        }
+      } else {
+        isStraight = true;
+      }
+
+      let passCount = 0;
+      if (hasFace) passCount++;
+      if (isCentered) passCount++;
+      if (isGoodDistance) passCount++;
+      if (isStraight) passCount++;
+
+      const isAllPassed = (passCount === 4);
+      if (isAllPassed) {
+        guidanceIcon = '✨';
+        guidanceText = 'ตำแหน่งสมบูรณ์แบบ! ถือนิ่งๆ สักครู่...';
+      }
+
+      return {
+        hasFace,
+        faceLabel: hasFace ? '✓ พร้อม' : '✗ คุณภาพต่ำ',
+        isCentered,
+        centerLabel,
+        isGoodDistance,
+        distanceLabel,
+        isStraight,
+        poseLabel,
+        score: passCount,
+        isAllPassed,
+        guidanceIcon,
+        guidanceText
+      };
+    }
+
+    let regGuideRafId = null;
+    let lastRegDetectTimestamp = 0;
+
+    function processRegGuideDetections(detections, vw, vh) {
+      if (!state.regGuideLoopRunning || state.currentTab !== 'register' || state.regIsCapturing) return;
+
+      const checkSteady = document.querySelector('#check_steady .check-status');
+
+      if (!detections || detections.length === 0) {
+        state.regAutoCaptureReadySince = 0;
+        hideRegCountdownUI();
+        setOvalGuideTheme('normal');
+        updateRegChecklistUI({
+          hasFace: false,
+          faceLabel: '✗ ไม่พบ',
+          isCentered: false,
+          centerLabel: 'รอจัดท่า',
+          isGoodDistance: false,
+          distanceLabel: 'รอจัดท่า',
+          isStraight: false,
+          poseLabel: 'รอจัดท่า',
+          score: 0
+        });
+        if (checkSteady) { checkSteady.innerHTML = '-'; checkSteady.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+        updateRegGuidanceHUD('👤', 'กรุณาส่องใบหน้าให้อยู่ในกรอบวงรี', false);
+        return;
+      }
+
+      if (detections.length > 1) {
+        state.regAutoCaptureReadySince = 0;
+        hideRegCountdownUI();
+        setOvalGuideTheme('normal');
+        updateRegChecklistUI({
+          hasFace: false,
+          faceLabel: '✗ พบ ' + detections.length + ' คน',
+          isCentered: false,
+          centerLabel: 'รอจัดท่า',
+          isGoodDistance: false,
+          distanceLabel: 'รอจัดท่า',
+          isStraight: false,
+          poseLabel: 'รอจัดท่า',
+          score: 0
+        });
+        if (checkSteady) { checkSteady.innerHTML = '-'; checkSteady.className = 'check-status font-bold text-[11px] text-[#8C877B]'; }
+        updateRegGuidanceHUD('👥', 'พบใบหน้าหลายคน กรุณาอยู่หน้ากล้องคนเดียว', false);
+        return;
+      }
+
+      const evalResult = evaluateRegistrationFace(detections[0], vw, vh);
+      updateRegChecklistUI(evalResult);
+      updateRegGuidanceHUD(evalResult.guidanceIcon, evalResult.guidanceText, evalResult.isAllPassed);
+
+      const STABILITY_DURATION = 1200; // 1.2 วินาทีถือคงที่
+
+      if (evalResult.isAllPassed) {
+        setOvalGuideTheme('ready');
+
+        if (!state.regAutoCaptureReadySince) {
+          state.regAutoCaptureReadySince = Date.now();
+        }
+
+        const elapsed = Date.now() - state.regAutoCaptureReadySince;
+        const progressRatio = Math.min(1.0, elapsed / STABILITY_DURATION);
+        const remainingSec = Math.max(0, (STABILITY_DURATION - elapsed) / 1000).toFixed(1);
+
+        if (state.autoCaptureEnabled) {
+          showRegCountdownUI(progressRatio, remainingSec);
+          if (checkSteady) {
+            const pct = Math.round(progressRatio * 100);
+            checkSteady.innerHTML = '⏳ ถือนิ่ง ' + pct + '%';
+            checkSteady.className = 'check-status font-bold text-[11px] text-[#28AE60] animate-pulse';
+          }
+
+          if (elapsed >= STABILITY_DURATION && !state.regIsCapturing) {
+            captureFaceForRegistration(true);
+            return;
+          }
+        } else {
+          hideRegCountdownUI();
+          if (checkSteady) {
+            checkSteady.innerHTML = '✓ พร้อมถ่าย';
+            checkSteady.className = 'check-status font-bold text-[11px] text-[#28AE60]';
+          }
+        }
+      } else {
+        state.regAutoCaptureReadySince = 0;
+        hideRegCountdownUI();
+        setOvalGuideTheme('normal');
+        if (checkSteady) {
+          checkSteady.innerHTML = '-';
+          checkSteady.className = 'check-status font-bold text-[11px] text-[#8C877B]';
+        }
+      }
+    }
+
+    function startRegistrationGuideLoop() {
+      if (state.regGuideLoopRunning) return;
+      state.regGuideLoopRunning = true;
+      state.regAutoCaptureReadySince = 0;
+      state.regIsCapturing = false;
+
+      async function regFrame() {
+        if (!state.regGuideLoopRunning || state.currentTab !== 'register') {
+          state.regGuideLoopRunning = false;
+          return;
+        }
+
+        if (state.capturedDescriptor || state.capturedImageBase64) {
+          state.regGuideLoopRunning = false;
+          return;
+        }
+
+        const regVideo = document.getElementById('regWebcamVideo');
+        const now = Date.now();
+
+        if (regVideo && regVideo.readyState >= 2 && state.modelsLoaded && (now - lastRegDetectTimestamp >= 90)) {
+          lastRegDetectTimestamp = now;
+          try {
+            const detections = await faceapi.detectAllFaces(regVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+              .withFaceLandmarks();
+
+            if (state.regGuideLoopRunning && state.currentTab === 'register' && !state.regIsCapturing) {
+              processRegGuideDetections(detections, regVideo.videoWidth || 640, regVideo.videoHeight || 480);
+            }
+          } catch (err) {}
+        }
+
+        if (state.regGuideLoopRunning && state.currentTab === 'register') {
+          regGuideRafId = requestAnimationFrame(regFrame);
+        }
+      }
+
+      regGuideRafId = requestAnimationFrame(regFrame);
+    }
+
+    function stopRegistrationGuideLoop() {
+      state.regGuideLoopRunning = false;
+      state.regAutoCaptureReadySince = 0;
+      if (regGuideRafId) {
+        cancelAnimationFrame(regGuideRafId);
+        regGuideRafId = null;
+      }
+      hideRegCountdownUI();
+      setOvalGuideTheme('normal');
+    }
+
+    // --- Face Registration Capture & Reset Logic ---
+    async function captureFaceForRegistration(isAuto) {
+      if (state.regIsCapturing) return;
+      state.regIsCapturing = true;
+
       const regVideo = document.getElementById('regWebcamVideo');
       const video = (regVideo && regVideo.readyState >= 2) ? regVideo : document.getElementById('webcamVideo');
 
       if (!state.cameraStarted || !video || video.readyState < 2) {
+        state.regIsCapturing = false;
         showToast('กรุณารอสักครู่ให้กล้องเริ่มทำงานก่อนถ่ายภาพ', 'warning');
         startCamera();
         return;
       }
 
+      // Stop registration guide loop immediately
+      stopRegistrationGuideLoop();
+
+      // Trigger shutter sound & visual flash
+      playCameraShutterSound();
+      const flashEl = document.getElementById('regShutterFlash');
+      if (flashEl) {
+        flashEl.classList.remove('opacity-0');
+        flashEl.classList.add('opacity-90');
+        setTimeout(() => {
+          flashEl.classList.remove('opacity-90');
+          flashEl.classList.add('opacity-0');
+        }, 160);
+      }
+
       const snapshotCanvas = document.getElementById('snapshotCanvas');
       const snapshotCtx = snapshotCanvas.getContext('2d');
+      const previewContainer = document.getElementById('regPreviewContainer');
       const previewImg = document.getElementById('regPreviewImage');
       const captureStatus = document.getElementById('regCaptureStatus');
       const regVideoContainer = document.getElementById('regVideoContainer');
@@ -3188,7 +3787,7 @@
       snapshotCanvas.height = video.videoHeight || 480;
       snapshotCtx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
 
-      captureStatus.textContent = 'กำลังวิเคราะห์ใบหน้าและสกัด Vector 128 มิติ...';
+      captureStatus.textContent = 'กำลังประมวลผลใบหน้าและสกัด Vector 128 มิติ...';
       captureStatus.className = 'text-xs text-[#9C6214] mt-2 font-bold text-center';
 
       try {
@@ -3197,41 +3796,56 @@
           .withFaceDescriptor();
 
         if (!detection) {
-          captureStatus.textContent = '❌ ไม่พบใบหน้าในภาพ กรุณาขยับหน้าให้อยู่ในกรอบวงรีแล้วลองใหม่อีกครั้ง';
+          captureStatus.textContent = '❌ ไม่พบใบหน้าชัดเจนในภาพ กรุณาขยับหน้าให้อยู่ในกรอบวงรีแล้วลองใหม่อีกครั้ง';
           captureStatus.className = 'text-xs text-[#D94338] mt-2 font-bold text-center';
           state.capturedDescriptor = null;
           state.capturedImageBase64 = null;
+          state.regIsCapturing = false;
           document.getElementById('saveProfileBtn').disabled = true;
+          startRegistrationGuideLoop();
           return;
         }
 
         const base64 = snapshotCanvas.toDataURL('image/jpeg', 0.85);
-        previewImg.src = base64;
-        previewImg.classList.remove('hidden');
+        if (previewImg) previewImg.src = base64;
+        if (previewContainer) previewContainer.classList.remove('hidden');
         if (regVideoContainer) regVideoContainer.classList.add('hidden');
         if (captureBtn) captureBtn.classList.add('hidden');
         if (retakeBtn) retakeBtn.classList.remove('hidden');
         if (regLiveBadge) {
           regLiveBadge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5';
-          regLiveBadge.innerHTML = '<span class="text-[#28AE60]">✓</span> <span>ภาพถ่ายพร้อมบันทึก</span>';
+          regLiveBadge.innerHTML = '<span class="text-[#28AE60]">✓</span> <span>ภาพถ่ายเรียบร้อย</span>';
         }
 
         state.capturedDescriptor = Array.from(detection.descriptor);
         state.capturedImageBase64 = base64;
+        state.regIsCapturing = false;
 
-        captureStatus.textContent = '✓ ตรวจพบใบหน้าเรียบร้อย พร้อมสำหรับบันทึกข้อมูล';
+        captureStatus.textContent = (isAuto ? '⚡ ถ่ายภาพอัตโนมัติสำเร็จ! ' : '✓ ถ่ายภาพสำเร็จ ') + 'ตรวจพบใบหน้าและสกัด Vector 128 มิติเรียบร้อย';
         captureStatus.className = 'text-xs text-[#1E824C] mt-2 font-bold text-center';
         document.getElementById('saveProfileBtn').disabled = false;
+
+        showToast((isAuto ? '⚡ ถ่ายภาพอัตโนมัติเรียบร้อย' : '📸 ถ่ายภาพใบหน้าสำเร็จ') + ' กรุณากรอกชื่อแล้วกดบันทึก', 'success');
+
+        const nameInput = document.getElementById('regNameInput');
+        if (nameInput) {
+          nameInput.focus();
+        }
       } catch (err) {
+        state.regIsCapturing = false;
         captureStatus.textContent = 'เกิดข้อผิดพลาดในการวิเคราะห์ใบหน้า: ' + (err ? err.message : err);
         captureStatus.className = 'text-xs text-[#D94338] mt-2 font-bold text-center';
+        startRegistrationGuideLoop();
       }
     }
 
     function retakePhotoForRegistration() {
       state.capturedDescriptor = null;
       state.capturedImageBase64 = null;
+      state.regIsCapturing = false;
+      state.regAutoCaptureReadySince = 0;
 
+      const previewContainer = document.getElementById('regPreviewContainer');
       const previewImg = document.getElementById('regPreviewImage');
       const regVideoContainer = document.getElementById('regVideoContainer');
       const captureBtn = document.getElementById('captureForRegBtn');
@@ -3240,10 +3854,8 @@
       const saveBtn = document.getElementById('saveProfileBtn');
       const regLiveBadge = document.getElementById('regLiveBadge');
 
-      if (previewImg) {
-        previewImg.classList.add('hidden');
-        previewImg.src = '';
-      }
+      if (previewContainer) previewContainer.classList.add('hidden');
+      if (previewImg) previewImg.src = '';
       if (regVideoContainer) regVideoContainer.classList.remove('hidden');
       if (captureBtn) captureBtn.classList.remove('hidden');
       if (retakeBtn) retakeBtn.classList.add('hidden');
@@ -3251,13 +3863,19 @@
       if (captureStatus) captureStatus.textContent = '';
       if (regLiveBadge) {
         regLiveBadge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5';
-        regLiveBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span> <span>กล้องสด (LIVE)</span>';
+        regLiveBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span> <span>LIVE</span>';
       }
+
+      resetRegChecklistUI();
 
       const regVideo = document.getElementById('regWebcamVideo');
       if (regVideo && state.stream) {
-        regVideo.srcObject = state.stream;
+        if (regVideo.srcObject !== state.stream) regVideo.srcObject = state.stream;
         regVideo.play().catch(function() {});
+      }
+
+      if (state.currentTab === 'register') {
+        startRegistrationGuideLoop();
       }
     }
 
@@ -3587,11 +4205,20 @@
           }
           if (regVideo) regVideo.play().catch(function() {});
           if (regOverlay) regOverlay.classList.add('hidden');
+          if (!state.capturedDescriptor) {
+            startRegistrationGuideLoop();
+          }
         } else {
-          startCamera().catch(function() {
+          startCamera().then(function() {
+            if (!state.capturedDescriptor) {
+              startRegistrationGuideLoop();
+            }
+          }).catch(function() {
             if (regOverlay) regOverlay.classList.remove('hidden');
           });
         }
+      } else {
+        stopRegistrationGuideLoop();
       }
     }
 
@@ -4064,6 +4691,10 @@
     window.saveSystemSettingsToBackend = saveSystemSettingsToBackend;
     window.captureFaceForRegistration = captureFaceForRegistration;
     window.retakePhotoForRegistration = retakePhotoForRegistration;
+    window.toggleAutoCapture = toggleAutoCapture;
+    window.playCameraShutterSound = playCameraShutterSound;
+    window.startRegistrationGuideLoop = startRegistrationGuideLoop;
+    window.stopRegistrationGuideLoop = stopRegistrationGuideLoop;
     window.saveProfile = saveProfile;
     window.deleteProfile = deleteProfile;
     window.loadProfilesFromBackend = loadProfilesFromBackend;
