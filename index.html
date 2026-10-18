@@ -1361,14 +1361,47 @@
       // Background sync to GAS
       try {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run.saveProfileMessage({ id: newMsg.id, profileId: cleanId, personName: cleanName, text: newMsg.text, createdAt: newMsg.createdAt });
+          google.script.run
+            .withSuccessHandler(function() {
+              logStatus('[SYNC] บันทึกข้อความลง Google Sheets สำเร็จ (' + cleanName + ')');
+            })
+            .withFailureHandler(function(err) {
+              logStatus('[WARN] บันทึก Google Sheets ไม่สำเร็จ: ' + (err ? err.message : err), true);
+            })
+            .saveProfileMessage({ id: newMsg.id, profileId: cleanId, personName: cleanName, text: newMsg.text, createdAt: newMsg.createdAt });
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'saveMessage', id: newMsg.id, profileId: cleanId, personName: cleanName, text: newMsg.text, createdAt: newMsg.createdAt })
-          }).catch(function() {});
+            body: JSON.stringify({
+              action: 'saveMessage',
+              id: newMsg.id,
+              profileId: cleanId,
+              personName: cleanName,
+              text: newMsg.text,
+              createdAt: newMsg.createdAt,
+              messageData: {
+                id: newMsg.id,
+                profileId: cleanId,
+                personName: cleanName,
+                text: newMsg.text,
+                createdAt: newMsg.createdAt
+              }
+            })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (res && res.success) {
+              logStatus('[SYNC] บันทึกข้อความลง Google Sheets สำเร็จ (' + cleanName + ')');
+            } else {
+              const errMsg = (res && res.message) ? res.message : 'Unknown error';
+              logStatus('[WARN] Google Sheets ไม่สามารถบันทึกข้อความได้: ' + errMsg + (errMsg === 'Invalid action' ? ' (กรุณาอัปเดตและ Deploy Code.js บน Apps Script เป็นเวอร์ชันใหม่)' : ''), true);
+            }
+          })
+          .catch(function(err) {
+            logStatus('[WARN] ข้อผิดพลาดซิงค์ Google Sheets: ' + (err ? err.message : err), true);
+          });
         }
       } catch (e) {}
 
@@ -1400,14 +1433,25 @@
 
       try {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run.deleteProfileMessage(messageId);
+          google.script.run
+            .withSuccessHandler(function() {
+              logStatus('[SYNC] ลบข้อความออกจาก Google Sheets สำเร็จ');
+            })
+            .deleteProfileMessage(messageId);
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'deleteMessage', id: messageId })
-          }).catch(function() {});
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (res && res.success) {
+              logStatus('[SYNC] ลบข้อความออกจาก Google Sheets สำเร็จ');
+            }
+          })
+          .catch(function() {});
         }
       } catch (e) {}
 
@@ -1432,14 +1476,25 @@
 
       try {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run.clearProfileMessages(cleanId, cleanName);
+          google.script.run
+            .withSuccessHandler(function() {
+              logStatus('[SYNC] ล้างข้อความทั้งหมดออกจาก Google Sheets สำเร็จ');
+            })
+            .clearProfileMessages(cleanId, cleanName);
         } else {
           fetch(GAS_API_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'clearMessages', profileId: cleanId, personName: cleanName })
-          }).catch(function() {});
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (res && res.success) {
+              logStatus('[SYNC] ล้างข้อความทั้งหมดออกจาก Google Sheets สำเร็จ');
+            }
+          })
+          .catch(function() {});
         }
       } catch (e) {}
     }
@@ -2446,9 +2501,17 @@
               state.profileMessages = Object.assign({}, res.messages, state.profileMessages);
               saveProfileMessagesToStorage();
               renderProfilesList();
+              const count = Object.keys(res.messages).length;
+              if (count > 0) {
+                logStatus('[SYNC] โหลดข้อความฝากจาก Google Sheets สำเร็จ (' + count + ' รายการ)');
+              }
+            } else if (res && !res.success && res.message === 'Invalid action') {
+              logStatus('[WARN] Google Apps Script ยังไม่รองรับ action=getMessages (กรุณาอัปเดต Code.js ใน Apps Script และ Deploy New Version)', true);
             }
           })
-          .catch(function() {});
+          .catch(function(e) {
+            logStatus('[WARN] ไม่สามารถดึงข้อความจาก Google Sheets: ' + (e ? e.message : e), true);
+          });
       }
     }
 

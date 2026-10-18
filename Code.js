@@ -30,6 +30,12 @@ function doGet(e) {
       result = getSystemUsers();
     } else if (action === "getMessages") {
       result = getProfileMessages();
+    } else if (action === "saveMessage") {
+      result = saveProfileMessage(e.parameter);
+    } else if (action === "deleteMessage") {
+      result = deleteProfileMessage(e.parameter.id || e.parameter.messageId);
+    } else if (action === "clearMessages") {
+      result = clearProfileMessages(e.parameter.profileId, e.parameter.personName);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -675,37 +681,63 @@ function doPost(e) {
 }
 
 /**
+ * ดึงหรือสร้าง Sheet ProfileMessages โดยอัตโนมัติพร้อมหัวตาราง
+ */
+function getOrCreateProfileMessagesSheet(ss) {
+  var sheet = ss.getSheetByName(SHEET_MESSAGES);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_MESSAGES);
+    sheet.appendRow([
+      "Message_ID", 
+      "Profile_ID", 
+      "Person_Name", 
+      "Message_Text", 
+      "Created_At"
+    ]);
+    sheet.getRange(1, 1, 1, 5)
+      .setBackground("#1E293B")
+      .setFontColor("#FFFFFF")
+      .setFontWeight("bold");
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/**
  * ดึงรายการข้อความฝากทั้งหมดจากตาราง ProfileMessages
  */
 function getProfileMessages() {
   try {
     var ss = getDatabaseSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_MESSAGES);
-    if (!sheet) {
-      initSheetAndFolder();
-      sheet = ss.getSheetByName(SHEET_MESSAGES);
-    }
-
+    var sheet = getOrCreateProfileMessagesSheet(ss);
     var data = sheet.getDataRange().getValues();
     var messages = {};
+
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      var msgId = row[0];
-      var profileId = row[1];
-      var personName = row[2];
-      var text = row[3];
-      var createdAt = row[4];
+      var msgId = String(row[0] || '').trim();
+      var profileId = String(row[1] || '').trim();
+      var personName = String(row[2] || '').trim();
+      var text = String(row[3] || '').trim();
+      var createdAt = String(row[4] || '').trim();
 
       if (msgId && text) {
-        var key = profileId || personName;
-        if (!messages[key]) messages[key] = [];
-        messages[key].push({
+        var item = {
           id: msgId,
           profileId: profileId,
           personName: personName,
           text: text,
           createdAt: createdAt
-        });
+        };
+        // ทำดัชนีทั้งสองคีย์เพื่อความรวดเร็วและแม่นยำในการค้นหา
+        if (profileId) {
+          if (!messages[profileId]) messages[profileId] = [];
+          messages[profileId].push(item);
+        }
+        if (personName && personName !== profileId) {
+          if (!messages[personName]) messages[personName] = [];
+          messages[personName].push(item);
+        }
       }
     }
     return { success: true, messages: messages };
@@ -719,20 +751,17 @@ function getProfileMessages() {
  */
 function saveProfileMessage(payload) {
   try {
-    if (!payload || !payload.text) {
+    if (!payload) return { success: false, message: "ไม่มีข้อมูลข้อความ" };
+    var text = String(payload.text || payload.messageText || "").trim();
+    if (!text) {
       return { success: false, message: "กรุณาระบุข้อความ" };
     }
     var ss = getDatabaseSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_MESSAGES);
-    if (!sheet) {
-      initSheetAndFolder();
-      sheet = ss.getSheetByName(SHEET_MESSAGES);
-    }
+    var sheet = getOrCreateProfileMessagesSheet(ss);
 
     var msgId = payload.id || ("MSG_" + Date.now().toString());
-    var profileId = payload.profileId || "";
-    var personName = payload.personName || "";
-    var text = String(payload.text).trim();
+    var profileId = String(payload.profileId || "").trim();
+    var personName = String(payload.personName || payload.name || "").trim();
     var createdAt = payload.createdAt || Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm");
 
     sheet.appendRow([msgId, profileId, personName, text, createdAt]);
@@ -749,12 +778,11 @@ function deleteProfileMessage(messageId) {
   try {
     if (!messageId) return { success: false, message: "ไม่พบรหัสข้อความ" };
     var ss = getDatabaseSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_MESSAGES);
-    if (!sheet) return { success: false, message: "ไม่พบแผ่นงาน" };
+    var sheet = getOrCreateProfileMessagesSheet(ss);
     var data = sheet.getDataRange().getValues();
 
     for (var i = 1; i < data.length; i++) {
-      if (String(data[i][0]) === String(messageId)) {
+      if (String(data[i][0]).trim() === String(messageId).trim()) {
         sheet.deleteRow(i + 1);
         return { success: true, message: "ลบข้อความเรียบร้อยแล้ว" };
       }
@@ -771,14 +799,15 @@ function deleteProfileMessage(messageId) {
 function clearProfileMessages(profileId, personName) {
   try {
     var ss = getDatabaseSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_MESSAGES);
-    if (!sheet) return { success: false, message: "ไม่พบแผ่นงาน" };
+    var sheet = getOrCreateProfileMessagesSheet(ss);
     var data = sheet.getDataRange().getValues();
+    var cleanId = String(profileId || "").trim();
+    var cleanName = String(personName || "").trim();
 
     for (var i = data.length - 1; i >= 1; i--) {
-      var rowProfId = String(data[i][1]);
-      var rowName = String(data[i][2]);
-      if ((profileId && rowProfId === String(profileId)) || (personName && rowName === String(personName))) {
+      var rowProfId = String(data[i][1]).trim();
+      var rowName = String(data[i][2]).trim();
+      if ((cleanId && rowProfId === cleanId) || (cleanName && rowName === cleanName)) {
         sheet.deleteRow(i + 1);
       }
     }
