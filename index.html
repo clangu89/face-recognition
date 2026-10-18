@@ -1301,6 +1301,9 @@
       profileMessages: {},
       activeMessageModalProfile: null,
       speechUnlocked: false,
+      speechQueue: [],
+      isSpeakingQueue: false,
+      currentSpeakingTask: null,
       activeUtterance: null,
       activeAudio: null,
       activeAudioGain: null,
@@ -2542,7 +2545,68 @@
       }, onComplete, sequenceSessionId);
     }
 
-    function speakPhrasesSequence(phrases, onFinished, withChime) {
+    // --- FIFO Speech Queue System (ลำดับการอ่านข้อความแบบ First-In-First-Out ไม่ขัดจังหวะ) ---
+    function enqueueGreetingTask(task) {
+      if (!state.soundEnabled || !task || !task.phrases || task.phrases.length === 0) return;
+
+      const taskLabel = (task.label || '').trim();
+      // ป้องกันการเข้าคิวซ้ำ: หากบุคคลนี้กำลังอ่านอยู่ หรือมีชื่ออยู่ในคิวแล้ว จะไม่เพิ่มซ้ำ
+      if (state.currentSpeakingTask && (state.currentSpeakingTask.label || '').trim() === taskLabel) {
+        return;
+      }
+      const isAlreadyInQueue = state.speechQueue.some(t => (t.label || '').trim() === taskLabel);
+      if (isAlreadyInQueue) {
+        return;
+      }
+
+      state.speechQueue.push(task);
+      const queuePos = state.speechQueue.length;
+      if (state.isSpeakingQueue) {
+        logStatus('[QUEUE] พักรอคิวเสียง: ' + taskLabel + ' (รอในคิวลำดับที่ ' + queuePos + ')');
+      }
+      processSpeechQueue();
+    }
+
+    function processSpeechQueue() {
+      if (!state.soundEnabled) {
+        clearSpeechQueue();
+        return;
+      }
+      if (state.isSpeakingQueue) {
+        // มีเสียงข้อความของบุคคลก่อนหน้ากำลังอ่านอยู่ ให้รอจนกว่าจะอ่านจบครบถ้วน
+        return;
+      }
+      if (state.speechQueue.length === 0) {
+        state.isSpeakingQueue = false;
+        state.currentSpeakingTask = null;
+        return;
+      }
+
+      const task = state.speechQueue.shift();
+      state.isSpeakingQueue = true;
+      state.currentSpeakingTask = task;
+
+      const remainingMsg = state.speechQueue.length > 0 ? ' (มีรอในคิวอีก ' + state.speechQueue.length + ' ท่าน)' : '';
+      logStatus('[SPEAK] เริ่มอ่านข้อความ: ' + task.label + remainingMsg);
+
+      executePhrasesSequence(task.phrases, function() {
+        state.currentSpeakingTask = null;
+        // หน่วงเวลาสั้นๆ 400ms ระหว่างบุคคลเพื่อให้เสียงมีความเป็นธรรมชาติและไม่ต่อกันกระชั้นชิดเกินไป
+        setTimeout(function() {
+          state.isSpeakingQueue = false;
+          processSpeechQueue();
+        }, 400);
+      }, task.withChime);
+    }
+
+    function clearSpeechQueue() {
+      state.speechQueue = [];
+      state.isSpeakingQueue = false;
+      state.currentSpeakingTask = null;
+      stopActiveAudioPlayback();
+    }
+
+    function executePhrasesSequence(phrases, onFinished, withChime) {
       if (!state.soundEnabled || !phrases || phrases.length === 0) {
         if (typeof onFinished === 'function') onFinished();
         return;
@@ -2553,7 +2617,10 @@
 
       let index = 0;
       function playNext() {
-        if (currentSessionId !== state.speechSessionId) return;
+        if (currentSessionId !== state.speechSessionId) {
+          if (typeof onFinished === 'function') onFinished();
+          return;
+        }
         if (index >= phrases.length) {
           if (typeof onFinished === 'function') onFinished();
           return;
@@ -2566,6 +2633,8 @@
         speakSinglePhrase(text, function() {
           if (currentSessionId === state.speechSessionId) {
             setTimeout(playNext, 280);
+          } else if (typeof onFinished === 'function') {
+            onFinished();
           }
         }, currentSessionId);
       }
@@ -2574,11 +2643,19 @@
         playBellChime(function() {
           if (currentSessionId === state.speechSessionId) {
             playNext();
+          } else if (typeof onFinished === 'function') {
+            onFinished();
           }
         }, currentSessionId);
       } else {
         playNext();
       }
+    }
+
+    function speakPhrasesSequence(phrases, onFinished, withChime) {
+      // เรียกใช้โดยตรงจากปุ่มกดทดสอบ (Manual Preview/Test): ล้างคิวพื้นหลังและอ่านทดสอบทันที
+      clearSpeechQueue();
+      executePhrasesSequence(phrases, onFinished, withChime);
     }
 
     function speakText(text, onComplete, withChime) {
@@ -3024,8 +3101,14 @@
           logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + cleanName + ' (กำลังอ่านตามลำดับ)');
         }
 
-        speakPhrasesSequence(phrases, null, true);
-        logStatus('[GREET] ทักทายผู้ใช้: คุณ ' + cleanName);
+        enqueueGreetingTask({
+          id: 'greet_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          type: 'known',
+          label: cleanName,
+          phrases: phrases,
+          withChime: true
+        });
+        logStatus('[GREET] ตรวจพบใบหน้า: คุณ ' + cleanName + ' (บันทึกลงคิวทักทาย)');
         recordScanLog(cleanName, 'KNOWN', confidence);
       } else {
         person.lastSeen = now;
@@ -3040,8 +3123,14 @@
       // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 3 เฟรม เพื่อป้องกันเฟรมแรกที่กล้องเพิ่งปรับโฟกัสแล้วเบลอ
       if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 3) {
         state.unknownTracker.hasGreeted = true;
-        speakText(buildGreetingMessage('unknown'), null, true);
-        logStatus('[GREET] ทักทายผู้มาติดต่อ / ลูกค้าทั่วไป');
+        enqueueGreetingTask({
+          id: 'greet_unknown_' + Date.now(),
+          type: 'unknown',
+          label: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
+          phrases: [buildGreetingMessage('unknown')],
+          withChime: true
+        });
+        logStatus('[GREET] ตรวจพบผู้มาติดต่อ / ลูกค้าทั่วไป (บันทึกลงคิวทักทาย)');
         recordScanLog('ลูกค้าทั่วไป', 'UNKNOWN', 0);
       }
     }
@@ -3515,7 +3604,7 @@
         showToast('เปิดเสียงพูดแล้ว', 'info');
       } else {
         btn.innerHTML = '<svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg><span class="text-xs font-bold text-[#8C877B]">ปิดเสียงพูด</span>';
-        stopActiveAudioPlayback();
+        clearSpeechQueue();
         showToast('ปิดเสียงพูดแล้ว', 'info');
       }
     }
@@ -3991,6 +4080,9 @@
     window.deleteProfileMessage = deleteProfileMessage;
     window.clearAllProfileMessages = clearAllProfileMessages;
     window.speakPhrasesSequence = speakPhrasesSequence;
+    window.enqueueGreetingTask = enqueueGreetingTask;
+    window.clearSpeechQueue = clearSpeechQueue;
+    window.processSpeechQueue = processSpeechQueue;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
