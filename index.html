@@ -986,6 +986,70 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL: Personal Profile Message Box (กล่องฝากข้อความประจำบุคคล) -->
+  <!-- ========================================================================= -->
+  <div id="profileMessagesModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-[#1F1E1B]/50 backdrop-blur-sm">
+    <div class="w-full max-w-xl glass-card rounded-[32px] p-6 sm:p-7 shadow-2xl relative max-h-[90vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-[#EFECE2] flex-shrink-0">
+        <div class="flex items-center space-x-3">
+          <div id="msgModalAvatar" class="w-12 h-12 ch-squircle bg-[#EAF7EF] border-2 border-[#28AE60] flex items-center justify-center text-xl font-extrabold text-[#1E824C] flex-shrink-0 shadow-sm overflow-hidden">
+            💬
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="msgModalTitle" class="text-lg font-extrabold text-[#1F1E1B]">กล่องฝากข้อความ</h3>
+              <span id="msgModalBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold">0 ข้อความ</span>
+            </div>
+            <p class="text-xs text-[#6E6B62] mt-0.5">ระบบจะกล่าวทักทายและอ่านข้อความเหล่านี้ตามลำดับเมื่อตรวจพบใบหน้า</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeProfileMessagesModal()" class="text-[#8C877B] hover:text-[#1F1E1B] p-1.5 rounded-full hover:bg-[#F7F5EE] transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Add New Message Form Row -->
+      <div class="py-4 border-b border-[#EFECE2] flex-shrink-0">
+        <label for="newProfileMessageInput" class="block text-xs font-bold text-[#1E824C] mb-1.5 flex items-center gap-1.5">
+          <span>➕</span> <span>เพิ่มแถวข้อความใหม่ที่ต้องการฝากไว้:</span>
+        </label>
+        <div class="flex gap-2">
+          <input type="text" id="newProfileMessageInput" onkeydown="if(event.key==='Enter'){event.preventDefault();addProfileMessageFromModal();}" placeholder="พิมพ์ข้อความที่ต้องการฝาก เช่น มีเอกสารวางไว้ที่โต๊ะ, บ่ายสองมีนัดประชุม ฯลฯ" class="flex-1 px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner">
+          <button type="button" onclick="addProfileMessageFromModal()" class="px-5 py-2.5 rounded-2xl bg-[#28AE60] hover:bg-[#229954] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#28AE60]/20 transition flex items-center space-x-1.5 whitespace-nowrap">
+            <span>➕</span>
+            <span>เพิ่มข้อความ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages List Container (Scrollable) -->
+      <div class="flex-1 overflow-y-auto py-3 space-y-2.5 min-h-[160px] max-h-[360px]" id="profileMessagesList">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#EFECE2] flex-shrink-0">
+        <div class="flex items-center space-x-2">
+          <button type="button" onclick="testAllProfileMessagesSpeech()" class="px-4 py-2 rounded-full text-xs font-bold bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] transition flex items-center space-x-1.5 shadow-sm">
+            <span>🔊</span>
+            <span>ทดสอบอ่านทั้งหมดตามลำดับ</span>
+          </button>
+          <button type="button" onclick="clearAllProfileMessagesFromModal()" class="px-3.5 py-2 rounded-full text-xs font-bold text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] border border-[#DCD6C4] transition flex items-center space-x-1 shadow-sm">
+            <span>🗑️</span>
+            <span>ลบทั้งหมด</span>
+          </button>
+        </div>
+        <button type="button" onclick="closeProfileMessagesModal()" class="px-5 py-2 rounded-full text-xs font-bold text-[#5C5950] hover:text-[#1F1E1B] bg-[#EAE6DA] hover:bg-[#DFD9C8] transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Floating Box -->
   <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden toast-enter">
     <div id="toastIcon"></div>
@@ -1140,6 +1204,7 @@
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
     const DEFAULT_KNOWN_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
     const DEFAULT_UNKNOWN_GREETING_TEXT = 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}';
+    const PROFILE_MESSAGES_STORAGE_KEY = 'face_app_profile_messages_v1';
 
     const state = {
       currentUser: null,
@@ -1160,6 +1225,8 @@
       voiceParticle: 'ค่ะ',
       knownGreetingTemplate: DEFAULT_KNOWN_GREETING_TEMPLATE,
       unknownGreetingText: DEFAULT_UNKNOWN_GREETING_TEXT,
+      profileMessages: {},
+      activeMessageModalProfile: null,
       speechUnlocked: false,
       activeUtterance: null,
       activeAudio: null,
@@ -1171,6 +1238,87 @@
       capturedDescriptor: null,
       capturedImageBase64: null
     };
+
+    function loadProfileMessagesFromStorage() {
+      try {
+        const raw = localStorage.getItem(PROFILE_MESSAGES_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            state.profileMessages = parsed;
+          }
+        }
+      } catch (e) {}
+    }
+
+    function saveProfileMessagesToStorage() {
+      try {
+        localStorage.setItem(PROFILE_MESSAGES_STORAGE_KEY, JSON.stringify(state.profileMessages || {}));
+      } catch (e) {}
+    }
+
+    function getProfileMessages(profileId, personName) {
+      if (!state.profileMessages) state.profileMessages = {};
+      let list = [];
+      if (profileId && state.profileMessages[profileId]) {
+        list = state.profileMessages[profileId];
+      } else if (personName && state.profileMessages[personName]) {
+        list = state.profileMessages[personName];
+      }
+      return Array.isArray(list) ? list : [];
+    }
+
+    function addProfileMessage(profileId, personName, text) {
+      if (!text || !text.trim()) return null;
+      const key = profileId || personName;
+      if (!key) return null;
+
+      if (!state.profileMessages) state.profileMessages = {};
+      if (!Array.isArray(state.profileMessages[key])) {
+        state.profileMessages[key] = [];
+      }
+
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+      const newMsg = {
+        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        text: text.trim(),
+        createdAt: timeStr
+      };
+
+      state.profileMessages[key].push(newMsg);
+      // Sync by name too if profileId was used, for robust lookup
+      if (personName && personName !== key) {
+        state.profileMessages[personName] = state.profileMessages[key];
+      }
+      saveProfileMessagesToStorage();
+      return newMsg;
+    }
+
+    function deleteProfileMessage(profileId, personName, messageId) {
+      const key = (profileId && state.profileMessages[profileId]) ? profileId : personName;
+      if (!key || !state.profileMessages[key]) return false;
+      const initialLen = state.profileMessages[key].length;
+      state.profileMessages[key] = state.profileMessages[key].filter(m => m.id !== messageId);
+      if (personName && state.profileMessages[personName]) {
+        state.profileMessages[personName] = state.profileMessages[key];
+      }
+      saveProfileMessagesToStorage();
+      return state.profileMessages[key].length < initialLen;
+    }
+
+    function clearAllProfileMessages(profileId, personName) {
+      const key = (profileId && state.profileMessages[profileId]) ? profileId : personName;
+      if (key && state.profileMessages[key]) {
+        state.profileMessages[key] = [];
+      }
+      if (personName && state.profileMessages[personName]) {
+        state.profileMessages[personName] = [];
+      }
+      saveProfileMessagesToStorage();
+    }
 
     // Global pool to prevent Chrome V8 Garbage Collector from destroying active Utterances mid-speech
     window._utterancePool = [];
@@ -1629,7 +1777,7 @@
     }
 
     // Play genuine Thai Female Cloud TTS with Acoustic Formant/Pitch Shifting and strict Session Lock
-    function playOnlineThaiTTS(text, preset, onErrorFallback) {
+    function playOnlineThaiTTS(text, preset, onErrorFallback, onComplete) {
       stopActiveAudioPlayback();
       const sessionId = state.speechSessionId;
 
@@ -1681,6 +1829,7 @@
               audio.onloadedmetadata = null;
               audio.onplay = null;
               audio.onerror = null;
+              audio.onended = null;
               audio.pause();
             } catch (e) {}
 
@@ -1688,6 +1837,8 @@
               configureAndPlay(backupUrl, true);
             } else if (typeof onErrorFallback === 'function' && sessionId === state.speechSessionId) {
               onErrorFallback();
+            } else if (typeof onComplete === 'function') {
+              onComplete();
             }
           };
 
@@ -1706,6 +1857,13 @@
               try { window.speechSynthesis.cancel(); } catch (e) {}
             }
             applyAudioProperties();
+          };
+
+          audio.onended = function() {
+            if (sessionId !== state.speechSessionId) return;
+            if (typeof onComplete === 'function') {
+              onComplete();
+            }
           };
 
           audio.onerror = function() {
@@ -1728,20 +1886,22 @@
       } catch (e) {
         if (typeof onErrorFallback === 'function' && sessionId === state.speechSessionId) {
           onErrorFallback();
+        } else if (typeof onComplete === 'function') {
+          onComplete();
         }
       }
     }
 
-    function playFallbackAudioTTS(text) {
-      playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'], null);
+    function playFallbackAudioTTS(text, onComplete) {
+      playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection] || VOICE_PRESETS['preset:female_polite'], null, onComplete);
     }
 
-    function speakWithDeviceSynthesis(text, preferredVoice) {
+    function speakWithDeviceSynthesis(text, preferredVoice, onComplete) {
       stopActiveAudioPlayback();
       const sessionId = state.speechSessionId;
 
       if (!('speechSynthesis' in window)) {
-        playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+        playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
         return;
       }
 
@@ -1784,6 +1944,10 @@
 
           utterance.onend = function() {
             cleanupUtterance();
+            if (sessionId !== state.speechSessionId) return;
+            if (typeof onComplete === 'function') {
+              onComplete();
+            }
           };
 
           utterance.onerror = function(ev) {
@@ -1791,7 +1955,9 @@
             if (sessionId !== state.speechSessionId) return;
             if (ev && ev.error !== 'interrupted' && ev.error !== 'canceled') {
               try { window.speechSynthesis.cancel(); } catch (e) {}
-              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+            } else if (typeof onComplete === 'function') {
+              onComplete();
             }
           };
 
@@ -1799,14 +1965,16 @@
             if (sessionId !== state.speechSessionId) return;
             if (!started && state.soundEnabled && !window.speechSynthesis.speaking) {
               try { window.speechSynthesis.cancel(); } catch (e) {}
-              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+              playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
             }
           }, 1500);
 
           window.speechSynthesis.speak(utterance);
         } catch (e) {
           if (sessionId === state.speechSessionId) {
-            playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null);
+            playOnlineThaiTTS(text, VOICE_PRESETS[state.voiceSelection], null, onComplete);
+          } else if (typeof onComplete === 'function') {
+            onComplete();
           }
         }
       };
@@ -1814,8 +1982,11 @@
       state.speechTimer = setTimeout(executeSpeak, 60);
     }
 
-    function speakText(text) {
-      if (!state.soundEnabled || !text) return;
+    function speakSinglePhrase(text, onComplete) {
+      if (!state.soundEnabled || !text) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
 
       showGreetingBanner(text);
       refreshThaiVoice();
@@ -1824,7 +1995,7 @@
 
       // Case 1: User explicitly selected a specific Device System Voice from the dropdown
       if (state.voiceSelection && state.voiceSelection.indexOf('device:') === 0) {
-        speakWithDeviceSynthesis(text, state.thaiVoice);
+        speakWithDeviceSynthesis(text, state.thaiVoice, onComplete);
         return;
       }
 
@@ -1832,21 +2003,56 @@
       if (activePreset && activePreset.engine === 'native_male_or_formant') {
         const maleDeviceVoice = getMaleDeviceVoice();
         if (maleDeviceVoice) {
-          speakWithDeviceSynthesis(text, maleDeviceVoice);
+          speakWithDeviceSynthesis(text, maleDeviceVoice, onComplete);
           return;
         }
-        playOnlineThaiTTS(text, activePreset, null);
+        playOnlineThaiTTS(text, activePreset, null, onComplete);
         return;
       }
 
       // Case 3: Female presets, Child preset, and Deep Formal Male preset -> Use Cloud Neural Stream + Acoustic Formant Shift exclusively
-      // (Never fall back to male Microsoft Pattara when a female preset is selected unless a genuine female device voice exists)
       const femaleDeviceFallback = getFemaleDeviceVoice();
       playOnlineThaiTTS(text, activePreset || VOICE_PRESETS['preset:female_polite'], function() {
         if (femaleDeviceFallback) {
-          speakWithDeviceSynthesis(text, femaleDeviceFallback);
+          speakWithDeviceSynthesis(text, femaleDeviceFallback, onComplete);
+        } else if (typeof onComplete === 'function') {
+          onComplete();
         }
-      });
+      }, onComplete);
+    }
+
+    function speakPhrasesSequence(phrases, onFinished) {
+      if (!state.soundEnabled || !phrases || phrases.length === 0) {
+        if (typeof onFinished === 'function') onFinished();
+        return;
+      }
+
+      stopActiveAudioPlayback();
+      const currentSessionId = state.speechSessionId;
+
+      let index = 0;
+      function playNext() {
+        if (currentSessionId !== state.speechSessionId) return;
+        if (index >= phrases.length) {
+          if (typeof onFinished === 'function') onFinished();
+          return;
+        }
+        const text = phrases[index++];
+        if (!text || !text.trim()) {
+          playNext();
+          return;
+        }
+        speakSinglePhrase(text, function() {
+          if (currentSessionId === state.speechSessionId) {
+            setTimeout(playNext, 280);
+          }
+        });
+      }
+      playNext();
+    }
+
+    function speakText(text, onComplete) {
+      speakPhrasesSequence([text], onComplete);
     }
 
     function showGreetingBanner(text) {
@@ -1959,12 +2165,34 @@
           .withSuccessHandler(handleProfilesSuccess)
           .withFailureHandler(handleProfilesError)
           .getFaceProfiles();
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success && res.messages) {
+              state.profileMessages = Object.assign({}, res.messages, state.profileMessages);
+              saveProfileMessagesToStorage();
+              renderProfilesList();
+            }
+          })
+          .withFailureHandler(function() {})
+          .getProfileMessages();
       } else {
         // Direct REST API (GitHub Pages / Standalone HTTPS)
         fetch(GAS_API_URL + '?action=getProfiles', { redirect: 'follow' })
           .then(function(r) { return r.json(); })
           .then(handleProfilesSuccess)
           .catch(handleProfilesError);
+
+        fetch(GAS_API_URL + '?action=getMessages', { redirect: 'follow' })
+          .then(function(r) { return r.json(); })
+          .then(function(res) {
+            if (res && res.success && res.messages) {
+              state.profileMessages = Object.assign({}, res.messages, state.profileMessages);
+              saveProfileMessagesToStorage();
+              renderProfilesList();
+            }
+          })
+          .catch(function() {});
       }
     }
 
@@ -2190,7 +2418,23 @@
       let person = state.trackedPersons.get(name);
       if (!person) {
         state.trackedPersons.set(name, { lastSeen: now, hasGreeted: true });
-        speakText(buildGreetingMessage('known', name));
+
+        const greetingMsg = buildGreetingMessage('known', name);
+        const profile = (state.profiles || []).find(p => p.name === name);
+        const profileId = profile ? profile.id : null;
+        const messages = getProfileMessages(profileId, name);
+
+        const phrases = [greetingMsg];
+        if (messages && messages.length > 0) {
+          const particle = state.voiceParticle || 'ค่ะ';
+          phrases.push('คุณมี ' + messages.length + ' ข้อความ' + particle);
+          messages.forEach((m, idx) => {
+            phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
+          });
+          logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + name);
+        }
+
+        speakPhrasesSequence(phrases);
         logStatus('[GREET] ทักทายผู้ใช้: คุณ ' + name);
         recordScanLog(name, 'KNOWN', confidence);
       } else {
@@ -2458,14 +2702,180 @@
           ? '<img src="' + safeUrl + '" alt="' + safeName + '" class="w-16 h-16 ch-squircle object-cover border-2 border-[#28AE60] flex-shrink-0 shadow-sm" onerror="this.src=\'https://ui-avatars.com/api/?name=' + encodeURIComponent(safeName) + '&background=EAF7EF&color=1E824C\'">'
           : '<div class="w-16 h-16 ch-squircle bg-[#EAF7EF] flex items-center justify-center text-xl font-extrabold text-[#1E824C] border-2 border-[#28AE60] flex-shrink-0 shadow-sm">' + safeName.charAt(0) + '</div>';
 
-        html += '<div class="glass-card rounded-[24px] p-4 flex items-center justify-between hover:border-[#28AE60]/60 transition shadow-sm">' +
-          '<div class="flex items-center space-x-3.5 overflow-hidden">' +
-          '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] text-[#28AE60] font-bold shadow">✓</span></div>' +
-          '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">วันที่ลงทะเบียน: ' + (p.createdAt || '-') + '</p></div></div>' +
-          '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2.5 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบข้อมูล"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
+        var msgs = getProfileMessages(p.id, p.name);
+        var msgCount = msgs.length;
+        var msgBtnClass = msgCount > 0
+          ? 'bg-[#EAF7EF] border border-[#BEE6CE] text-[#1E824C] hover:bg-[#28AE60] hover:text-white'
+          : 'bg-[#F7F5EE] border border-[#DCD6C4] text-[#5C5950] hover:bg-[#EAE6DA] hover:text-[#1F1E1B]';
+        var badgeClass = msgCount > 0
+          ? 'bg-[#28AE60] text-white'
+          : 'bg-[#EAE6DA] text-[#6E6B62]';
+
+        html += '<div class="glass-card rounded-[24px] p-4 flex flex-col justify-between hover:border-[#28AE60]/60 transition shadow-sm space-y-3">' +
+          '<div class="flex items-center justify-between">' +
+            '<div class="flex items-center space-x-3.5 overflow-hidden">' +
+              '<div class="relative flex-shrink-0">' + imgDisplay + '<span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-[#E5E0D0] flex items-center justify-center text-[10px] text-[#28AE60] font-bold shadow">✓</span></div>' +
+              '<div class="truncate"><h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4><p class="text-xs text-[#6E6B62] font-medium">วันที่ลงทะเบียน: ' + (p.createdAt || '-') + '</p></div>' +
+            '</div>' +
+            '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบข้อมูล">' +
+              '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="pt-2 border-t border-[#EFECE2]">' +
+            '<button type="button" onclick="openProfileMessagesModal(\'' + p.id + '\', \'' + safeName + '\', \'' + safeUrl + '\')" class="w-full py-2 px-3.5 rounded-xl ' + msgBtnClass + ' transition flex items-center justify-between text-xs font-bold shadow-xs cursor-pointer">' +
+              '<span class="flex items-center space-x-1.5"><span>💬</span><span>กล่องฝากข้อความ</span></span>' +
+              '<span class="px-2 py-0.5 rounded-full text-[11px] ' + badgeClass + ' font-extrabold">' + msgCount + '</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
       });
       html += '</div>';
       container.innerHTML = html;
+    }
+
+    // --- Profile Messages Modal Controllers ---
+    function openProfileMessagesModal(profileId, personName, imageUrl) {
+      state.activeMessageModalProfile = {
+        id: profileId,
+        name: personName,
+        imageUrl: imageUrl || ''
+      };
+
+      const modal = document.getElementById('profileMessagesModal');
+      const title = document.getElementById('msgModalTitle');
+      const avatar = document.getElementById('msgModalAvatar');
+      const input = document.getElementById('newProfileMessageInput');
+
+      if (title) title.textContent = 'กล่องฝากข้อความ: คุณ ' + personName;
+      if (avatar) {
+        if (imageUrl) {
+          avatar.innerHTML = '<img src="' + imageUrl + '" class="w-full h-full object-cover" onerror="this.outerHTML=\'' + (personName ? personName.charAt(0) : '💬') + '\'">';
+        } else {
+          avatar.innerHTML = personName ? personName.charAt(0) : '💬';
+        }
+      }
+
+      if (input) input.value = '';
+      renderProfileMessagesModalList();
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        if (input) setTimeout(() => input.focus(), 100);
+      }
+    }
+
+    function closeProfileMessagesModal() {
+      const modal = document.getElementById('profileMessagesModal');
+      if (modal) modal.classList.add('hidden');
+      state.activeMessageModalProfile = null;
+      renderProfilesList();
+    }
+
+    function renderProfileMessagesModalList() {
+      if (!state.activeMessageModalProfile) return;
+      const { id, name } = state.activeMessageModalProfile;
+      const listEl = document.getElementById('profileMessagesList');
+      const badgeEl = document.getElementById('msgModalBadge');
+      if (!listEl) return;
+
+      const messages = getProfileMessages(id, name);
+      if (badgeEl) {
+        badgeEl.textContent = messages.length + ' ข้อความ';
+        badgeEl.className = 'text-xs px-2.5 py-0.5 rounded-full font-bold ' +
+          (messages.length > 0 ? 'bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]' : 'bg-[#F7F5EE] text-[#8C877B] border border-[#DCD6C4]');
+      }
+
+      if (messages.length === 0) {
+        listEl.innerHTML = '<div class="py-10 text-center text-[#8C877B] bg-[#F7F5EE] rounded-2xl border border-dashed border-[#DCD6C4]"><div class="text-3xl mb-1.5">📭</div><p class="text-xs font-bold text-[#1F1E1B]">ยังไม่มีข้อความฝากไว้สำหรับท่านนี้</p><p class="text-[11px] text-[#8C877B] mt-0.5">พิมพ์ข้อความในช่องด้านบนแล้วกด "เพิ่มข้อความ"</p></div>';
+        return;
+      }
+
+      let html = '';
+      messages.forEach((msg, idx) => {
+        const safeText = (msg.text || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        html += '<div class="p-3 rounded-2xl bg-white border border-[#EAE6DA] shadow-xs hover:border-[#28AE60]/50 transition flex items-center justify-between gap-3">' +
+          '<div class="flex items-start gap-2.5 flex-1 min-w-0">' +
+            '<span class="w-6 h-6 rounded-full bg-[#EAF7EF] text-[#1E824C] font-mono font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">' + (idx + 1) + '</span>' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="text-xs sm:text-sm font-bold text-[#1F1E1B] break-words leading-relaxed">' + safeText + '</p>' +
+              '<p class="text-[10px] text-[#8C877B] mt-0.5 flex items-center gap-1"><span>🕒 ฝากเมื่อ:</span><span>' + (msg.createdAt || '-') + '</span></p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="flex items-center gap-1.5 flex-shrink-0">' +
+            '<button type="button" onclick="testSingleMessageSpeech(\'' + safeText + '\')" class="p-2 rounded-xl text-[#1E824C] bg-[#EAF7EF] hover:bg-[#D5F0DF] transition shadow-xs" title="ทดสอบฟังเสียงอ่านข้อความนี้">' +
+              '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>' +
+            '</button>' +
+            '<button type="button" onclick="deleteProfileMessageFromModal(\'' + msg.id + '\')" class="p-2 rounded-xl text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] transition" title="ลบข้อความนี้">' +
+              '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      });
+
+      listEl.innerHTML = html;
+    }
+
+    function addProfileMessageFromModal() {
+      if (!state.activeMessageModalProfile) return;
+      const input = document.getElementById('newProfileMessageInput');
+      if (!input) return;
+      const text = input.value ? input.value.trim() : '';
+      if (!text) {
+        showToast('กรุณากรอกข้อความก่อนกดเพิ่ม', 'warning');
+        input.focus();
+        return;
+      }
+      const { id, name } = state.activeMessageModalProfile;
+      addProfileMessage(id, name, text);
+      input.value = '';
+      renderProfileMessagesModalList();
+      renderProfilesList();
+      showToast('เพิ่มข้อความเรียบร้อยแล้ว', 'success');
+      input.focus();
+    }
+
+    function deleteProfileMessageFromModal(messageId) {
+      if (!state.activeMessageModalProfile) return;
+      const { id, name } = state.activeMessageModalProfile;
+      deleteProfileMessage(id, name, messageId);
+      renderProfileMessagesModalList();
+      renderProfilesList();
+      showToast('ลบข้อความเรียบร้อย', 'info');
+    }
+
+    function clearAllProfileMessagesFromModal() {
+      if (!state.activeMessageModalProfile) return;
+      const { id, name } = state.activeMessageModalProfile;
+      const messages = getProfileMessages(id, name);
+      if (messages.length === 0) return;
+      if (!confirm('ต้องการลบข้อความทั้งหมดของ คุณ ' + name + ' ใช่หรือไม่?')) return;
+      clearAllProfileMessages(id, name);
+      renderProfileMessagesModalList();
+      renderProfilesList();
+      showToast('ลบข้อความทั้งหมดเรียบร้อยแล้ว', 'info');
+    }
+
+    function testSingleMessageSpeech(text) {
+      unlockSpeechEngine();
+      speakText(text);
+    }
+
+    function testAllProfileMessagesSpeech() {
+      if (!state.activeMessageModalProfile) return;
+      const { id, name } = state.activeMessageModalProfile;
+      const messages = getProfileMessages(id, name);
+      if (messages.length === 0) {
+        showToast('ยังไม่มีข้อความให้ทดสอบ', 'warning');
+        return;
+      }
+      unlockSpeechEngine();
+      const greetingMsg = buildGreetingMessage('known', name);
+      const particle = state.voiceParticle || 'ค่ะ';
+      const phrases = [greetingMsg, 'คุณมี ' + messages.length + ' ข้อความ' + particle];
+      messages.forEach((m, idx) => {
+        phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
+      });
+      speakPhrasesSequence(phrases);
     }
 
     function switchTab(tabName) {
@@ -2973,6 +3383,19 @@
     window.deleteProfile = deleteProfile;
     window.loadProfilesFromBackend = loadProfilesFromBackend;
 
+    window.openProfileMessagesModal = openProfileMessagesModal;
+    window.closeProfileMessagesModal = closeProfileMessagesModal;
+    window.addProfileMessageFromModal = addProfileMessageFromModal;
+    window.deleteProfileMessageFromModal = deleteProfileMessageFromModal;
+    window.clearAllProfileMessagesFromModal = clearAllProfileMessagesFromModal;
+    window.testSingleMessageSpeech = testSingleMessageSpeech;
+    window.testAllProfileMessagesSpeech = testAllProfileMessagesSpeech;
+    window.getProfileMessages = getProfileMessages;
+    window.addProfileMessage = addProfileMessage;
+    window.deleteProfileMessage = deleteProfileMessage;
+    window.clearAllProfileMessages = clearAllProfileMessages;
+    window.speakPhrasesSequence = speakPhrasesSequence;
+
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
     (async function startApplicationNow() {
@@ -2986,6 +3409,9 @@
 
       // 1. ตรวจสอบระบบเสียงภาษาไทยทันที
       initSpeech();
+
+      // 1.5 โหลดกล่องข้อความประจำบุคคลจากแคช
+      loadProfileMessagesFromStorage();
 
       // 2. ดึงข้อมูลโปรไฟล์จากแคชในเครื่องทันที 0ms และซิงค์ Google Sheets
       loadProfilesFromBackend();

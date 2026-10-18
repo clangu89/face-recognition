@@ -10,6 +10,7 @@ const DB_SPREADSHEET_ID = "15iYZLwqkoWcw4yPBOy9TysfaKd0MfrmZR_JgDKl_VEE";
 const SHEET_PROFILES = "FaceProfiles";
 const SHEET_LOGS = "ScanLogs";
 const SHEET_USERS = "SystemUsers";
+const SHEET_MESSAGES = "ProfileMessages";
 const DRIVE_FOLDER_NAME = "FaceRecognition_Photos";
 const DB_SPREADSHEET_NAME = "AI_Face_Recognition_Database";
 
@@ -27,6 +28,8 @@ function doGet(e) {
       result = initSheetAndFolder();
     } else if (action === "getUsers") {
       result = getSystemUsers();
+    } else if (action === "getMessages") {
+      result = getProfileMessages();
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -145,7 +148,25 @@ function initSheetAndFolder() {
       ]);
     }
 
-    // 4. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
+    // 4. ตรวจสอบ Sheet กล่องฝากข้อความประจำบุคคล (ProfileMessages)
+    var msgSheet = ss.getSheetByName(SHEET_MESSAGES);
+    if (!msgSheet) {
+      msgSheet = ss.insertSheet(SHEET_MESSAGES);
+      msgSheet.appendRow([
+        "Message_ID", 
+        "Profile_ID", 
+        "Person_Name", 
+        "Message_Text", 
+        "Created_At"
+      ]);
+      msgSheet.getRange(1, 1, 1, 5)
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
+      msgSheet.setFrozenRows(1);
+    }
+
+    // 5. ตรวจสอบหรือสร้างโฟลเดอร์สำหรับเก็บภาพใบหน้าใน Google Drive
     getOrCreateDriveFolder();
 
     return {
@@ -635,6 +656,14 @@ function doPost(e) {
       result = logScanEvent(data.name, data.status, data.confidence);
     } else if (action === "getProfiles") {
       result = getFaceProfiles();
+    } else if (action === "getMessages") {
+      result = getProfileMessages();
+    } else if (action === "saveMessage") {
+      result = saveProfileMessage(data.messageData || data.payload || data);
+    } else if (action === "deleteMessage") {
+      result = deleteProfileMessage(data.id || (e.parameter && e.parameter.id));
+    } else if (action === "clearMessages") {
+      result = clearProfileMessages(data.profileId || (e.parameter && e.parameter.profileId), data.personName);
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -642,6 +671,120 @@ function doPost(e) {
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * ดึงรายการข้อความฝากทั้งหมดจากตาราง ProfileMessages
+ */
+function getProfileMessages() {
+  try {
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_MESSAGES);
+    if (!sheet) {
+      initSheetAndFolder();
+      sheet = ss.getSheetByName(SHEET_MESSAGES);
+    }
+
+    var data = sheet.getDataRange().getValues();
+    var messages = {};
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var msgId = row[0];
+      var profileId = row[1];
+      var personName = row[2];
+      var text = row[3];
+      var createdAt = row[4];
+
+      if (msgId && text) {
+        var key = profileId || personName;
+        if (!messages[key]) messages[key] = [];
+        messages[key].push({
+          id: msgId,
+          profileId: profileId,
+          personName: personName,
+          text: text,
+          createdAt: createdAt
+        });
+      }
+    }
+    return { success: true, messages: messages };
+  } catch (error) {
+    return { success: false, message: error.toString(), messages: {} };
+  }
+}
+
+/**
+ * บันทึกข้อความฝากใหม่ลงตาราง ProfileMessages
+ */
+function saveProfileMessage(payload) {
+  try {
+    if (!payload || !payload.text) {
+      return { success: false, message: "กรุณาระบุข้อความ" };
+    }
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_MESSAGES);
+    if (!sheet) {
+      initSheetAndFolder();
+      sheet = ss.getSheetByName(SHEET_MESSAGES);
+    }
+
+    var msgId = payload.id || ("MSG_" + Date.now().toString());
+    var profileId = payload.profileId || "";
+    var personName = payload.personName || "";
+    var text = String(payload.text).trim();
+    var createdAt = payload.createdAt || Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm");
+
+    sheet.appendRow([msgId, profileId, personName, text, createdAt]);
+    return { success: true, message: "บันทึกข้อความเรียบร้อยแล้ว", id: msgId };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * ลบข้อความฝากตาม Message ID
+ */
+function deleteProfileMessage(messageId) {
+  try {
+    if (!messageId) return { success: false, message: "ไม่พบรหัสข้อความ" };
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_MESSAGES);
+    if (!sheet) return { success: false, message: "ไม่พบแผ่นงาน" };
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(messageId)) {
+        sheet.deleteRow(i + 1);
+        return { success: true, message: "ลบข้อความเรียบร้อยแล้ว" };
+      }
+    }
+    return { success: false, message: "ไม่พบข้อความที่ต้องการลบ" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
+  }
+}
+
+/**
+ * ล้างข้อความทั้งหมดของ Profile ID หรือ Person Name
+ */
+function clearProfileMessages(profileId, personName) {
+  try {
+    var ss = getDatabaseSpreadsheet();
+    var sheet = ss.getSheetByName(SHEET_MESSAGES);
+    if (!sheet) return { success: false, message: "ไม่พบแผ่นงาน" };
+    var data = sheet.getDataRange().getValues();
+
+    for (var i = data.length - 1; i >= 1; i--) {
+      var rowProfId = String(data[i][1]);
+      var rowName = String(data[i][2]);
+      if ((profileId && rowProfId === String(profileId)) || (personName && rowName === String(personName))) {
+        sheet.deleteRow(i + 1);
+      }
+    }
+    return { success: true, message: "ล้างข้อความทั้งหมดเรียบร้อยแล้ว" };
+  } catch (error) {
+    return { success: false, message: error.toString() };
   }
 }
 
