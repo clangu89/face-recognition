@@ -447,8 +447,8 @@
                 <div class="w-20 h-20 ch-squircle bg-[#EAF7EF] border-2 border-[#BEE6CE] flex items-center justify-center mb-4 text-4xl shadow-sm">
                   📷
                 </div>
-                <h3 class="text-xl font-extrabold text-[#1F1E1B] mb-1.5">ระบบกล้องตรวจจับใบหน้าพร้อมทำงาน</h3>
-                <p class="text-sm text-[#6E6B62] max-w-md mb-6">
+                <h3 id="startCameraOverlayTitle" class="text-xl font-extrabold text-[#1F1E1B] mb-1.5">ระบบกล้องตรวจจับใบหน้าพร้อมทำงาน</h3>
+                <p id="startCameraOverlayDesc" class="text-sm text-[#6E6B62] max-w-md mb-6">
                   กดปุ่มด้านล่างเพื่อเปิดใช้งานกล้อง Webcam ระบบจะประมวลผลใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ
                 </p>
                 <button id="startCameraBtn" onclick="startCamera()" class="px-7 py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm cursor-pointer">
@@ -1940,6 +1940,7 @@
       systemUsers: [],
       modelsLoaded: false,
       cameraStarted: false,
+      operatorAutoStarted: false,
       isScannerFullscreen: false,
       scannerVideoFit: 'cover',
       currentTab: 'scanner',
@@ -3312,7 +3313,7 @@
       return isNaN(d.getTime()) ? String(dateStrOrObj) : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    function loadTodayAttendanceFromBackend(isManual, targetDate) {
+    function loadTodayAttendanceFromBackend(isManual, targetDate, onDone) {
       const modalRefreshIcon = document.getElementById('refreshAttendanceModalBtn');
       const mainRefreshIcon = document.getElementById('refreshAttendanceMainIcon');
       if (isManual) {
@@ -3404,6 +3405,9 @@
         if (isManual) {
           showToast('โหลดข้อมูลลงเวลาเรียบร้อยแล้ว (' + list.length + ' รายการ)', 'success');
         }
+        if (typeof onDone === 'function') {
+          try { onDone(); } catch(e) {}
+        }
       };
 
       const handleError = function(err) {
@@ -3413,6 +3417,9 @@
         }
         renderAttendanceModalTable([]);
         renderAttendanceMainTable([]);
+        if (typeof onDone === 'function') {
+          try { onDone(); } catch(e) {}
+        }
       };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -4568,8 +4575,7 @@
     }
 
     // --- Backend Profiles Sync (Instant Local Cache + Background Sync) ---
-    // --- Backend Profiles Sync (Instant Local Cache + Background Sync) ---
-    function loadProfilesFromBackend(isManual) {
+    function loadProfilesFromBackend(isManual, onDone) {
       const refreshBtn = document.getElementById('refreshProfilesBtn');
       const refreshIcon = document.getElementById('refreshProfilesIcon');
       const refreshText = document.getElementById('refreshProfilesText');
@@ -4589,6 +4595,9 @@
           if (refreshText) refreshText.textContent = 'รีเฟรชข้อมูล';
           if (isManual) {
             showToast('โหลดข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว', 'success');
+          }
+          if (typeof onDone === 'function') {
+            try { onDone(); } catch(e) {}
           }
         }
       };
@@ -4816,6 +4825,135 @@
       cameraBadge.innerHTML = '<span class="text-[#8C877B]">●</span> กล้องปิดอยู่';
       cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap';
       logStatus('[CAMERA] กล้อง Webcam ปิดการทำงานแล้ว');
+    }
+
+    // --- Operator Auto-Start Camera & Readiness Coordinator ---
+    let _appInitPromise = null;
+    let _profilesSyncDone = false;
+    let _settingsSyncDone = false;
+    let _attendanceSyncDone = false;
+
+    function waitForInitialDataAndModels() {
+      if (_appInitPromise) return _appInitPromise;
+
+      const pModels = (async function() {
+        if (state.modelsLoaded) return;
+        try {
+          await ensureFaceApiLoaded();
+          if (!state.modelsLoaded) {
+            await loadFaceModels();
+          }
+        } catch(e) {
+          logStatus('[WARN] ความล่าช้าของโมเดล AI: ' + (e ? e.message : e), true);
+        }
+      })();
+
+      const pData = new Promise(function(resolve) {
+        if (_profilesSyncDone && _settingsSyncDone && _attendanceSyncDone) {
+          resolve();
+          return;
+        }
+
+        let resolved = false;
+        const markDone = function() {
+          if (!resolved) {
+            resolved = true;
+            resolve();
+          }
+        };
+
+        // หากมีแคชโปรไฟล์ในเครื่องอยู่แล้ว และซิงค์เบื้องหลังนานเกิน 3.5 วินาที ให้เปิดกล้องได้เลย
+        const hasCachedProfiles = Array.isArray(state.profiles) && state.profiles.length > 0;
+        const maxWaitMs = hasCachedProfiles ? 3500 : 7000;
+        const timer = setTimeout(markDone, maxWaitMs);
+
+        const checkReady = function() {
+          if (_profilesSyncDone && _settingsSyncDone && _attendanceSyncDone) {
+            clearTimeout(timer);
+            markDone();
+          }
+        };
+
+        if (!_profilesSyncDone) {
+          loadProfilesFromBackend(false, function() {
+            _profilesSyncDone = true;
+            checkReady();
+          });
+        }
+        if (!_settingsSyncDone) {
+          loadSystemSettingsFromBackend(false, function() {
+            _settingsSyncDone = true;
+            checkReady();
+          });
+        }
+        if (!_attendanceSyncDone) {
+          loadTodayAttendanceFromBackend(false, null, function() {
+            _attendanceSyncDone = true;
+            checkReady();
+          });
+        }
+        checkReady();
+      });
+
+      _appInitPromise = Promise.all([pModels, pData]);
+      return _appInitPromise;
+    }
+
+    async function triggerOperatorAutoStart() {
+      if (!state.currentUser || state.currentUser.role !== 'operator') return;
+      if (state.operatorAutoStarted || state.cameraStarted) return;
+      state.operatorAutoStarted = true;
+
+      // 1. สลับมาที่แท็บ scanner
+      if (state.currentTab !== 'scanner') {
+        switchTab('scanner');
+      }
+
+      // 2. แสดงสถานะเตรียมความพร้อมบน Overlay & Badge
+      const overlayTitle = document.getElementById('startCameraOverlayTitle');
+      const overlayDesc = document.getElementById('startCameraOverlayDesc');
+      const startBtn = document.getElementById('startCameraBtn');
+      const cameraBadge = document.getElementById('cameraStatusBadge');
+
+      if (overlayTitle) overlayTitle.textContent = '⚡ กำลังเตรียมระบบอัตโนมัติ...';
+      if (overlayDesc) overlayDesc.textContent = 'สิทธิ์เจ้าหน้าที่: กำลังโหลดโมเดล AI และข้อมูลระบบ กล้องจะเปิดทำงานและเริ่มตรวจจับอัตโนมัติ';
+      if (startBtn) {
+        startBtn.innerHTML = '<span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></span><span>กำลังเตรียมระบบ (หรือกดเพื่อเปิดทันที)...</span>';
+      }
+      if (cameraBadge && !state.cameraStarted) {
+        cameraBadge.innerHTML = '<span class="text-[#D9822B] animate-pulse">●</span> เตรียมเปิดกล้องอัตโนมัติ...';
+        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold whitespace-nowrap';
+      }
+
+      logStatus('[AUTO] สิทธิ์เจ้าหน้าที่: กำลังรอโมเดล AI และข้อมูลระบบให้พร้อม...');
+
+      try {
+        await waitForInitialDataAndModels();
+
+        // ตรวจสอบสถานะอีกครั้งหลัง async
+        if (!state.currentUser || state.currentUser.role !== 'operator') return;
+        if (state.cameraStarted) return;
+
+        logStatus('[AUTO] สิทธิ์เจ้าหน้าที่: ข้อมูลและโมเดล AI พร้อมสมบูรณ์ กำลังเปิดกล้องตรวจจับ...');
+        showToast('สิทธิ์เจ้าหน้าที่: กำลังเปิดกล้องและเริ่มระบบตรวจจับอัตโนมัติ...', 'info');
+
+        await startCamera();
+
+        if (state.cameraStarted) {
+          logStatus('[OK] สิทธิ์เจ้าหน้าที่: เปิดกล้องและเริ่มระบบตรวจจับอัตโนมัติเรียบร้อยแล้ว');
+          showToast('ระบบกล้องและตรวจจับใบหน้าพร้อมทำงานแล้ว', 'success');
+        }
+      } catch (err) {
+        logStatus('[WARN] ไม่สามารถเปิดกล้องอัตโนมัติได้: ' + (err ? err.message : err), true);
+      } finally {
+        if (!state.cameraStarted) {
+          if (overlayTitle) overlayTitle.textContent = 'ระบบกล้องตรวจจับใบหน้าพร้อมทำงาน';
+          if (overlayDesc) overlayDesc.textContent = 'กดปุ่มด้านล่างเพื่อเปิดใช้งานกล้อง Webcam ระบบจะประมวลผลใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ';
+          if (startBtn) {
+            startBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg><span>เปิดการทำงานกล้องและเริ่มตรวจจับ</span>';
+          }
+        }
+      }
     }
 
     async function startRecognitionLoop() {
@@ -6295,6 +6433,7 @@
 
         if (response && response.success && response.user) {
           state.currentUser = response.user;
+          state.operatorAutoStarted = false;
           try {
             sessionStorage.setItem('face_app_user', JSON.stringify(response.user));
           } catch(e) {}
@@ -6311,6 +6450,11 @@
           ensureFaceApiLoaded().then(loadFaceModels).catch(function(err) {
             logStatus('[ERROR] โมเดล AI: ' + (err ? err.message : err), true);
           });
+
+          // สิทธิ์เจ้าหน้าที่ (Operator): เปิดกล้องและตรวจจับอัตโนมัติหลังจากโหลดค่าพร้อมแล้ว
+          if (response.user.role === 'operator') {
+            triggerOperatorAutoStart();
+          }
         } else {
           errText.textContent = response ? (response.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง') : 'เข้าสู่ระบบไม่สำเร็จ';
           errBox.classList.remove('hidden');
@@ -6346,6 +6490,8 @@
       if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
         stopCamera();
         state.currentUser = null;
+        state.operatorAutoStarted = false;
+        _appInitPromise = null;
         try {
           sessionStorage.removeItem('face_app_user');
           localStorage.removeItem('face_app_user');
@@ -6701,6 +6847,8 @@
     window.formatThaiDateTimeForSpeech = formatThaiDateTimeForSpeech;
     window.evaluateEmployeeAttendance = evaluateEmployeeAttendance;
     window.recordAttendanceLogToBackend = recordAttendanceLogToBackend;
+    window.waitForInitialDataAndModels = waitForInitialDataAndModels;
+    window.triggerOperatorAutoStart = triggerOperatorAutoStart;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
@@ -6737,6 +6885,11 @@
           modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
           modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
         }
+      }
+
+      // 4. กรณีที่มีเซสชันล็อกอินของ Operator ค้างอยู่ ให้เปิดกล้องอัตโนมัติเมื่อระบบพร้อม
+      if (isAuth && state.currentUser && state.currentUser.role === 'operator') {
+        triggerOperatorAutoStart();
       }
     })();
   </script>
