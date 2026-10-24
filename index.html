@@ -107,6 +107,30 @@
     ::-webkit-scrollbar-thumb:hover { background: #A8A18E; }
     .toast-enter { transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
     .toast-visible { transform: translateY(0); opacity: 1; }
+    .scanner-fullscreen {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      z-index: 9999 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: #0D0D0C !important;
+      aspect-ratio: unset !important;
+    }
+    #scannerViewport:fullscreen,
+    #scannerViewport:-webkit-full-screen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: #0D0D0C !important;
+      aspect-ratio: unset !important;
+    }
   </style>
 </head>
 <body class="bg-[#F2EFE4] text-[#1F1E1B] min-h-screen flex flex-col font-sans selection:bg-[#28AE60] selection:text-white">
@@ -360,29 +384,66 @@
         <div class="lg:col-span-3">
           <div class="glass-card rounded-[28px] p-3 sm:p-4">
             <!-- Stage Top Bar -->
-            <div class="flex items-center justify-between px-2 pb-3">
+            <div class="flex items-center justify-between px-2 pb-3 gap-2">
               <div class="flex items-center space-x-2">
                 <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60] bg-[#EAF7EF] px-2.5 py-1 rounded-full border border-[#BEE6CE]">
                   🎥 LIVE RECOGNITION
                 </span>
                 <span class="text-xs font-semibold text-[#6E6B62] hidden sm:inline">จุดตรวจจับใบหน้าและต้อนรับอัตโนมัติ</span>
               </div>
-              <span class="text-xs text-[#8C877B] font-medium">Real-time 128D Vector</span>
+              <div class="flex items-center gap-2.5">
+                <span class="text-xs text-[#8C877B] font-medium hidden md:inline">Real-time 128D Vector</span>
+                <button type="button" id="stageFullscreenBtn" onclick="toggleScannerFullscreen()" title="ขยายพื้นที่ตรวจจับเต็มหน้าจอ (Fullscreen)" class="px-3.5 py-1.5 rounded-full bg-[#F7F5EE] hover:bg-[#EAE6DA] text-[#1F1E1B] border border-[#DCD6C4] text-xs font-bold shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+                  <svg id="stageFullscreenIcon" class="w-3.5 h-3.5 text-[#28AE60]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                  </svg>
+                  <span id="stageFullscreenText">ขยายเต็มจอ</span>
+                </button>
+              </div>
             </div>
 
-            <div class="relative w-full aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#E5E0D0] shadow-inner flex items-center justify-center">
+            <div id="scannerViewport" ondblclick="handleScannerViewportDblClick(event)" class="relative w-full aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#E5E0D0] shadow-inner flex items-center justify-center group">
               
               <!-- Webcam Video Element -->
               <video id="webcamVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
 
               <!-- Real-time Bounding Box Canvas -->
-              <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+              <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full object-cover pointer-events-none"></canvas>
 
               <!-- Animated Radar Scan Line -->
               <div class="scan-line"></div>
 
+              <!-- Fullscreen Top-Left HUD (Shown when Fullscreen is active) -->
+              <div id="fullscreenStatusHud" class="hidden absolute top-4 left-4 z-20 items-center space-x-2.5 px-3.5 py-2 rounded-full bg-[#1F1E1B]/80 backdrop-blur-md border border-white/15 text-white shadow-lg pointer-events-none">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60] animate-ping"></span>
+                <span class="text-xs font-extrabold tracking-wider text-[#28AE60]">LIVE RECOGNITION</span>
+                <span class="text-white/30">|</span>
+                <span id="fullscreenLiveClock" class="text-xs font-mono font-bold text-white/90">--:--:-- น.</span>
+              </div>
+
+              <!-- Fullscreen Floating Greeting Banner (Top-Center in Fullscreen mode) -->
+              <div id="fullscreenGreetingBanner" class="hidden absolute top-16 sm:top-5 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-2xl items-center justify-between p-4 rounded-[24px] bg-white/95 backdrop-blur-md border-2 border-[#28AE60] shadow-2xl pointer-events-none">
+                <div class="flex items-center space-x-3.5">
+                  <div class="w-11 h-11 ch-squircle bg-[#EAF7EF] border-2 border-[#28AE60] flex items-center justify-center text-xl flex-shrink-0 ch-speaking-ring">
+                    🔊
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#28AE60] flex items-center gap-1">
+                      <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>
+                      ระบบกำลังกล่าวคำทักทาย (Active Greeting)
+                    </span>
+                    <p id="fullscreenGreetingBannerText" class="text-base sm:text-lg font-extrabold text-[#1F1E1B] tracking-tight">
+                      สวัสดีค่ะคุณ...
+                    </p>
+                  </div>
+                </div>
+                <span class="hidden sm:inline-block text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold border border-[#BEE6CE] flex-shrink-0">
+                  ✓ ทักทายแล้ว
+                </span>
+              </div>
+
               <!-- Start Camera Overlay (When Camera is Stopped) -->
-              <div id="startCameraOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-md p-6 text-center">
+              <div id="startCameraOverlay" class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#F7F5EE]/95 backdrop-blur-md p-6 text-center">
                 <div class="w-20 h-20 ch-squircle bg-[#EAF7EF] border-2 border-[#BEE6CE] flex items-center justify-center mb-4 text-4xl shadow-sm">
                   📷
                 </div>
@@ -390,7 +451,7 @@
                 <p class="text-sm text-[#6E6B62] max-w-md mb-6">
                   กดปุ่มด้านล่างเพื่อเปิดใช้งานกล้อง Webcam ระบบจะประมวลผลใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ
                 </p>
-                <button id="startCameraBtn" onclick="startCamera()" class="px-7 py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm">
+                <button id="startCameraBtn" onclick="startCamera()" class="px-7 py-3.5 rounded-full font-bold bg-[#28AE60] hover:bg-[#229954] text-white shadow-md shadow-[#28AE60]/25 transition transform hover:-translate-y-0.5 flex items-center space-x-2 text-sm cursor-pointer">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                   </svg>
@@ -398,13 +459,30 @@
                 </button>
               </div>
 
-              <!-- Stop Camera Floating Button -->
-              <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 px-4 py-2 rounded-full bg-[#FDECEB]/95 hover:bg-[#FBD8D6] text-[#D94338] text-xs font-bold backdrop-blur-md border border-[#F5C2C0] shadow-md transition flex items-center space-x-1.5">
+              <!-- Stop Camera Floating Button (Top-Right) -->
+              <button id="stopCameraBtn" onclick="stopCamera()" class="hidden absolute top-4 right-4 z-20 px-4 py-2 rounded-full bg-[#FDECEB]/95 hover:bg-[#FBD8D6] text-[#D94338] text-xs font-bold backdrop-blur-md border border-[#F5C2C0] shadow-md transition flex items-center space-x-1.5 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
                 <span>หยุดการทำงานกล้อง</span>
               </button>
+
+              <!-- Floating Viewport Controls (Bottom-Right) -->
+              <div class="absolute bottom-4 right-4 z-20 flex items-center space-x-2">
+                <!-- Video Fit Mode Button (Shown in Fullscreen) -->
+                <button type="button" id="videoFitToggleBtn" onclick="toggleScannerVideoFit()" title="สลับสัดส่วนภาพ (เต็มจอไร้ขอบ / พอดีกรอบ)" class="hidden px-3.5 py-2 rounded-full bg-[#1F1E1B]/80 hover:bg-[#1F1E1B] text-white text-xs font-bold backdrop-blur-md border border-white/20 shadow-lg transition items-center space-x-1.5 cursor-pointer">
+                  <span>📐</span>
+                  <span id="videoFitToggleText">สัดส่วน: เต็มจอไร้ขอบ</span>
+                </button>
+
+                <!-- Floating Fullscreen Toggle Button -->
+                <button type="button" id="viewportFullscreenBtn" onclick="toggleScannerFullscreen()" title="สลับโหมดเต็มหน้าจอ (Fullscreen / Esc)" class="px-4 py-2 rounded-full bg-[#1F1E1B]/80 hover:bg-[#28AE60] text-white text-xs font-bold backdrop-blur-md border border-white/20 shadow-lg transition flex items-center space-x-1.5 cursor-pointer">
+                  <svg id="viewportFullscreenIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                  </svg>
+                  <span id="viewportFullscreenText">ขยายเต็มจอ</span>
+                </button>
+              </div>
 
             </div>
           </div>
@@ -1706,6 +1784,8 @@
       systemUsers: [],
       modelsLoaded: false,
       cameraStarted: false,
+      isScannerFullscreen: false,
+      scannerVideoFit: 'cover',
       currentTab: 'scanner',
       profiles: [],
       faceMatcher: null,
@@ -3769,7 +3849,175 @@
           banner.classList.remove('flex');
         }, 5000);
       }
+
+      const fsBanner = document.getElementById('fullscreenGreetingBanner');
+      const fsBannerText = document.getElementById('fullscreenGreetingBannerText');
+      if (fsBanner && fsBannerText) {
+        fsBannerText.textContent = text;
+        if (state.isScannerFullscreen) {
+          fsBanner.classList.remove('hidden');
+          fsBanner.classList.add('flex');
+        }
+        clearTimeout(fsBanner._timer);
+        fsBanner._timer = setTimeout(() => {
+          fsBanner.classList.add('hidden');
+          fsBanner.classList.remove('flex');
+        }, 5000);
+      }
     }
+
+    // --- Scanner Fullscreen & Viewport Fit Controllers ---
+    let fullscreenClockTimer = null;
+
+    function updateFullscreenLiveClock() {
+      const clockEl = document.getElementById('fullscreenLiveClock');
+      if (!clockEl) return;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      clockEl.textContent = hh + ':' + mm + ':' + ss + ' น.';
+    }
+
+    function syncScannerFullscreenUI(isFullscreen) {
+      state.isScannerFullscreen = !!isFullscreen;
+      const viewport = document.getElementById('scannerViewport');
+      const statusHud = document.getElementById('fullscreenStatusHud');
+      const fitBtn = document.getElementById('videoFitToggleBtn');
+      const fsBanner = document.getElementById('fullscreenGreetingBanner');
+      const stageText = document.getElementById('stageFullscreenText');
+      const viewportText = document.getElementById('viewportFullscreenText');
+      const stageIcon = document.getElementById('stageFullscreenIcon');
+      const viewportIcon = document.getElementById('viewportFullscreenIcon');
+
+      const expandPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>';
+      const collapsePath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"></path>';
+
+      if (state.isScannerFullscreen) {
+        if (viewport) viewport.classList.add('scanner-fullscreen');
+        if (statusHud) {
+          statusHud.classList.remove('hidden');
+          statusHud.classList.add('flex');
+        }
+        if (fitBtn) {
+          fitBtn.classList.remove('hidden');
+          fitBtn.classList.add('flex');
+        }
+        if (stageText) stageText.textContent = 'ย่อขนาดหน้าจอ';
+        if (viewportText) viewportText.textContent = 'ย่อขนาดหน้าจอ (Esc)';
+        if (stageIcon) stageIcon.innerHTML = collapsePath;
+        if (viewportIcon) viewportIcon.innerHTML = collapsePath;
+
+        updateFullscreenLiveClock();
+        clearInterval(fullscreenClockTimer);
+        fullscreenClockTimer = setInterval(updateFullscreenLiveClock, 1000);
+      } else {
+        if (viewport) viewport.classList.remove('scanner-fullscreen');
+        if (statusHud) {
+          statusHud.classList.add('hidden');
+          statusHud.classList.remove('flex');
+        }
+        if (fitBtn) {
+          fitBtn.classList.add('hidden');
+          fitBtn.classList.remove('flex');
+        }
+        if (fsBanner) {
+          fsBanner.classList.add('hidden');
+          fsBanner.classList.remove('flex');
+        }
+        if (stageText) stageText.textContent = 'ขยายเต็มจอ';
+        if (viewportText) viewportText.textContent = 'ขยายเต็มจอ';
+        if (stageIcon) stageIcon.innerHTML = expandPath;
+        if (viewportIcon) viewportIcon.innerHTML = expandPath;
+
+        clearInterval(fullscreenClockTimer);
+        fullscreenClockTimer = null;
+      }
+    }
+
+    function toggleScannerFullscreen() {
+      const viewport = document.getElementById('scannerViewport');
+      if (!viewport) return;
+
+      if (!state.isScannerFullscreen) {
+        syncScannerFullscreenUI(true);
+        try {
+          if (viewport.requestFullscreen) {
+            viewport.requestFullscreen().catch(function() {});
+          } else if (viewport.webkitRequestFullscreen) {
+            viewport.webkitRequestFullscreen();
+          }
+        } catch (e) {}
+        logStatus('[UI] ขยายพื้นที่ตรวจจับใบหน้าแบบเต็มหน้าจอ (Fullscreen Mode)');
+      } else {
+        exitScannerFullscreen();
+      }
+    }
+
+    function exitScannerFullscreen() {
+      syncScannerFullscreenUI(false);
+      try {
+        const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+        if (fsEl) {
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(function() {});
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        }
+      } catch (e) {}
+      logStatus('[UI] ออกจากโหมดเต็มหน้าจอแล้ว');
+    }
+
+    function toggleScannerVideoFit() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('overlayCanvas');
+      const label = document.getElementById('videoFitToggleText');
+      if (!video || !canvas) return;
+
+      if (state.scannerVideoFit === 'cover') {
+        state.scannerVideoFit = 'contain';
+        video.classList.remove('object-cover');
+        video.classList.add('object-contain');
+        canvas.classList.remove('object-cover');
+        canvas.classList.add('object-contain');
+        if (label) label.textContent = 'สัดส่วน: พอดีกรอบ';
+      } else {
+        state.scannerVideoFit = 'cover';
+        video.classList.remove('object-contain');
+        video.classList.add('object-cover');
+        canvas.classList.remove('object-contain');
+        canvas.classList.add('object-cover');
+        if (label) label.textContent = 'สัดส่วน: เต็มจอไร้ขอบ';
+      }
+    }
+
+    function handleScannerViewportDblClick(event) {
+      if (event && event.target && (event.target.tagName === 'BUTTON' || event.target.closest('button'))) {
+        return;
+      }
+      toggleScannerFullscreen();
+    }
+
+    document.addEventListener('fullscreenchange', function() {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!fsEl && state.isScannerFullscreen) {
+        syncScannerFullscreenUI(false);
+      }
+    });
+
+    document.addEventListener('webkitfullscreenchange', function() {
+      const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!fsEl && state.isScannerFullscreen) {
+        syncScannerFullscreenUI(false);
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && state.isScannerFullscreen) {
+        exitScannerFullscreen();
+      }
+    });
 
     // --- Face Models Loader (Ultra-fast from Edge CDN) ---
     async function loadFaceModels() {
@@ -5279,6 +5527,9 @@
           tabName = 'scanner';
         }
       }
+      if (tabName !== 'scanner' && state.isScannerFullscreen) {
+        exitScannerFullscreen();
+      }
       state.currentTab = tabName;
       ['scanner', 'register', 'profiles', 'attendance', 'voicesettings', 'users'].forEach(t => {
         const btn = document.getElementById('tabBtn_' + t);
@@ -5845,6 +6096,10 @@
 
     window.startCamera = startCamera;
     window.stopCamera = stopCamera;
+    window.toggleScannerFullscreen = toggleScannerFullscreen;
+    window.exitScannerFullscreen = exitScannerFullscreen;
+    window.toggleScannerVideoFit = toggleScannerVideoFit;
+    window.handleScannerViewportDblClick = handleScannerViewportDblClick;
     window.switchTab = switchTab;
     window.toggleSound = toggleSound;
     window.testGreetingSpeech = testGreetingSpeech;
