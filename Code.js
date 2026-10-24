@@ -51,6 +51,12 @@ function doGet(e) {
       var gType = e.parameter.personType;
       var gName = e.parameter.name || e.parameter.personName;
       result = updateProfileType(gId, gType, gName);
+    } else if (action === "getActiveCameras") {
+      result = getActiveCameras();
+    } else if (action === "getCameraFrame") {
+      result = getRemoteCameraFrame(e.parameter.sessionId);
+    } else if (action === "stopCameraPublish") {
+      result = unregisterCameraSession(e.parameter.sessionId);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -841,6 +847,14 @@ function doPost(e) {
       var pType = data.personType || (e.parameter && e.parameter.personType);
       var pName = data.name || data.personName || (e.parameter && (e.parameter.name || e.parameter.personName));
       result = updateProfileType(pId, pType, pName);
+    } else if (action === "publishCamera") {
+      result = publishCameraHeartbeat(data.payload || data);
+    } else if (action === "stopCameraPublish") {
+      result = unregisterCameraSession(data.sessionId || (e.parameter && e.parameter.sessionId));
+    } else if (action === "getActiveCameras") {
+      result = getActiveCameras();
+    } else if (action === "getCameraFrame") {
+      result = getRemoteCameraFrame(data.sessionId || (e.parameter && e.parameter.sessionId));
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -1385,5 +1399,227 @@ function getTodayAttendance(targetDate) {
     return { success: false, message: e.toString(), attendance: [], logs: [], count: 0 };
   }
 }
+
+/**
+ * ==============================================================================
+ * ระบบติดตามกล้องตรวจจับระยะไกล (Admin Remote Camera Monitor via CacheService)
+ * ==============================================================================
+ */
+var CAM_INDEX_KEY = "ACTIVE_CAM_INDEX_V1";
+var CAM_SESSION_TTL_MS = 28000; // หมดอายุหากไม่มีสัญญาณ Heartbeat เกิน 28 วินาที
+
+/**
+ * บันทึกสัญญาณชีพ (Heartbeat) และเฟรมภาพล่าสุดจากเครื่องที่เปิดกล้องใช้งานอยู่
+ */
+function publishCameraHeartbeat(payload) {
+  try {
+    if (!payload || !payload.sessionId) {
+      return { success: false, message: "Missing sessionId" };
+    }
+    var cache = CacheService.getScriptCache();
+    var nowMs = Date.now();
+    var timeStr = Utilities.formatDate(new Date(nowMs), "GMT+7", "HH:mm:ss");
+    var sessionId = String(payload.sessionId).trim();
+
+    // 1. อ่านและอัปเดตดัชนีกล้องที่กำลังทำงานอยู่
+    var rawIndex = cache.get(CAM_INDEX_KEY);
+    var indexMap = {};
+    if (rawIndex) {
+      try {
+        indexMap = JSON.parse(rawIndex) || {};
+      } catch (e) {
+        indexMap = {};
+      }
+    }
+
+    // ล้างรายการที่หมดอายุเกิน CAM_SESSION_TTL_MS
+    var activeKeys = Object.keys(indexMap);
+    for (var i = 0; i < activeKeys.length; i++) {
+      var k = activeKeys[i];
+      if (!indexMap[k] || (nowMs - (indexMap[k].lastHeartbeat || 0) > CAM_SESSION_TTL_MS)) {
+        delete indexMap[k];
+      }
+    }
+
+    var existing = indexMap[sessionId] || {};
+    var meta = {
+      sessionId: sessionId,
+      username: String(payload.username || existing.username || "unknown"),
+      fullName: String(payload.fullName || existing.fullName || payload.username || "ผู้ใช้งาน"),
+      role: String(payload.role || existing.role || "operator"),
+      peerId: String(payload.peerId || existing.peerId || ""),
+      startedAt: existing.startedAt || payload.startedAt || nowMs,
+      startedAtFormatted: existing.startedAtFormatted || timeStr,
+      lastHeartbeat: nowMs,
+      lastHeartbeatFormatted: timeStr,
+      detectedCount: Number(payload.detectedCount !== undefined ? payload.detectedCount : (existing.detectedCount || 0)),
+      lastDetected: String(payload.lastDetected !== undefined ? payload.lastDetected : (existing.lastDetected || "กำลังสแกน...")),
+      lastGreeting: String(payload.lastGreeting !== undefined ? payload.lastGreeting : (existing.lastGreeting || "")),
+      lastGreetingId: String(payload.lastGreetingId !== undefined ? payload.lastGreetingId : (existing.lastGreetingId || ""))
+    };
+
+    indexMap[sessionId] = meta;
+    cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
+
+    // 2. บันทึกเฟรมภาพและสถานะลงแคชเฉพาะของ sessionId นั้น
+    if (payload.frameDataUrl) {
+      var frameObj = {
+        sessionId: sessionId,
+        username: meta.username,
+        fullName: meta.fullName,
+        role: meta.role,
+        peerId: meta.peerId,
+        frameDataUrl: String(payload.frameDataUrl),
+        detectedCount: meta.detectedCount,
+        lastDetected: meta.lastDetected,
+        lastGreeting: meta.lastGreeting,
+        lastGreetingId: meta.lastGreetingId,
+        timestamp: nowMs,
+        timeStr: timeStr
+      };
+      var serializedFrame = JSON.stringify(frameObj);
+      if (serializedFrame.length < 98000) {
+        cache.put("CAM_FRAME_" + sessionId, serializedFrame, 60);
+      }
+    }
+
+    return {
+      success: true,
+      sessionId: sessionId,
+      activeCount: Object.keys(indexMap).length,
+      timestamp: nowMs
+    };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * ยกเลิกสถานะการเปิดกล้องทันทีเมื่อผู้ใช้กดปิดกล้องหรือออกจากระบบ
+ */
+function unregisterCameraSession(sessionId) {
+  try {
+    if (!sessionId) return { success: false, message: "Missing sessionId" };
+    var cache = CacheService.getScriptCache();
+    var sId = String(sessionId).trim();
+
+    var rawIndex = cache.get(CAM_INDEX_KEY);
+    if (rawIndex) {
+      try {
+        var indexMap = JSON.parse(rawIndex) || {};
+        if (indexMap[sId]) {
+          delete indexMap[sId];
+          cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
+        }
+      } catch (e) {}
+    }
+    cache.remove("CAM_FRAME_" + sId);
+    return { success: true, sessionId: sId };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * ดึงรายชื่อกล้องของผู้ใช้งานทั้งหมดที่กำลังเปิดทำงานอยู่ในปัจจุบัน
+ */
+function getActiveCameras() {
+  try {
+    var cache = CacheService.getScriptCache();
+    var nowMs = Date.now();
+    var rawIndex = cache.get(CAM_INDEX_KEY);
+    var indexMap = {};
+    if (rawIndex) {
+      try {
+        indexMap = JSON.parse(rawIndex) || {};
+      } catch (e) {
+        indexMap = {};
+      }
+    }
+
+    var cameras = [];
+    var changed = false;
+    var keys = Object.keys(indexMap);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      var item = indexMap[k];
+      if (!item || (nowMs - (item.lastHeartbeat || 0) > CAM_SESSION_TTL_MS)) {
+        delete indexMap[k];
+        changed = true;
+      } else {
+        cameras.push(item);
+      }
+    }
+
+    if (changed) {
+      cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
+    }
+
+    // เรียงลำดับตามเวลาที่เริ่มเปิดล่าสุด
+    cameras.sort(function(a, b) {
+      return (b.lastHeartbeat || 0) - (a.lastHeartbeat || 0);
+    });
+
+    return {
+      success: true,
+      cameras: cameras,
+      count: cameras.length,
+      serverTime: nowMs
+    };
+  } catch (e) {
+    return { success: false, cameras: [], count: 0, message: e.toString() };
+  }
+}
+
+/**
+ * ดึงข้อมูลเฟรมภาพล่าสุดและสถานะการตรวจจับของกล้องที่เลือกดู
+ */
+function getRemoteCameraFrame(sessionId) {
+  try {
+    if (!sessionId) return { success: false, active: false, message: "Missing sessionId" };
+    var cache = CacheService.getScriptCache();
+    var sId = String(sessionId).trim();
+    var nowMs = Date.now();
+
+    var rawIndex = cache.get(CAM_INDEX_KEY);
+    var sessionMeta = null;
+    if (rawIndex) {
+      try {
+        var indexMap = JSON.parse(rawIndex) || {};
+        if (indexMap[sId] && (nowMs - (indexMap[sId].lastHeartbeat || 0) <= CAM_SESSION_TTL_MS)) {
+          sessionMeta = indexMap[sId];
+        }
+      } catch (e) {}
+    }
+
+    var rawFrame = cache.get("CAM_FRAME_" + sId);
+    var frameData = null;
+    if (rawFrame) {
+      try {
+        frameData = JSON.parse(rawFrame);
+      } catch (e) {}
+    }
+
+    if (!sessionMeta && !frameData) {
+      return {
+        success: true,
+        active: false,
+        sessionId: sId,
+        message: "กล้องของผู้ใช้งานนี้ปิดการทำงานหรือออฟไลน์แล้ว"
+      };
+    }
+
+    return {
+      success: true,
+      active: true,
+      sessionId: sId,
+      meta: sessionMeta || frameData,
+      frame: frameData
+    };
+  } catch (e) {
+    return { success: false, active: false, message: e.toString() };
+  }
+}
+
 
 
