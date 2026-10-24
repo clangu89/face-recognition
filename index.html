@@ -292,7 +292,7 @@
           <span>📝</span>
           <span>ลงทะเบียนข้อมูลใบหน้า</span>
         </button>
-        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="hidden px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
+        <button id="tabBtn_profiles" onclick="switchTab('profiles')" class="px-4 py-2 rounded-full text-sm font-medium text-[#5C5950] hover:bg-[#F2EFE4]/70 hover:text-[#1F1E1B] transition flex items-center space-x-2">
           <span>📋</span>
           <span>ทะเบียนประวัติใบหน้า</span>
           <span id="profileCountBadge" class="ml-1.5 px-2.5 py-0.5 rounded-full text-xs bg-white text-[#1F1E1B] font-bold border border-[#DCD6C4] shadow-sm">0 คน</span>
@@ -836,8 +836,11 @@
       
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xl font-extrabold text-[#1F1E1B]">ทะเบียนประวัติใบหน้าที่บันทึกในระบบ (Registered Profiles)</h2>
-          <p class="text-xs text-[#6E6B62]">ข้อมูลเวกเตอร์ใบหน้าจัดเก็บบน Google Sheets และรูปภาพอ้างอิงบน Google Drive</p>
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <h2 class="text-xl font-extrabold text-[#1F1E1B]">ทะเบียนประวัติใบหน้าที่บันทึกในระบบ (Registered Profiles)</h2>
+            <span id="profilesRoleAccessBadge" class="hidden text-xs px-2.5 py-0.5 rounded-full font-bold"></span>
+          </div>
+          <p class="text-xs text-[#6E6B62] mt-0.5">ข้อมูลเวกเตอร์ใบหน้าจัดเก็บบน Google Sheets และรูปภาพอ้างอิงบน Google Drive</p>
         </div>
 
         <button id="refreshProfilesBtn" onclick="loadProfilesFromBackend(true)" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition cursor-pointer">
@@ -3694,6 +3697,10 @@
     }
 
     function toggleProfileType(profileId, newType) {
+      if (!state.currentUser || state.currentUser.role !== 'admin') {
+        showToast('สิทธิ์เจ้าหน้าที่สามารถจัดการได้เฉพาะกล่องฝากข้อความ (ไม่อนุญาตให้เปลี่ยนประเภทบุคคล)', 'warning');
+        return;
+      }
       const profile = (state.profiles || []).find(p => p.id === profileId);
       if (!profile) return;
       const oldType = profile.personType;
@@ -5717,6 +5724,10 @@
     }
 
     function deleteProfile(id, name) {
+      if (!state.currentUser || state.currentUser.role !== 'admin') {
+        showToast('สิทธิ์เจ้าหน้าที่สามารถจัดการได้เฉพาะกล่องฝากข้อความ (ไม่อนุญาตให้ลบประวัติใบหน้า)', 'warning');
+        return;
+      }
       if (!confirm('คุณต้องการลบข้อมูลใบหน้าของ "' + name + '" ใช่หรือไม่?')) return;
 
       showToast('กำลังลบข้อมูล ' + name + '...', 'info');
@@ -5758,6 +5769,8 @@
       const container = document.getElementById('profilesListContainer');
       if (!container) return;
 
+      const isAdmin = !!(state.currentUser && state.currentUser.role === 'admin');
+
       if (state.profiles.length === 0) {
         container.innerHTML = '<div class="glass-card rounded-[28px] text-center py-12 px-6 text-[#6E6B62]"><div class="w-16 h-16 mx-auto mb-3 ch-squircle bg-[#F7F5EE] border border-[#E5E0D0] flex items-center justify-center text-3xl">📋</div><p class="text-base font-extrabold text-[#1F1E1B]">ยังไม่มีข้อมูลประวัติใบหน้าที่ลงทะเบียนในระบบ</p><p class="text-xs text-[#8C877B] mt-1">คลิกที่เมนู "ลงทะเบียนข้อมูลใบหน้า" เพื่อบันทึกข้อมูลใหม่</p></div>';
         return;
@@ -5778,7 +5791,15 @@
           : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-extrabold shadow-xs">💼 พนักงาน</span>';
 
         var switchTypeTarget = isVip ? 'employee' : 'vip';
-        var switchBtn = '<button type="button" onclick="toggleProfileType(\'' + p.id + '\', \'' + switchTypeTarget + '\')" class="text-[10px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-lg bg-[#F7F5EE] hover:bg-[#EAE6DA] border border-[#DDD7C5] transition shadow-xs cursor-pointer" title="สลับเป็น ' + (isVip ? 'พนักงาน' : 'VIP') + '">🔄 ' + (isVip ? 'เป็นพนักงาน' : 'เป็น VIP') + '</button>';
+        var switchBtn = isAdmin
+          ? '<button type="button" onclick="toggleProfileType(\'' + p.id + '\', \'' + switchTypeTarget + '\')" class="text-[10px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-lg bg-[#F7F5EE] hover:bg-[#EAE6DA] border border-[#DDD7C5] transition shadow-xs cursor-pointer" title="สลับเป็น ' + (isVip ? 'พนักงาน' : 'VIP') + '">🔄 ' + (isVip ? 'เป็นพนักงาน' : 'เป็น VIP') + '</button>'
+          : '';
+
+        var deleteBtn = isAdmin
+          ? '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0 cursor-pointer" title="ลบข้อมูล">' +
+              '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
+            '</button>'
+          : '';
 
         var msgs = getProfileMessages(p.id, p.name);
         var msgCount = msgs.length;
@@ -5804,9 +5825,7 @@
                 '</div>' +
               '</div>' +
             '</div>' +
-            '<button onclick="deleteProfile(\'' + p.id + '\', \'' + safeName + '\')" class="p-2 text-[#8C877B] hover:text-[#D94338] hover:bg-[#FDECEB] rounded-full transition flex-shrink-0" title="ลบข้อมูล">' +
-              '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>' +
-            '</button>' +
+            deleteBtn +
           '</div>' +
           '<div class="pt-2 border-t border-[#EFECE2]">' +
             '<button type="button" onclick="openProfileMessagesModal(\'' + p.id + '\', \'' + safeName + '\', \'' + safeUrl + '\')" class="w-full py-2 px-3.5 rounded-xl ' + msgBtnClass + ' transition flex items-center justify-between text-xs font-bold shadow-xs cursor-pointer">' +
@@ -6016,8 +6035,8 @@
     });
 
     function switchTab(tabName) {
-      // Permission guard: only admin can access 'profiles', 'attendance', and 'users'
-      var adminOnlyTabs = ['profiles', 'attendance', 'users'];
+      // Permission guard: only admin can access 'attendance' and 'users'
+      var adminOnlyTabs = ['attendance', 'users'];
       if (adminOnlyTabs.indexOf(tabName) !== -1) {
         if (!state.currentUser || state.currentUser.role !== 'admin') {
           showToast('หน้านี้สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น', 'warning');
@@ -6216,27 +6235,41 @@
         roleEl.className = user.role === 'admin' ? 'text-[10px] text-[#28AE60] font-bold' : 'text-[10px] text-[#6E6B62] font-semibold';
       }
 
-      // Show/hide Admin-only Tabs & Dropdown Items (Profiles, Attendance, User Management)
+      // Show/hide Admin-only Tabs & Dropdown Items (Attendance, User Management)
       var userTabBtn = document.getElementById('tabBtn_users');
       var userDropdownItem = document.getElementById('navDropdownItem_users');
       var profilesTabBtn = document.getElementById('tabBtn_profiles');
       var attendanceTabBtn = document.getElementById('tabBtn_attendance');
+      var profilesRoleBadge = document.getElementById('profilesRoleAccessBadge');
+
+      if (profilesTabBtn) profilesTabBtn.classList.remove('hidden');
+
+      if (profilesRoleBadge) {
+        profilesRoleBadge.classList.remove('hidden');
+        if (user.role === 'admin') {
+          profilesRoleBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] inline-flex items-center gap-1';
+          profilesRoleBadge.innerHTML = '<span>🛡️</span> <span>สิทธิ์ผู้ดูแลระบบ</span>';
+        } else {
+          profilesRoleBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] inline-flex items-center gap-1';
+          profilesRoleBadge.innerHTML = '<span>💬</span> <span>สิทธิ์เจ้าหน้าที่: จัดการเฉพาะกล่องฝากข้อความ</span>';
+        }
+      }
 
       if (user.role === 'admin') {
         if (userTabBtn) userTabBtn.classList.remove('hidden');
         if (userDropdownItem) userDropdownItem.classList.remove('hidden');
-        if (profilesTabBtn) profilesTabBtn.classList.remove('hidden');
         if (attendanceTabBtn) attendanceTabBtn.classList.remove('hidden');
         loadSystemUsers();
       } else {
         if (userTabBtn) userTabBtn.classList.add('hidden');
         if (userDropdownItem) userDropdownItem.classList.add('hidden');
-        if (profilesTabBtn) profilesTabBtn.classList.add('hidden');
         if (attendanceTabBtn) attendanceTabBtn.classList.add('hidden');
-        if (state.currentTab === 'profiles' || state.currentTab === 'attendance' || state.currentTab === 'users') {
+        if (state.currentTab === 'attendance' || state.currentTab === 'users') {
           switchTab('scanner');
         }
       }
+
+      renderProfilesList();
     }
 
     function handleLoginSubmit(event) {
