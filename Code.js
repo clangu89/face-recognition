@@ -1042,10 +1042,13 @@ function getSystemSettings() {
     var data = sheet.getDataRange().getValues();
 
     var settings = {
+      employeeGreetingTemplate: "สวัสดี{particle}คุณ {name} วันนี้{datetime}",
+      vipGreetingTemplate: "สวัสดี{particle}คุณ {name}",
       knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
       unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
       voiceParticle: "ค่ะ",
       bellChimeEnabled: true,
+      voiceCategoryConfigs: null,
       workStartTime: "08:30",
       workEndTime: "17:30"
     };
@@ -1054,20 +1057,36 @@ function getSystemSettings() {
       for (var i = 1; i < data.length; i++) {
         var key = String(data[i][0] || "").trim().toUpperCase();
         var val = data[i][1];
-        if (key === "GREETING_KNOWN_TEMPLATE" && val !== undefined && val !== null && String(val).trim() !== "") {
+        if (key === "GREETING_EMPLOYEE_TEMPLATE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.employeeGreetingTemplate = String(val).trim();
+        } else if (key === "GREETING_VIP_TEMPLATE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.vipGreetingTemplate = String(val).trim();
           settings.knownGreetingTemplate = String(val).trim();
+        } else if (key === "GREETING_KNOWN_TEMPLATE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.knownGreetingTemplate = String(val).trim();
+          if (!settings._hasExplicitVip) {
+            settings.vipGreetingTemplate = String(val).trim();
+          }
         } else if (key === "GREETING_UNKNOWN_TEXT" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.unknownGreetingText = String(val).trim();
         } else if (key === "VOICE_PARTICLE" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.voiceParticle = String(val).trim();
         } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
           settings.bellChimeEnabled = (String(val).trim().toLowerCase() === "true");
+        } else if (key === "VOICE_CATEGORY_CONFIGS" && val !== undefined && val !== null && String(val).trim() !== "") {
+          try {
+            settings.voiceCategoryConfigs = JSON.parse(String(val).trim());
+          } catch (eJson) {}
         } else if (key === "WORK_START_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.workStartTime = normalizeTimeHHMM_(val) || "08:30";
         } else if (key === "WORK_END_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.workEndTime = normalizeTimeHHMM_(val) || "17:30";
         }
+        if (key === "GREETING_VIP_TEMPLATE") {
+          settings._hasExplicitVip = true;
+        }
       }
+      delete settings._hasExplicitVip;
     }
 
     return {
@@ -1079,10 +1098,13 @@ function getSystemSettings() {
       success: false,
       message: error.toString(),
       settings: {
+        employeeGreetingTemplate: "สวัสดี{particle}คุณ {name} วันนี้{datetime}",
+        vipGreetingTemplate: "สวัสดี{particle}คุณ {name}",
         knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
         unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
         voiceParticle: "ค่ะ",
         bellChimeEnabled: true,
+        voiceCategoryConfigs: null,
         workStartTime: "08:30",
         workEndTime: "17:30"
       }
@@ -1103,7 +1125,22 @@ function saveSystemSettings(payload) {
     var nowStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
 
     var updateMap = {};
-    if (payload.knownGreetingTemplate !== undefined) {
+    if (payload.employeeGreetingTemplate !== undefined) {
+      updateMap["GREETING_EMPLOYEE_TEMPLATE"] = {
+        value: String(payload.employeeGreetingTemplate).trim(),
+        desc: "ข้อความทักทายพนักงาน (Employee)"
+      };
+    }
+    if (payload.vipGreetingTemplate !== undefined) {
+      updateMap["GREETING_VIP_TEMPLATE"] = {
+        value: String(payload.vipGreetingTemplate).trim(),
+        desc: "ข้อความทักทายบุคคลสำคัญ (VIP)"
+      };
+      updateMap["GREETING_KNOWN_TEMPLATE"] = {
+        value: String(payload.vipGreetingTemplate).trim(),
+        desc: "ข้อความทักทายสมาชิกหรือบุคลากรในระบบ"
+      };
+    } else if (payload.knownGreetingTemplate !== undefined) {
       updateMap["GREETING_KNOWN_TEMPLATE"] = {
         value: String(payload.knownGreetingTemplate).trim(),
         desc: "ข้อความทักทายสมาชิกหรือบุคลากรในระบบ"
@@ -1125,6 +1162,15 @@ function saveSystemSettings(payload) {
       updateMap["BELL_CHIME_ENABLED"] = {
         value: String(payload.bellChimeEnabled).trim().toLowerCase() === "true" ? "true" : "false",
         desc: "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)"
+      };
+    }
+    if (payload.voiceCategoryConfigs !== undefined && payload.voiceCategoryConfigs !== null) {
+      var jsonStr = (typeof payload.voiceCategoryConfigs === "string")
+        ? payload.voiceCategoryConfigs
+        : JSON.stringify(payload.voiceCategoryConfigs);
+      updateMap["VOICE_CATEGORY_CONFIGS"] = {
+        value: jsonStr,
+        desc: "การตั้งค่าสุ้มเสียงแยกตามประเภท (พนักงาน / VIP / ผู้มาติดต่อ)"
       };
     }
     if (payload.workStartTime !== undefined) {

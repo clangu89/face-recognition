@@ -528,43 +528,56 @@
             </div>
 
             <!-- Sound Preview Buttons -->
-            <div class="space-y-1 pt-1">
-              <span class="block text-[11px] font-bold text-[#5C5950]">ทดสอบเสียงพูดทักทาย</span>
-              <div class="grid grid-cols-2 gap-2">
-                <button type="button" onclick="testGreetingSpeech('known')" class="py-2 px-2.5 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm">
-                  <span>🔊</span> <span>สมาชิกในระบบ</span>
+            <div class="space-y-1.5 pt-1">
+              <span class="block text-[11px] font-bold text-[#5C5950]">ทดสอบเสียงพูดทักทาย (แยกตามประเภท)</span>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="testGreetingSpeech('employee')" class="py-2 px-2 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                  <span>💼</span> <span>พนักงาน</span>
                 </button>
-                <button type="button" onclick="testGreetingSpeech('unknown')" class="py-2 px-2.5 rounded-xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm">
-                  <span>🔊</span> <span>ผู้มาติดต่อทั่วไป</span>
+                <button type="button" onclick="testGreetingSpeech('vip')" class="py-2 px-2 rounded-xl bg-[#FEF9E7] hover:bg-[#FCF3CF] text-[#9A7D0A] border border-[#F7DC6F] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                  <span>⭐</span> <span>VIP</span>
+                </button>
+                <button type="button" onclick="testGreetingSpeech('unknown')" class="py-2 px-2 rounded-xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                  <span>🟡</span> <span>ผู้มาติดต่อ</span>
                 </button>
               </div>
             </div>
           </div>
 
           <!-- Detection Rules Card -->
-          <div class="glass-card rounded-[28px] p-5 space-y-4">
+          <div class="glass-card rounded-[28px] p-5 space-y-3.5">
             <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
               หลักเกณฑ์การตรวจจับและทักทาย
             </h3>
 
-            <!-- Rule 1: Known Face -->
-            <div class="p-3.5 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
+            <!-- Rule 1: Employee -->
+            <div class="p-3 rounded-2xl bg-[#EAF7EF] border border-[#BEE6CE] space-y-1">
               <div class="flex items-center space-x-2 text-[#1E824C] font-bold text-xs">
-                <span>🟢 บุคลากรหรือสมาชิกที่มีข้อมูลในระบบ</span>
+                <span>💼 พนักงานในระบบ (Employee)</span>
               </div>
               <p class="text-xs text-[#2D6A4F] leading-relaxed">
-                แสดงกรอบสีเขียวพร้อมชื่อ และส่งเสียงทักทาย: <span id="ruleKnownGreetingText" class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณ [ชื่อ]"</span>
+                แสดงกรอบสีเขียว ลงเวลาอัตโนมัติ และทักทาย: <span id="ruleEmployeeGreetingText" class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณ [ชื่อ] วันนี้..."</span>
               </p>
             </div>
 
-            <!-- Rule 2: Unknown Face -->
-            <div class="p-3.5 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
+            <!-- Rule 2: VIP -->
+            <div class="p-3 rounded-2xl bg-[#FEF9E7] border border-[#F7DC6F] space-y-1">
+              <div class="flex items-center space-x-2 text-[#9A7D0A] font-bold text-xs">
+                <span>⭐ บุคคลสำคัญ (VIP)</span>
+              </div>
+              <p class="text-xs text-[#7D6608] leading-relaxed">
+                แสดงกรอบสีทอง และส่งเสียงทักทาย: <span id="ruleKnownGreetingText" class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณ [ชื่อ]"</span>
+              </p>
+            </div>
+
+            <!-- Rule 3: Unknown Visitor -->
+            <div class="p-3 rounded-2xl bg-[#FEF6E6] border border-[#F5DFB0] space-y-1">
               <div class="flex items-center space-x-2 text-[#9C6214] font-bold text-xs">
                 <span>🟡 ผู้มาติดต่อหรือลูกค้าทั่วไป</span>
               </div>
               <p class="text-xs text-[#7C4D10] leading-relaxed">
-                แสดงกรอบสีส้มทอง และส่งเสียงทักทาย: <span id="ruleUnknownGreetingText" class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+                แสดงกรอบสีส้ม และส่งเสียงทักทาย: <span id="ruleUnknownGreetingText" class="font-bold text-[#1F1E1B]">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
               </p>
             </div>
 
@@ -979,25 +992,98 @@
             🎙️
           </div>
           <div>
-            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">VOICE & SPEECH SYNTHESIS SETTINGS</span>
-            <h2 class="text-xl font-extrabold text-[#1F1E1B]">การตั้งค่าเสียงกล่าวทักทาย</h2>
-            <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบเสียง คำลงท้าย ความเร็ว และระดับโทนเสียงสำหรับการกล่าวทักทายอัตโนมัติ</p>
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-[#28AE60]">VOICE &amp; SPEECH SYNTHESIS SETTINGS</span>
+            <h2 class="text-xl font-extrabold text-[#1F1E1B]">การตั้งค่าเสียงกล่าวทักทาย (แยกตามประเภทบุคคล)</h2>
+            <p class="text-xs text-[#6E6B62] mt-0.5">แยกการตั้งค่ารูปแบบเสียง โทนเสียง และข้อความกล่าวทักทายสำหรับ พนักงาน (Employee) • บุคคลสำคัญ (VIP) • ผู้มาติดต่อ (Visitor)</p>
           </div>
         </div>
 
-        <button type="button" onclick="resetVoiceSettings()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#5C5950] hover:text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition">
-          <svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-          </svg>
-          <span>คืนค่าเสียงเริ่มต้น</span>
-        </button>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button type="button" onclick="applyCurrentVoiceConfigToAllCategories()" class="px-3.5 py-2 rounded-full bg-[#EAF7EF] hover:bg-[#D5F0DF] text-xs font-bold text-[#1E824C] border border-[#BEE6CE] shadow-sm flex items-center space-x-1.5 transition cursor-pointer" title="คัดลอกการตั้งค่าโทนเสียงของหมวดหมู่นี้ไปใช้กับทุกประเภท">
+            <span>🔗</span>
+            <span>ใช้โทนเสียงนี้กับทุกประเภท</span>
+          </button>
+          <button type="button" onclick="resetVoiceSettings()" class="px-4 py-2 rounded-full bg-white hover:bg-[#F7F5EE] text-xs font-bold text-[#5C5950] hover:text-[#1F1E1B] border border-[#DCD6C4] shadow-sm flex items-center space-x-1.5 transition cursor-pointer">
+            <svg class="w-4 h-4 text-[#8C877B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            <span>คืนค่าเสียงเริ่มต้น</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3-Category Selector Bar (Employee / VIP / Visitor) -->
+      <div class="glass-card rounded-[26px] p-2.5 sm:p-3 border border-[#DCD6C4]">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <!-- Category 1: Employee -->
+          <button type="button" id="catTabBtn_employee" onclick="switchVoiceSettingCategory('employee')" class="p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-[#28AE60] bg-[#EAF7EF] shadow-sm cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-[#28AE60] text-white flex items-center justify-center text-lg shadow-xs flex-shrink-0">💼</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-extrabold text-sm text-[#1F1E1B] truncate">พนักงาน (Employee)</span>
+                  <span id="catActiveDot_employee" class="w-2 h-2 rounded-full bg-[#28AE60]"></span>
+                </div>
+                <p id="catVoiceSummary_employee" class="text-[11px] text-[#1E824C] font-semibold truncate mt-0.5">เสียงผู้หญิงนุ่มนวล • ค่ะ</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/90 text-[#1E824C] border border-[#BEE6CE] flex-shrink-0">กำลังแก้ไข</span>
+          </button>
+
+          <!-- Category 2: VIP -->
+          <button type="button" id="catTabBtn_vip" onclick="switchVoiceSettingCategory('vip')" class="p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-transparent bg-[#F7F5EE] hover:bg-white cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-[#FEF9E7] text-[#9A7D0A] border border-[#FAD7A0] flex items-center justify-center text-lg shadow-xs flex-shrink-0">⭐</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-extrabold text-sm text-[#1F1E1B] truncate">บุคคลสำคัญ (VIP)</span>
+                  <span id="catActiveDot_vip" class="w-2 h-2 rounded-full bg-[#D4AC0D] hidden"></span>
+                </div>
+                <p id="catVoiceSummary_vip" class="text-[11px] text-[#6E6B62] font-medium truncate mt-0.5">เสียงผู้หญิงนุ่มนวล • ค่ะ</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAE6DA] text-[#5C5950] flex-shrink-0">เลือกแก้ไข</span>
+          </button>
+
+          <!-- Category 3: Unknown / Visitor -->
+          <button type="button" id="catTabBtn_unknown" onclick="switchVoiceSettingCategory('unknown')" class="p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-transparent bg-[#F7F5EE] hover:bg-white cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] flex items-center justify-center text-lg shadow-xs flex-shrink-0">🟡</div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-extrabold text-sm text-[#1F1E1B] truncate">ผู้มาติดต่อ (Visitor)</span>
+                  <span id="catActiveDot_unknown" class="w-2 h-2 rounded-full bg-[#D9822B] hidden"></span>
+                </div>
+                <p id="catVoiceSummary_unknown" class="text-[11px] text-[#6E6B62] font-medium truncate mt-0.5">เสียงผู้หญิงนุ่มนวล • ค่ะ</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAE6DA] text-[#5C5950] flex-shrink-0">เลือกแก้ไข</span>
+          </button>
+        </div>
       </div>
 
       <!-- Settings & Previews Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Left Column: Voice Configuration (7 Cols) -->
-        <div class="lg:col-span-7 space-y-5">
+        <!-- Left Column: Voice Configuration for Selected Category (6 Cols) -->
+        <div class="lg:col-span-6 space-y-5">
+
+          <!-- Active Category Voice Banner -->
+          <div id="activeVoiceCategoryBanner" class="glass-card rounded-[24px] p-4 border-2 border-[#28AE60] bg-[#EAF7EF]/70 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span id="activeVoiceCategoryIcon" class="w-9 h-9 rounded-xl bg-[#28AE60] text-white flex items-center justify-center text-base shadow-xs">💼</span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#1E824C]" id="activeVoiceCategoryTag">VOICE PROFILE: EMPLOYEE</span>
+                </div>
+                <h3 id="activeVoiceCategoryTitle" class="text-sm sm:text-base font-extrabold text-[#1F1E1B]">ตั้งค่าโทนเสียงสำหรับ: พนักงาน (Employee)</h3>
+              </div>
+            </div>
+            <button type="button" onclick="testGreetingSpeech(state.activeVoiceCategory || 'employee')" class="px-3.5 py-1.5 rounded-xl bg-white hover:bg-[#F7F5EE] text-[#1F1E1B] border border-[#DCD6C4] text-xs font-bold shadow-xs flex items-center gap-1.5 transition cursor-pointer">
+              <span>🔊</span>
+              <span>ฟังเสียงหมวดนี้</span>
+            </button>
+          </div>
 
           <!-- Voice Profile Selection -->
           <div class="glass-card rounded-[28px] p-6 space-y-4">
@@ -1006,7 +1092,7 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
                 รูปแบบเสียงและเอนจินเสียงพูด (Voice Model)
               </h3>
-              <p class="text-xs text-[#6E6B62] mt-1">เลือกโทนเสียงที่ต้องการ ระบบจะปรับแต่งคลื่นเสียงให้อัตโนมัติ</p>
+              <p class="text-xs text-[#6E6B62] mt-1">เลือกโทนเสียงที่ต้องการสำหรับหมวดหมู่นี้ ระบบจะปรับแต่งคลื่นเสียงให้อัตโนมัติ</p>
             </div>
 
             <div class="space-y-1.5">
@@ -1033,15 +1119,15 @@
                 <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
                 คำลงท้ายประโยคทักทาย (Polite Particle)
               </h3>
-              <p class="text-xs text-[#6E6B62] mt-1">กำหนดคำลงท้ายประโยคที่ระบบจะกล่าวทักทายอัตโนมัติ</p>
+              <p class="text-xs text-[#6E6B62] mt-1">กำหนดคำลงท้ายประโยคที่ระบบจะใช้แทนที่ตัวแปร <code class="bg-[#EAE6DA] px-1 rounded font-bold">{particle}</code> ของหมวดหมู่นี้</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3 bg-[#EAE6DA] p-1.5 rounded-2xl border border-[#DCD6C4]">
-              <button type="button" id="particleBtn_ka" onclick="setVoiceParticle('ค่ะ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2">
+              <button type="button" id="particleBtn_ka" onclick="setVoiceParticle('ค่ะ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer">
                 <span>👩</span>
                 <span>ลงท้าย "ค่ะ"</span>
               </button>
-              <button type="button" id="particleBtn_krub" onclick="setVoiceParticle('ครับ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2">
+              <button type="button" id="particleBtn_krub" onclick="setVoiceParticle('ครับ', true)" class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2 cursor-pointer">
                 <span>👨</span>
                 <span>ลงท้าย "ครับ"</span>
               </button>
@@ -1053,9 +1139,9 @@
             <div>
               <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-                ความเร็วและระดับความสูงของเสียง (Rate & Pitch)
+                ความเร็วและระดับความสูงของเสียง (Rate &amp; Pitch)
               </h3>
-              <p class="text-xs text-[#6E6B62] mt-1">ปรับระดับความเร็วและโทนเสียงให้เข้ากับสภาพแวดล้อมของหน่วยงาน</p>
+              <p class="text-xs text-[#6E6B62] mt-1">ปรับระดับความเร็วและโทนเสียงแยกตามประเภทบุคคล</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-1">
@@ -1095,7 +1181,7 @@
                   <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
                   เสียงกระดิ่งเตือนก่อนทักทาย (Bell Chime)
                 </h3>
-                <p class="text-xs text-[#6E6B62] mt-1">ส่งเสียงกระดิ่ง "ดิ่ง-ด่อง" เพื่อดึงดูดความสนใจก่อนเริ่มอ่านประโยคทักทาย</p>
+                <p class="text-xs text-[#6E6B62] mt-1">เปิด/ปิดเสียงกระดิ่ง "ดิ่ง-ด่อง" ก่อนเริ่มอ่านคำทักทายของหมวดหมู่นี้</p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="bellChimeToggleCheckbox" onchange="toggleBellChime(this.checked)" class="sr-only peer" checked>
@@ -1105,7 +1191,7 @@
 
             <div class="flex items-center justify-between pt-2 border-t border-[#EFECE2]">
               <span class="text-xs text-[#5C5950] font-medium">ทดสอบฟังเสียงกระดิ่ง:</span>
-              <button type="button" onclick="playBellChimePreview()" class="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] shadow-sm flex items-center gap-1.5 transition">
+              <button type="button" onclick="playBellChimePreview()" class="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] shadow-sm flex items-center gap-1.5 transition cursor-pointer">
                 <span>🔔</span>
                 <span>ฟังเสียงกระดิ่ง</span>
               </button>
@@ -1114,99 +1200,153 @@
 
         </div>
 
-        <!-- Right Column: Custom Greeting Messages & Audio Preview (5 Cols) -->
-        <div class="lg:col-span-5 space-y-5">
+        <!-- Right Column: Custom Greeting Messages (3 Categories) & Audio Preview (6 Cols) -->
+        <div class="lg:col-span-6 space-y-5">
 
           <!-- Custom Greeting Messages Editor Card -->
           <div class="glass-card rounded-[28px] p-6 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#EFECE2]">
               <div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-                    ข้อความกล่าวทักทาย (Greeting Messages)
+                    ข้อความกล่าวทักทายแยกประเภท (Greeting Templates)
                   </h3>
                   <span id="greetingSyncBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60]"></span>
                     <span>ค่าคงที่ถาวร (Google Sheets)</span>
                   </span>
                 </div>
-                <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบประโยคที่ระบบจะพูดทักทายอัตโนมัติและจัดเก็บเป็นค่าคงที่ถาวร</p>
+                <p class="text-xs text-[#6E6B62] mt-0.5">กำหนดรูปแบบประโยคทักทายแยกสำหรับ พนักงาน, VIP และผู้มาติดต่อ</p>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap">
-                <button type="button" id="saveSystemSettingsBtn" onclick="saveSystemSettingsToBackend()" class="px-3 py-1.5 rounded-xl bg-[#28AE60] hover:bg-[#219653] text-white text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm" title="บันทึกข้อความปัจจุบันเป็นค่าคงที่ถาวรของระบบบน Google Sheets">
+                <button type="button" id="saveSystemSettingsBtn" onclick="saveSystemSettingsToBackend()" class="px-3 py-1.5 rounded-xl bg-[#28AE60] hover:bg-[#219653] text-white text-[11px] font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="บันทึกข้อความและโทนเสียงทั้ง 3 ประเภทลง Google Sheets">
                   <span id="saveSystemSettingsIcon">💾</span>
                   <span id="saveSystemSettingsText">บันทึกเป็นค่าคงที่ถาวร</span>
                 </button>
-                <button type="button" onclick="loadSystemSettingsFromBackend(true)" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#DDD7C5] transition flex items-center gap-1" title="ดึงค่าคงที่ล่าสุดจาก Google Sheets">
+                <button type="button" onclick="loadSystemSettingsFromBackend(true)" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#DDD7C5] transition flex items-center gap-1 cursor-pointer" title="ดึงค่าคงที่ล่าสุดจาก Google Sheets">
                   <span>🔄</span> <span>ซิงค์ค่าระบบ</span>
                 </button>
-                <button type="button" onclick="resetGreetingTemplates()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#E5534B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#FCE8E8] transition" title="คืนค่าข้อความเริ่มต้น">
+                <button type="button" onclick="resetGreetingTemplates()" class="text-[11px] font-bold text-[#6E6B62] hover:text-[#E5534B] px-2.5 py-1.5 rounded-xl bg-[#EAE6DA] hover:bg-[#FCE8E8] transition cursor-pointer" title="คืนค่าข้อความเริ่มต้นทั้ง 3 ประเภท">
                   คืนค่าเริ่มต้น
                 </button>
               </div>
             </div>
 
-            <!-- Known Member Greeting Input -->
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label for="greetingKnownInput" class="block text-xs font-bold text-[#1E824C] flex items-center gap-1.5">
-                  <span>🟢</span> <span>ข้อความทักทายสมาชิก:</span>
+            <!-- 1. Employee Greeting Section -->
+            <div id="greetingCard_employee" class="p-4 rounded-2xl bg-[#EAF7EF]/45 border-2 border-[#28AE60] space-y-2 transition">
+              <div class="flex items-center justify-between flex-wrap gap-1.5">
+                <label for="greetingEmployeeInput" class="text-xs font-extrabold text-[#1E824C] flex items-center gap-1.5 cursor-pointer" onclick="switchVoiceSettingCategory('employee')">
+                  <span>💼</span> <span>1. ข้อความทักทายพนักงาน (Employee):</span>
                 </label>
-                <div class="flex items-center gap-1">
-                  <button type="button" onclick="insertGreetingTag('known', '{name}')" class="px-2 py-0.5 rounded-md bg-[#EAF7EF] hover:bg-[#28AE60] hover:text-white text-[#1E824C] font-mono font-bold transition text-[10px] border border-[#BEE6CE] shadow-xs" title="แทรกตัวแปรชื่อสมาชิก">+ {name}</button>
-                  <button type="button" onclick="insertGreetingTag('known', '{particle}')" class="px-2 py-0.5 rounded-md bg-[#EAE6DA] hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs" title="แทรกตัวแปรคำลงท้าย">+ {particle}</button>
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button type="button" onclick="insertGreetingTag('employee', '{name}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#28AE60] hover:text-white text-[#1E824C] font-mono font-bold transition text-[10px] border border-[#BEE6CE] shadow-xs cursor-pointer" title="แทรกชื่อพนักงาน">+ {name}</button>
+                  <button type="button" onclick="insertGreetingTag('employee', '{particle}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกคำลงท้าย (ค่ะ/ครับ)">+ {particle}</button>
+                  <button type="button" onclick="insertGreetingTag('employee', '{datetime}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#28AE60] hover:text-white text-[#1E824C] font-mono font-bold transition text-[10px] border border-[#BEE6CE] shadow-xs cursor-pointer" title="แทรกวันที่และเวลาปัจจุบัน">+ {datetime}</button>
+                  <button type="button" onclick="insertGreetingTag('employee', '{date}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกวันที่ปัจจุบัน">+ {date}</button>
+                  <button type="button" onclick="insertGreetingTag('employee', '{time}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกเวลาปัจจุบัน">+ {time}</button>
                 </div>
               </div>
-              <input type="text" id="greetingKnownInput" oninput="updateGreetingTemplate('known', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณ {name}">
-              
-              <!-- Quick Preset Chips for Known Member -->
+              <input type="text" id="greetingEmployeeInput" onfocus="switchVoiceSettingCategory('employee', true)" oninput="updateGreetingTemplate('employee', this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#BEE6CE] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] shadow-inner" placeholder="เช่น สวัสดี{particle}คุณ {name} วันนี้{datetime}">
+
+              <!-- Quick Preset Chips for Employee -->
               <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
-                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบแนะนำ:</span>
-                <button type="button" onclick="applyGreetingPreset('known', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">มาตรฐาน</button>
-                <button type="button" onclick="applyGreetingPreset('known', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">ต้อนรับอบอุ่น</button>
-                <button type="button" onclick="applyGreetingPreset('known', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">อวยพรยามเช้า</button>
-                <button type="button" onclick="applyGreetingPreset('known', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#2D6A4F] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#28AE60] transition shadow-xs">ทางการ</button>
+                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบพนักงาน:</span>
+                <button type="button" onclick="applyGreetingPreset('employee', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#1E824C] text-[10px] font-bold border border-[#BEE6CE] hover:border-[#28AE60] transition shadow-xs cursor-pointer">มาตรฐาน (ชื่อ+วันเวลา)</button>
+                <button type="button" onclick="applyGreetingPreset('employee', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#1E824C] text-[10px] font-bold border border-[#BEE6CE] hover:border-[#28AE60] transition shadow-xs cursor-pointer">สวัสดี+เวลา</button>
+                <button type="button" onclick="applyGreetingPreset('employee', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#1E824C] text-[10px] font-bold border border-[#BEE6CE] hover:border-[#28AE60] transition shadow-xs cursor-pointer">ต้อนรับทำงาน</button>
+                <button type="button" onclick="applyGreetingPreset('employee', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#EAF7EF] text-[#1E824C] text-[10px] font-bold border border-[#BEE6CE] hover:border-[#28AE60] transition shadow-xs cursor-pointer">กระชับ</button>
               </div>
 
-              <!-- Live Preview for Known -->
-              <div class="p-2.5 rounded-xl bg-[#EAF7EF]/70 border border-[#BEE6CE] text-xs flex items-center gap-2 mt-1">
-                <span class="text-[10px] font-bold text-[#1E824C] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
-                <span id="voicePreviewKnownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณ ธนกร"</span>
+              <!-- Live Preview for Employee -->
+              <div class="p-2.5 rounded-xl bg-white/90 border border-[#BEE6CE] text-xs flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-[10px] font-bold text-[#1E824C] whitespace-nowrap">ตัวอย่างเสียง:</span>
+                  <span id="voicePreviewEmployeeText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณ ธนกร วันนี้..."</span>
+                </div>
+                <button type="button" onclick="testGreetingSpeech('employee')" class="px-2.5 py-1 rounded-lg bg-[#EAF7EF] hover:bg-[#28AE60] text-[#1E824C] hover:text-white text-[11px] font-bold transition flex items-center gap-1 flex-shrink-0 cursor-pointer" title="ฟังเสียงทักทายพนักงาน">
+                  <span>🔊</span><span>ฟัง</span>
+                </button>
               </div>
             </div>
 
-            <!-- Unknown Visitor Greeting Input -->
-            <div class="space-y-1.5 pt-1">
-              <div class="flex items-center justify-between">
-                <label for="greetingUnknownInput" class="block text-xs font-bold text-[#9C6214] flex items-center gap-1.5">
-                  <span>🟡</span> <span>ข้อความทักทายผู้มาติดต่อ:</span>
+            <!-- 2. VIP Greeting Section -->
+            <div id="greetingCard_vip" class="p-4 rounded-2xl bg-[#FEF9E7]/60 border border-[#FAD7A0] space-y-2 transition">
+              <div class="flex items-center justify-between flex-wrap gap-1.5">
+                <label for="greetingKnownInput" class="text-xs font-extrabold text-[#9A7D0A] flex items-center gap-1.5 cursor-pointer" onclick="switchVoiceSettingCategory('vip')">
+                  <span>⭐</span> <span>2. ข้อความทักทายบุคคลสำคัญ (VIP):</span>
                 </label>
-                <div class="flex items-center gap-1">
-                  <button type="button" onclick="insertGreetingTag('unknown', '{particle}')" class="px-2 py-0.5 rounded-md bg-[#EAE6DA] hover:bg-[#28AE60] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs" title="แทรกตัวแปรคำลงท้าย">+ {particle}</button>
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button type="button" onclick="insertGreetingTag('vip', '{name}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#D4AC0D] hover:text-white text-[#9A7D0A] font-mono font-bold transition text-[10px] border border-[#FAD7A0] shadow-xs cursor-pointer" title="แทรกชื่อ VIP">+ {name}</button>
+                  <button type="button" onclick="insertGreetingTag('vip', '{particle}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#D4AC0D] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกคำลงท้าย (ค่ะ/ครับ)">+ {particle}</button>
+                  <button type="button" onclick="insertGreetingTag('vip', '{time}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#D4AC0D] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกเวลาปัจจุบัน">+ {time}</button>
                 </div>
               </div>
-              <input type="text" id="greetingUnknownInput" oninput="updateGreetingTemplate('unknown', this.value)" class="w-full px-3.5 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#28AE60] focus:bg-white shadow-inner" placeholder="เช่น สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}">
+              <input type="text" id="greetingKnownInput" onfocus="switchVoiceSettingCategory('vip', true)" oninput="updateGreetingTemplate('vip', this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#FAD7A0] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#D4AC0D] shadow-inner" placeholder="เช่น สวัสดี{particle}คุณ {name}">
+              
+              <!-- Quick Preset Chips for VIP -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบ VIP:</span>
+                <button type="button" onclick="applyGreetingPreset('vip', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF9E7] text-[#9A7D0A] text-[10px] font-bold border border-[#FAD7A0] hover:border-[#D4AC0D] transition shadow-xs cursor-pointer">มาตรฐาน VIP</button>
+                <button type="button" onclick="applyGreetingPreset('vip', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF9E7] text-[#9A7D0A] text-[10px] font-bold border border-[#FAD7A0] hover:border-[#D4AC0D] transition shadow-xs cursor-pointer">ต้อนรับอบอุ่น</button>
+                <button type="button" onclick="applyGreetingPreset('vip', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF9E7] text-[#9A7D0A] text-[10px] font-bold border border-[#FAD7A0] hover:border-[#D4AC0D] transition shadow-xs cursor-pointer">อวยพรพิเศษ</button>
+                <button type="button" onclick="applyGreetingPreset('vip', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF9E7] text-[#9A7D0A] text-[10px] font-bold border border-[#FAD7A0] hover:border-[#D4AC0D] transition shadow-xs cursor-pointer">ทางการผู้บริหาร</button>
+              </div>
+
+              <!-- Live Preview for VIP -->
+              <div class="p-2.5 rounded-xl bg-white/90 border border-[#FAD7A0] text-xs flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-[10px] font-bold text-[#9A7D0A] whitespace-nowrap">ตัวอย่างเสียง:</span>
+                  <span id="voicePreviewKnownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณ ธนกร"</span>
+                </div>
+                <button type="button" onclick="testGreetingSpeech('vip')" class="px-2.5 py-1 rounded-lg bg-[#FEF9E7] hover:bg-[#D4AC0D] text-[#9A7D0A] hover:text-white text-[11px] font-bold transition flex items-center gap-1 flex-shrink-0 cursor-pointer" title="ฟังเสียงทักทาย VIP">
+                  <span>🔊</span><span>ฟัง</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 3. Unknown Visitor Greeting Section -->
+            <div id="greetingCard_unknown" class="p-4 rounded-2xl bg-[#FEF6E6]/60 border border-[#F5DFB0] space-y-2 transition">
+              <div class="flex items-center justify-between flex-wrap gap-1.5">
+                <label for="greetingUnknownInput" class="text-xs font-extrabold text-[#9C6214] flex items-center gap-1.5 cursor-pointer" onclick="switchVoiceSettingCategory('unknown')">
+                  <span>🟡</span> <span>3. ข้อความทักทายผู้มาติดต่อ (Visitor):</span>
+                </label>
+                <div class="flex items-center gap-1 flex-wrap">
+                  <button type="button" onclick="insertGreetingTag('unknown', '{particle}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#D9822B] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกคำลงท้าย (ค่ะ/ครับ)">+ {particle}</button>
+                  <button type="button" onclick="insertGreetingTag('unknown', '{time}')" class="px-2 py-0.5 rounded-md bg-white hover:bg-[#D9822B] hover:text-white text-[#5C5950] font-mono font-bold transition text-[10px] border border-[#DCD6C4] shadow-xs cursor-pointer" title="แทรกเวลาปัจจุบัน">+ {time}</button>
+                </div>
+              </div>
+              <input type="text" id="greetingUnknownInput" onfocus="switchVoiceSettingCategory('unknown', true)" oninput="updateGreetingTemplate('unknown', this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#F5DFB0] text-[#1F1E1B] text-xs sm:text-sm font-medium focus:outline-none focus:border-[#D9822B] shadow-inner" placeholder="เช่น สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}">
               
               <!-- Quick Preset Chips for Unknown Visitor -->
               <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
-                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบแนะนำ:</span>
-                <button type="button" onclick="applyGreetingPreset('unknown', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">ร้านค้า</button>
-                <button type="button" onclick="applyGreetingPreset('unknown', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">สำนักงาน</button>
-                <button type="button" onclick="applyGreetingPreset('unknown', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">บริการทั่วไป</button>
-                <button type="button" onclick="applyGreetingPreset('unknown', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#DCD6C4] hover:border-[#F5A623] transition shadow-xs">ต้อนรับสั้น</button>
+                <span class="text-[10px] font-bold text-[#6E6B62]">แม่แบบผู้มาติดต่อ:</span>
+                <button type="button" onclick="applyGreetingPreset('unknown', 0)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#F5DFB0] hover:border-[#F5A623] transition shadow-xs cursor-pointer">ร้านค้า</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 1)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#F5DFB0] hover:border-[#F5A623] transition shadow-xs cursor-pointer">สำนักงาน</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 2)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#F5DFB0] hover:border-[#F5A623] transition shadow-xs cursor-pointer">บริการทั่วไป</button>
+                <button type="button" onclick="applyGreetingPreset('unknown', 3)" class="px-2 py-0.5 rounded-lg bg-white hover:bg-[#FEF6E6] text-[#9C6214] text-[10px] font-bold border border-[#F5DFB0] hover:border-[#F5A623] transition shadow-xs cursor-pointer">ต้อนรับสั้น</button>
               </div>
 
               <!-- Live Preview for Unknown -->
-              <div class="p-2.5 rounded-xl bg-[#FEF6E6]/70 border border-[#F5DFB0] text-xs flex items-center gap-2 mt-1">
-                <span class="text-[10px] font-bold text-[#9C6214] whitespace-nowrap">ตัวอย่างเสียงที่พูด:</span>
-                <span id="voicePreviewUnknownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+              <div class="p-2.5 rounded-xl bg-white/90 border border-[#F5DFB0] text-xs flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-[10px] font-bold text-[#9C6214] whitespace-nowrap">ตัวอย่างเสียง:</span>
+                  <span id="voicePreviewUnknownText" class="font-extrabold text-[#1F1E1B] truncate">"สวัสดีค่ะคุณลูกค้า วันนี้รับอะไรดีค่ะ"</span>
+                </div>
+                <button type="button" onclick="testGreetingSpeech('unknown')" class="px-2.5 py-1 rounded-lg bg-[#FEF6E6] hover:bg-[#D9822B] text-[#9C6214] hover:text-white text-[11px] font-bold transition flex items-center gap-1 flex-shrink-0 cursor-pointer" title="ฟังเสียงทักทายผู้มาติดต่อ">
+                  <span>🔊</span><span>ฟัง</span>
+                </button>
               </div>
             </div>
 
             <!-- Variable Guide footnote -->
             <div class="text-[11px] text-[#8C877B] leading-relaxed pt-2 border-t border-[#EFECE2]">
-              💡 <strong>แท็กคำสั่ง</strong>: <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{name}</code> แทนที่ด้วยชื่อสมาชิก, <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{particle}</code> แทนที่ด้วยคำลงท้าย (<span class="font-bold text-[#1F1E1B]">ค่ะ</span> / <span class="font-bold text-[#1F1E1B]">ครับ</span>)
+              💡 <strong>ตัวแปรอัตโนมัติ</strong>:
+              <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{name}</code> ชื่อบุคคล,
+              <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{particle}</code> คำลงท้าย (<span class="font-bold text-[#1F1E1B]">ค่ะ</span>/<span class="font-bold text-[#1F1E1B]">ครับ</span> ตามหมวดหมู่),
+              <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{datetime}</code> วันที่และเวลาไทย,
+              <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{date}</code> วันที่ไทย,
+              <code class="bg-[#EAE6DA] px-1 py-0.5 rounded text-[#1F1E1B] font-bold">{time}</code> เวลาปัจจุบัน
             </div>
           </div>
 
@@ -1214,35 +1354,28 @@
           <div class="glass-card rounded-[28px] p-6 space-y-4">
             <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
-              ทดสอบเสียงพูด (Audio Preview)
+              ทดสอบเสียงพูดแยกตามประเภท (Audio Preview)
             </h3>
             <p class="text-xs text-[#6E6B62]">
-              กดปุ่มเพื่อฟังตัวอย่างเสียงพูดทักทายตามข้อความและสุ้มเสียงที่กำหนดไว้
+              กดปุ่มเพื่อฟังตัวอย่างเสียงพูดทักทายตามข้อความและโทนเสียงที่ตั้งค่าไว้ในแต่ละประเภท
             </p>
 
-            <div class="space-y-3 pt-1">
-              <button type="button" onclick="testGreetingSpeech('known')" class="w-full py-3 px-4 rounded-2xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] font-bold text-sm transition flex items-center justify-center space-x-2 shadow-sm">
-                <span class="text-base">🔊</span>
-                <span>ทดสอบเสียง: สมาชิกที่มีข้อมูลในระบบ</span>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              <button type="button" onclick="testGreetingSpeech('employee')" class="py-3 px-3 rounded-2xl bg-[#EAF7EF] hover:bg-[#D5F0DF] text-[#1E824C] border border-[#BEE6CE] font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer">
+                <span class="text-sm">💼</span>
+                <span>เสียงพนักงาน</span>
               </button>
 
-              <button type="button" onclick="testGreetingSpeech('unknown')" class="w-full py-3 px-4 rounded-2xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] font-bold text-sm transition flex items-center justify-center space-x-2 shadow-sm">
-                <span class="text-base">🔊</span>
-                <span>ทดสอบเสียง: ลูกค้าหรือผู้มาติดต่อทั่วไป</span>
+              <button type="button" onclick="testGreetingSpeech('vip')" class="py-3 px-3 rounded-2xl bg-[#FEF9E7] hover:bg-[#FCF3CF] text-[#9A7D0A] border border-[#FAD7A0] font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer">
+                <span class="text-sm">⭐</span>
+                <span>เสียง VIP</span>
+              </button>
+
+              <button type="button" onclick="testGreetingSpeech('unknown')" class="py-3 px-3 rounded-2xl bg-[#FEF6E6] hover:bg-[#FCE8C3] text-[#9C6214] border border-[#F5DFB0] font-bold text-xs transition flex items-center justify-center space-x-1.5 shadow-sm cursor-pointer">
+                <span class="text-sm">🟡</span>
+                <span>เสียงผู้มาติดต่อ</span>
               </button>
             </div>
-          </div>
-
-          <!-- Speech Engine Notice -->
-          <div class="glass-card rounded-[28px] p-5 space-y-2 text-xs text-[#6E6B62]">
-            <div class="flex items-center space-x-2 text-[#1F1E1B] font-bold">
-              <span>💡</span>
-              <span>กลไกระบบเสียงอัจฉริยะ (Smart Speech Architecture)</span>
-            </div>
-            <p class="leading-relaxed">
-              • รองรับเอนจินเสียงผู้หญิงคุณภาพสูงผ่านสตรีมเสียง Cloud TTS และปรับระดับความถี่คลื่นเสียง (Acoustic Formant Shift) แบบเรียลไทม์<br>
-              • มีระบบล็อกช่องสัญญาณเสียงเดี่ยว (Single Speech Session Lock) ป้องกันการส่งเสียงพูดทับซ้อนกันขณะทำงาน
-            </p>
           </div>
 
         </div>
@@ -1759,18 +1892,28 @@
 
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
     const SYSTEM_SETTINGS_STORAGE_KEY = 'face_app_system_settings_v1';
+    const DEFAULT_EMPLOYEE_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name} วันนี้{datetime}';
+    const DEFAULT_VIP_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
     const DEFAULT_KNOWN_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name}';
     const DEFAULT_UNKNOWN_GREETING_TEXT = 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}';
     const DEFAULT_WORK_START_TIME = '08:30';
     const DEFAULT_WORK_END_TIME = '17:30';
     const PROFILE_MESSAGES_STORAGE_KEY = 'face_app_profile_messages_v1';
 
-    const GREETING_PRESETS_KNOWN = [
-      { label: 'มาตรฐาน', text: 'สวัสดี{particle}คุณ {name}' },
-      { label: 'ต้อนรับอบอุ่น', text: 'ยินดีต้อนรับ{particle}คุณ {name}' },
-      { label: 'อวยพรยามเช้า', text: 'สวัสดีตอนเช้า{particle}คุณ {name} ขอให้เป็นวันที่ดี{particle}' },
-      { label: 'ทางการ', text: 'ขอต้อนรับคุณ {name} เข้าสู่อาคาร{particle}' }
+    const GREETING_PRESETS_EMPLOYEE = [
+      { label: 'มาตรฐาน (ชื่อ+วันเวลา)', text: 'สวัสดี{particle}คุณ {name} วันนี้{datetime}' },
+      { label: 'สวัสดี+เวลา', text: 'สวัสดี{particle}คุณ {name} ขณะนี้เวลา {time}' },
+      { label: 'ต้อนรับทำงาน', text: 'สวัสดีตอนเช้า{particle}คุณ {name} ขอให้มีความสุขกับการทำงาน{particle}' },
+      { label: 'กระชับ', text: 'สวัสดี{particle}คุณ {name}' }
     ];
+
+    const GREETING_PRESETS_VIP = [
+      { label: 'มาตรฐาน VIP', text: 'สวัสดี{particle}คุณ {name}' },
+      { label: 'ต้อนรับอบอุ่น', text: 'ยินดีต้อนรับ{particle}คุณ {name}' },
+      { label: 'อวยพรพิเศษ', text: 'สวัสดี{particle}คุณ {name} ยินดีเป็นอย่างยิ่งที่ได้ต้อนรับ{particle}' },
+      { label: 'ทางการผู้บริหาร', text: 'ขอต้อนรับท่าน {name} เข้าสู่อาคาร{particle}' }
+    ];
+    const GREETING_PRESETS_KNOWN = GREETING_PRESETS_VIP;
 
     const GREETING_PRESETS_UNKNOWN = [
       { label: 'ร้านค้า', text: 'สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}' },
@@ -1778,6 +1921,16 @@
       { label: 'บริการทั่วไป', text: 'สวัสดี{particle} ยินดีให้บริการ{particle}' },
       { label: 'ต้อนรับสั้น', text: 'ยินดีต้อนรับ{particle}' }
     ];
+
+    function createDefaultVoiceConfig() {
+      return {
+        voiceSelection: 'preset:female_polite',
+        voiceRate: 0.95,
+        voicePitch: 1.05,
+        voiceParticle: 'ค่ะ',
+        bellChimeEnabled: true
+      };
+    }
 
     const state = {
       currentUser: null,
@@ -1794,12 +1947,20 @@
       soundEnabled: true,
       thaiVoice: null,
       availableVoices: [],
+      activeVoiceCategory: 'employee',
       voiceSelection: 'preset:female_polite',
-      voiceRate: 1.00,
-      voicePitch: 1.00,
+      voiceRate: 0.95,
+      voicePitch: 1.05,
       voiceParticle: 'ค่ะ',
+      employeeGreetingTemplate: DEFAULT_EMPLOYEE_GREETING_TEMPLATE,
+      vipGreetingTemplate: DEFAULT_VIP_GREETING_TEMPLATE,
       knownGreetingTemplate: DEFAULT_KNOWN_GREETING_TEMPLATE,
       unknownGreetingText: DEFAULT_UNKNOWN_GREETING_TEXT,
+      voiceCategoryConfigs: {
+        employee: createDefaultVoiceConfig(),
+        vip: createDefaultVoiceConfig(),
+        unknown: createDefaultVoiceConfig()
+      },
       workStartTime: DEFAULT_WORK_START_TIME,
       workEndTime: DEFAULT_WORK_END_TIME,
       todayAttendance: {},
@@ -2085,6 +2246,99 @@
       return /premwadee|achara|kanya|narisa|female|หญิง|ผู้หญิง/i.test(name || '');
     }
 
+    function normalizeVoiceCategory(cat) {
+      if (cat === 'vip' || cat === 'known') return 'vip';
+      if (cat === 'unknown' || cat === 'visitor') return 'unknown';
+      return 'employee';
+    }
+
+    function getCategoryVoiceConfig(category) {
+      const cat = normalizeVoiceCategory(category);
+      if (!state.voiceCategoryConfigs || typeof state.voiceCategoryConfigs !== 'object') {
+        state.voiceCategoryConfigs = {
+          employee: createDefaultVoiceConfig(),
+          vip: createDefaultVoiceConfig(),
+          unknown: createDefaultVoiceConfig()
+        };
+      }
+      if (!state.voiceCategoryConfigs[cat] || typeof state.voiceCategoryConfigs[cat] !== 'object') {
+        state.voiceCategoryConfigs[cat] = {
+          voiceSelection: state.voiceSelection || 'preset:female_polite',
+          voiceRate: typeof state.voiceRate === 'number' ? state.voiceRate : 0.95,
+          voicePitch: typeof state.voicePitch === 'number' ? state.voicePitch : 1.05,
+          voiceParticle: state.voiceParticle || 'ค่ะ',
+          bellChimeEnabled: state.bellChimeEnabled !== false
+        };
+      }
+      return state.voiceCategoryConfigs[cat];
+    }
+
+    function applyCategoryVoiceToActiveState(category) {
+      const cfg = getCategoryVoiceConfig(category);
+      state.voiceSelection = cfg.voiceSelection || 'preset:female_polite';
+      state.voiceRate = (typeof cfg.voiceRate === 'number' && !isNaN(cfg.voiceRate)) ? cfg.voiceRate : 0.95;
+      state.voicePitch = (typeof cfg.voicePitch === 'number' && !isNaN(cfg.voicePitch)) ? cfg.voicePitch : 1.05;
+      state.voiceParticle = (cfg.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ';
+      state.bellChimeEnabled = cfg.bellChimeEnabled !== false;
+      refreshThaiVoice();
+    }
+
+    function saveActiveStateToCategoryVoiceConfig(category) {
+      const cat = normalizeVoiceCategory(category || state.activeVoiceCategory || 'employee');
+      const cfg = getCategoryVoiceConfig(cat);
+      cfg.voiceSelection = state.voiceSelection || 'preset:female_polite';
+      cfg.voiceRate = (typeof state.voiceRate === 'number' && !isNaN(state.voiceRate)) ? state.voiceRate : 0.95;
+      cfg.voicePitch = (typeof state.voicePitch === 'number' && !isNaN(state.voicePitch)) ? state.voicePitch : 1.05;
+      cfg.voiceParticle = (state.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ';
+      cfg.bellChimeEnabled = state.bellChimeEnabled !== false;
+    }
+
+    function getVoiceSummaryText(cfg) {
+      if (!cfg) return 'เสียงผู้หญิงนุ่มนวล • ค่ะ';
+      let shortName = 'เสียงผู้หญิงนุ่มนวล';
+      const sel = cfg.voiceSelection || 'preset:female_polite';
+      if (VOICE_PRESETS[sel]) {
+        shortName = VOICE_PRESETS[sel].label.replace(/\s*\(.*?\)\s*/g, '').trim();
+      } else if (sel.indexOf('device:') === 0) {
+        shortName = '🎙️ ' + sel.replace('device:', '');
+      }
+      return shortName + ' • ' + (cfg.voiceParticle || 'ค่ะ') + (cfg.bellChimeEnabled === false ? ' • ปิดกระดิ่ง' : '');
+    }
+
+    function switchVoiceSettingCategory(category, skipToast) {
+      const cat = normalizeVoiceCategory(category);
+      state.activeVoiceCategory = cat;
+      applyCategoryVoiceToActiveState(cat);
+      syncVoiceControlsUI();
+      if (!skipToast) {
+        const labelMap = {
+          employee: '💼 พนักงาน (Employee)',
+          vip: '⭐ บุคคลสำคัญ (VIP)',
+          unknown: '🟡 ผู้มาติดต่อ (Visitor)'
+        };
+        logStatus('[VOICE] สลับหมวดตั้งค่าเสียงเป็น: ' + (labelMap[cat] || cat));
+      }
+    }
+
+    function applyCurrentVoiceConfigToAllCategories() {
+      const currentCat = normalizeVoiceCategory(state.activeVoiceCategory || 'employee');
+      saveActiveStateToCategoryVoiceConfig(currentCat);
+      const src = getCategoryVoiceConfig(currentCat);
+      ['employee', 'vip', 'unknown'].forEach(function(cat) {
+        state.voiceCategoryConfigs[cat] = {
+          voiceSelection: src.voiceSelection,
+          voiceRate: src.voiceRate,
+          voicePitch: src.voicePitch,
+          voiceParticle: src.voiceParticle,
+          bellChimeEnabled: src.bellChimeEnabled
+        };
+      });
+      saveVoiceSettingsToStorage();
+      syncVoiceControlsUI();
+      showToast('คัดลอกโทนเสียงนี้ไปใช้กับทั้ง 3 ประเภทเรียบร้อยแล้ว', 'success');
+      logStatus('[VOICE] คัดลอกการตั้งค่าโทนเสียงไปใช้กับ พนักงาน, VIP และผู้มาติดต่อ');
+    }
+
     function loadVoiceSettingsFromStorage() {
       try {
         const raw = localStorage.getItem(VOICE_SETTINGS_STORAGE_KEY);
@@ -2092,7 +2346,6 @@
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === 'object') {
           if (parsed.voiceSelection) {
-            // Migrate legacy preset:online_tts if present
             state.voiceSelection = (parsed.voiceSelection === 'preset:online_tts')
               ? 'preset:child_bright'
               : parsed.voiceSelection;
@@ -2100,8 +2353,15 @@
           if (typeof parsed.voiceRate === 'number' && !isNaN(parsed.voiceRate)) state.voiceRate = parsed.voiceRate;
           if (typeof parsed.voicePitch === 'number' && !isNaN(parsed.voicePitch)) state.voicePitch = parsed.voicePitch;
           if (parsed.voiceParticle === 'ค่ะ' || parsed.voiceParticle === 'ครับ') state.voiceParticle = parsed.voiceParticle;
-          if (typeof parsed.knownGreetingTemplate === 'string' && parsed.knownGreetingTemplate.trim()) {
+          if (typeof parsed.employeeGreetingTemplate === 'string' && parsed.employeeGreetingTemplate.trim()) {
+            state.employeeGreetingTemplate = parsed.employeeGreetingTemplate.trim();
+          }
+          if (typeof parsed.vipGreetingTemplate === 'string' && parsed.vipGreetingTemplate.trim()) {
+            state.vipGreetingTemplate = parsed.vipGreetingTemplate.trim();
+            state.knownGreetingTemplate = state.vipGreetingTemplate;
+          } else if (typeof parsed.knownGreetingTemplate === 'string' && parsed.knownGreetingTemplate.trim()) {
             state.knownGreetingTemplate = parsed.knownGreetingTemplate.trim();
+            state.vipGreetingTemplate = state.knownGreetingTemplate;
           }
           if (typeof parsed.unknownGreetingText === 'string' && parsed.unknownGreetingText.trim()) {
             state.unknownGreetingText = parsed.unknownGreetingText.trim();
@@ -2111,20 +2371,50 @@
           } else {
             state.bellChimeEnabled = true;
           }
+          if (parsed.voiceCategoryConfigs && typeof parsed.voiceCategoryConfigs === 'object') {
+            ['employee', 'vip', 'unknown'].forEach(function(cat) {
+              if (parsed.voiceCategoryConfigs[cat] && typeof parsed.voiceCategoryConfigs[cat] === 'object') {
+                const c = parsed.voiceCategoryConfigs[cat];
+                state.voiceCategoryConfigs[cat] = {
+                  voiceSelection: c.voiceSelection || state.voiceSelection || 'preset:female_polite',
+                  voiceRate: (typeof c.voiceRate === 'number' && !isNaN(c.voiceRate)) ? c.voiceRate : state.voiceRate,
+                  voicePitch: (typeof c.voicePitch === 'number' && !isNaN(c.voicePitch)) ? c.voicePitch : state.voicePitch,
+                  voiceParticle: (c.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ',
+                  bellChimeEnabled: c.bellChimeEnabled !== false
+                };
+              }
+            });
+          } else {
+            // Migrate single voice config to all 3 categories
+            ['employee', 'vip', 'unknown'].forEach(function(cat) {
+              state.voiceCategoryConfigs[cat] = {
+                voiceSelection: state.voiceSelection,
+                voiceRate: state.voiceRate,
+                voicePitch: state.voicePitch,
+                voiceParticle: state.voiceParticle,
+                bellChimeEnabled: state.bellChimeEnabled
+              };
+            });
+          }
+          applyCategoryVoiceToActiveState(state.activeVoiceCategory || 'employee');
         }
       } catch (e) {}
     }
 
     function saveVoiceSettingsToStorage() {
       try {
+        saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
         localStorage.setItem(VOICE_SETTINGS_STORAGE_KEY, JSON.stringify({
           voiceSelection: state.voiceSelection,
           voiceRate: state.voiceRate,
           voicePitch: state.voicePitch,
           voiceParticle: state.voiceParticle,
-          knownGreetingTemplate: state.knownGreetingTemplate,
+          employeeGreetingTemplate: state.employeeGreetingTemplate,
+          vipGreetingTemplate: state.vipGreetingTemplate,
+          knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate,
           unknownGreetingText: state.unknownGreetingText,
-          bellChimeEnabled: state.bellChimeEnabled
+          bellChimeEnabled: state.bellChimeEnabled,
+          voiceCategoryConfigs: state.voiceCategoryConfigs
         }));
       } catch (e) {}
     }
@@ -2245,6 +2535,7 @@
     }
 
     function syncVoiceControlsUI() {
+      const activeCat = normalizeVoiceCategory(state.activeVoiceCategory || 'employee');
       const quickSelect = document.getElementById('quickVoiceSelect');
       const mainSelect = document.getElementById('voiceSelectDropdown');
       if (quickSelect && quickSelect.value !== state.voiceSelection) {
@@ -2270,39 +2561,133 @@
       const btnKrub = document.getElementById('particleBtn_krub');
       if (btnKa && btnKrub) {
         if (state.voiceParticle === 'ครับ') {
-          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2';
-          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2';
+          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer';
+          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2 cursor-pointer';
         } else {
-          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2';
-          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2';
+          btnKa.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#28AE60] text-white shadow-sm transition flex items-center justify-center space-x-2 cursor-pointer';
+          btnKrub.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-[#5C5950] hover:text-[#1F1E1B] transition flex items-center justify-center space-x-2 cursor-pointer';
         }
       }
 
+      // Sync 3 Category Selector Tabs & Active Banner
+      const catMeta = {
+        employee: {
+          btnActive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-[#28AE60] bg-[#EAF7EF] shadow-sm cursor-pointer',
+          btnInactive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-transparent bg-[#F7F5EE] hover:bg-white cursor-pointer',
+          bannerClass: 'glass-card rounded-[24px] p-4 border-2 border-[#28AE60] bg-[#EAF7EF]/70 flex flex-wrap items-center justify-between gap-3',
+          iconClass: 'w-9 h-9 rounded-xl bg-[#28AE60] text-white flex items-center justify-center text-base shadow-xs',
+          icon: '💼',
+          tag: 'VOICE PROFILE: EMPLOYEE',
+          tagColor: 'text-[10px] font-extrabold uppercase tracking-wider text-[#1E824C]',
+          title: 'ตั้งค่าโทนเสียงสำหรับ: พนักงาน (Employee)',
+          cardActive: 'p-4 rounded-2xl bg-[#EAF7EF]/60 border-2 border-[#28AE60] space-y-2 transition shadow-xs',
+          cardInactive: 'p-4 rounded-2xl bg-[#EAF7EF]/30 border border-[#BEE6CE] space-y-2 transition'
+        },
+        vip: {
+          btnActive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-[#D4AC0D] bg-[#FEF9E7] shadow-sm cursor-pointer',
+          btnInactive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-transparent bg-[#F7F5EE] hover:bg-white cursor-pointer',
+          bannerClass: 'glass-card rounded-[24px] p-4 border-2 border-[#D4AC0D] bg-[#FEF9E7]/80 flex flex-wrap items-center justify-between gap-3',
+          iconClass: 'w-9 h-9 rounded-xl bg-[#D4AC0D] text-white flex items-center justify-center text-base shadow-xs',
+          icon: '⭐',
+          tag: 'VOICE PROFILE: VIP',
+          tagColor: 'text-[10px] font-extrabold uppercase tracking-wider text-[#9A7D0A]',
+          title: 'ตั้งค่าโทนเสียงสำหรับ: บุคคลสำคัญ (VIP)',
+          cardActive: 'p-4 rounded-2xl bg-[#FEF9E7]/85 border-2 border-[#D4AC0D] space-y-2 transition shadow-xs',
+          cardInactive: 'p-4 rounded-2xl bg-[#FEF9E7]/45 border border-[#FAD7A0] space-y-2 transition'
+        },
+        unknown: {
+          btnActive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-[#D9822B] bg-[#FEF6E6] shadow-sm cursor-pointer',
+          btnInactive: 'p-3.5 rounded-2xl text-left transition flex items-center justify-between border-2 border-transparent bg-[#F7F5EE] hover:bg-white cursor-pointer',
+          bannerClass: 'glass-card rounded-[24px] p-4 border-2 border-[#D9822B] bg-[#FEF6E6]/80 flex flex-wrap items-center justify-between gap-3',
+          iconClass: 'w-9 h-9 rounded-xl bg-[#D9822B] text-white flex items-center justify-center text-base shadow-xs',
+          icon: '🟡',
+          tag: 'VOICE PROFILE: VISITOR',
+          tagColor: 'text-[10px] font-extrabold uppercase tracking-wider text-[#9C6214]',
+          title: 'ตั้งค่าโทนเสียงสำหรับ: ผู้มาติดต่อ (Visitor)',
+          cardActive: 'p-4 rounded-2xl bg-[#FEF6E6]/85 border-2 border-[#D9822B] space-y-2 transition shadow-xs',
+          cardInactive: 'p-4 rounded-2xl bg-[#FEF6E6]/45 border border-[#F5DFB0] space-y-2 transition'
+        }
+      };
+
+      ['employee', 'vip', 'unknown'].forEach(function(cat) {
+        const isAct = (cat === activeCat);
+        const btn = document.getElementById('catTabBtn_' + cat);
+        const dot = document.getElementById('catActiveDot_' + cat);
+        const sumEl = document.getElementById('catVoiceSummary_' + cat);
+        const cardEl = document.getElementById('greetingCard_' + cat);
+        const cfg = getCategoryVoiceConfig(cat);
+
+        if (btn) btn.className = isAct ? catMeta[cat].btnActive : catMeta[cat].btnInactive;
+        if (dot) {
+          if (isAct) dot.classList.remove('hidden');
+          else dot.classList.add('hidden');
+        }
+        if (sumEl) {
+          sumEl.textContent = getVoiceSummaryText(cfg);
+        }
+        if (cardEl) {
+          cardEl.className = isAct ? catMeta[cat].cardActive : catMeta[cat].cardInactive;
+        }
+      });
+
+      const activeBanner = document.getElementById('activeVoiceCategoryBanner');
+      const activeIcon = document.getElementById('activeVoiceCategoryIcon');
+      const activeTag = document.getElementById('activeVoiceCategoryTag');
+      const activeTitle = document.getElementById('activeVoiceCategoryTitle');
+      const curMeta = catMeta[activeCat] || catMeta.employee;
+      if (activeBanner) activeBanner.className = curMeta.bannerClass;
+      if (activeIcon) {
+        activeIcon.className = curMeta.iconClass;
+        activeIcon.textContent = curMeta.icon;
+      }
+      if (activeTag) {
+        activeTag.className = curMeta.tagColor;
+        activeTag.textContent = curMeta.tag;
+      }
+      if (activeTitle) {
+        activeTitle.textContent = curMeta.title;
+      }
+
+      // Sync Greeting Inputs
+      const empInput = document.getElementById('greetingEmployeeInput');
       const knownInput = document.getElementById('greetingKnownInput');
       const unknownInput = document.getElementById('greetingUnknownInput');
+
+      if (empInput && document.activeElement !== empInput) {
+        empInput.value = state.employeeGreetingTemplate || DEFAULT_EMPLOYEE_GREETING_TEMPLATE;
+      }
       if (knownInput && document.activeElement !== knownInput) {
-        knownInput.value = state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE;
+        knownInput.value = state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_VIP_GREETING_TEMPLATE;
       }
       if (unknownInput && document.activeElement !== unknownInput) {
         unknownInput.value = state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT;
       }
 
-      const sampleKnown = buildGreetingMessage('known', 'ธนกร');
+      const sampleEmployee = buildGreetingMessage('employee', 'ธนกร', 'employee');
+      const sampleVip = buildGreetingMessage('vip', 'ธนกร', 'vip');
       const sampleUnknown = buildGreetingMessage('unknown');
 
+      const empRuleEl = document.getElementById('ruleEmployeeGreetingText');
       const knownRuleEl = document.getElementById('ruleKnownGreetingText');
       const unknownRuleEl = document.getElementById('ruleUnknownGreetingText');
+      if (empRuleEl) {
+        empRuleEl.textContent = '"' + sampleEmployee + '"';
+      }
       if (knownRuleEl) {
-        knownRuleEl.textContent = '"' + sampleKnown + '"';
+        knownRuleEl.textContent = '"' + sampleVip + '"';
       }
       if (unknownRuleEl) {
         unknownRuleEl.textContent = '"' + sampleUnknown + '"';
       }
 
+      const previewEmpEl = document.getElementById('voicePreviewEmployeeText');
       const previewKnownEl = document.getElementById('voicePreviewKnownText');
       const previewUnknownEl = document.getElementById('voicePreviewUnknownText');
+      if (previewEmpEl) {
+        previewEmpEl.textContent = '"' + sampleEmployee + '"';
+      }
       if (previewKnownEl) {
-        previewKnownEl.textContent = '"' + sampleKnown + '"';
+        previewKnownEl.textContent = '"' + sampleVip + '"';
       }
       if (previewUnknownEl) {
         previewUnknownEl.textContent = '"' + sampleUnknown + '"';
@@ -2319,6 +2704,7 @@
     function toggleBellChime(enabled) {
       unlockSpeechEngine();
       state.bellChimeEnabled = !!enabled;
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
       if (state.bellChimeEnabled) {
@@ -2355,6 +2741,7 @@
         }
       }
 
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
       refreshThaiVoice();
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
@@ -2366,18 +2753,19 @@
       showToast('เลือกเสียง: ' + activeName, 'info');
 
       if (playPreview) {
-        testGreetingSpeech('known');
+        testGreetingSpeech(state.activeVoiceCategory || 'employee');
       }
     }
 
     function setVoiceParticle(particle, playPreview) {
       unlockSpeechEngine();
       state.voiceParticle = (particle === 'ครับ') ? 'ครับ' : 'ค่ะ';
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
       showToast('ตั้งค่าคำลงท้ายเป็น "' + state.voiceParticle + '"', 'info');
       if (playPreview) {
-        testGreetingSpeech('known');
+        testGreetingSpeech(state.activeVoiceCategory || 'employee');
       }
     }
 
@@ -2389,12 +2777,16 @@
       } else if (type === 'pitch') {
         state.voicePitch = numVal;
       }
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
     }
 
     function updateGreetingTemplate(type, value) {
-      if (type === 'known') {
+      if (type === 'employee') {
+        state.employeeGreetingTemplate = value;
+      } else if (type === 'vip' || type === 'known') {
+        state.vipGreetingTemplate = value;
         state.knownGreetingTemplate = value;
       } else if (type === 'unknown') {
         state.unknownGreetingText = value;
@@ -2404,9 +2796,17 @@
     }
 
     function insertGreetingTag(type, tag) {
-      const inputEl = (type === 'known')
-        ? document.getElementById('greetingKnownInput')
-        : document.getElementById('greetingUnknownInput');
+      let inputEl = null;
+      if (type === 'employee') {
+        inputEl = document.getElementById('greetingEmployeeInput');
+        switchVoiceSettingCategory('employee', true);
+      } else if (type === 'vip' || type === 'known') {
+        inputEl = document.getElementById('greetingKnownInput');
+        switchVoiceSettingCategory('vip', true);
+      } else {
+        inputEl = document.getElementById('greetingUnknownInput');
+        switchVoiceSettingCategory('unknown', true);
+      }
       if (!inputEl) return;
 
       const start = inputEl.selectionStart !== undefined ? inputEl.selectionStart : inputEl.value.length;
@@ -2427,35 +2827,54 @@
     }
 
     function resetGreetingTemplates() {
+      state.employeeGreetingTemplate = DEFAULT_EMPLOYEE_GREETING_TEMPLATE;
+      state.vipGreetingTemplate = DEFAULT_VIP_GREETING_TEMPLATE;
       state.knownGreetingTemplate = DEFAULT_KNOWN_GREETING_TEMPLATE;
       state.unknownGreetingText = DEFAULT_UNKNOWN_GREETING_TEXT;
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
-      showToast('คืนค่าข้อความทักทายเริ่มต้นเรียบร้อย', 'info');
+      showToast('คืนค่าข้อความทักทายเริ่มต้นทั้ง 3 ประเภทเรียบร้อย', 'info');
     }
 
     function resetVoiceSettings() {
+      state.employeeGreetingTemplate = DEFAULT_EMPLOYEE_GREETING_TEMPLATE;
+      state.vipGreetingTemplate = DEFAULT_VIP_GREETING_TEMPLATE;
       state.knownGreetingTemplate = DEFAULT_KNOWN_GREETING_TEMPLATE;
       state.unknownGreetingText = DEFAULT_UNKNOWN_GREETING_TEXT;
+      state.voiceCategoryConfigs = {
+        employee: createDefaultVoiceConfig(),
+        vip: createDefaultVoiceConfig(),
+        unknown: createDefaultVoiceConfig()
+      };
       state.bellChimeEnabled = true;
       handleVoiceSelectionChange('preset:female_polite', true);
     }
 
     function applyGreetingPreset(type, index) {
-      if (type === 'known') {
-        const item = GREETING_PRESETS_KNOWN[index];
+      if (type === 'employee') {
+        const item = GREETING_PRESETS_EMPLOYEE[index];
         if (!item) return;
+        switchVoiceSettingCategory('employee', true);
+        const input = document.getElementById('greetingEmployeeInput');
+        if (input) input.value = item.text;
+        updateGreetingTemplate('employee', item.text);
+        showToast('เลือกแม่แบบพนักงาน: ' + item.label, 'info');
+      } else if (type === 'vip' || type === 'known') {
+        const item = GREETING_PRESETS_VIP[index];
+        if (!item) return;
+        switchVoiceSettingCategory('vip', true);
         const input = document.getElementById('greetingKnownInput');
         if (input) input.value = item.text;
-        updateGreetingTemplate('known', item.text);
-        showToast('เลือกแม่แบบ: ' + item.label, 'info');
+        updateGreetingTemplate('vip', item.text);
+        showToast('เลือกแม่แบบ VIP: ' + item.label, 'info');
       } else if (type === 'unknown') {
         const item = GREETING_PRESETS_UNKNOWN[index];
         if (!item) return;
+        switchVoiceSettingCategory('unknown', true);
         const input = document.getElementById('greetingUnknownInput');
         if (input) input.value = item.text;
         updateGreetingTemplate('unknown', item.text);
-        showToast('เลือกแม่แบบ: ' + item.label, 'info');
+        showToast('เลือกแม่แบบผู้มาติดต่อ: ' + item.label, 'info');
       }
     }
 
@@ -2499,8 +2918,17 @@
         if (res && res.success && res.settings) {
           const s = res.settings;
           let changed = false;
-          if (s.knownGreetingTemplate && s.knownGreetingTemplate.trim()) {
+          if (s.employeeGreetingTemplate && s.employeeGreetingTemplate.trim()) {
+            state.employeeGreetingTemplate = s.employeeGreetingTemplate.trim();
+            changed = true;
+          }
+          if (s.vipGreetingTemplate && s.vipGreetingTemplate.trim()) {
+            state.vipGreetingTemplate = s.vipGreetingTemplate.trim();
+            state.knownGreetingTemplate = state.vipGreetingTemplate;
+            changed = true;
+          } else if (s.knownGreetingTemplate && s.knownGreetingTemplate.trim()) {
             state.knownGreetingTemplate = s.knownGreetingTemplate.trim();
+            state.vipGreetingTemplate = state.knownGreetingTemplate;
             changed = true;
           }
           if (s.unknownGreetingText && s.unknownGreetingText.trim()) {
@@ -2513,6 +2941,22 @@
           }
           if (s.bellChimeEnabled !== undefined) {
             state.bellChimeEnabled = !!s.bellChimeEnabled;
+            changed = true;
+          }
+          if (s.voiceCategoryConfigs && typeof s.voiceCategoryConfigs === 'object') {
+            ['employee', 'vip', 'unknown'].forEach(function(cat) {
+              if (s.voiceCategoryConfigs[cat] && typeof s.voiceCategoryConfigs[cat] === 'object') {
+                const c = s.voiceCategoryConfigs[cat];
+                state.voiceCategoryConfigs[cat] = {
+                  voiceSelection: c.voiceSelection || 'preset:female_polite',
+                  voiceRate: (typeof c.voiceRate === 'number' && !isNaN(c.voiceRate)) ? c.voiceRate : 0.95,
+                  voicePitch: (typeof c.voicePitch === 'number' && !isNaN(c.voicePitch)) ? c.voicePitch : 1.05,
+                  voiceParticle: (c.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ',
+                  bellChimeEnabled: c.bellChimeEnabled !== false
+                };
+              }
+            });
+            applyCategoryVoiceToActiveState(state.activeVoiceCategory || 'employee');
             changed = true;
           }
           if (s.workStartTime) {
@@ -2571,11 +3015,16 @@
       if (saveText) saveText.textContent = 'กำลังบันทึก...';
       updateGreetingSyncBadge('saving', 'กำลังบันทึกลง Google Sheets...');
 
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
+
       const payload = {
-        knownGreetingTemplate: state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
+        employeeGreetingTemplate: state.employeeGreetingTemplate || DEFAULT_EMPLOYEE_GREETING_TEMPLATE,
+        vipGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_VIP_GREETING_TEMPLATE,
+        knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
+        voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime || DEFAULT_WORK_START_TIME,
         workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME
       };
@@ -2589,7 +3038,7 @@
           const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
           updateGreetingSyncBadge('synced', 'บันทึกค่าคงที่แล้ว (' + timeStr + ')');
           saveVoiceSettingsToStorage();
-          showToast('บันทึกข้อความทักทายและเวลาทำงานเป็นค่าคงที่ถาวรเรียบร้อยแล้ว', 'success');
+          showToast('บันทึกการตั้งค่าเสียงทั้ง 3 ประเภทและเวลาทำงานเรียบร้อยแล้ว', 'success');
           logStatus('[SYNC] บันทึกค่าคงที่ระบบลง Google Sheets สำเร็จ');
         } else {
           updateGreetingSyncBadge('local', 'บันทึกล้มเหลว');
@@ -2653,7 +3102,7 @@
       return h + ':' + m;
     }
 
-    function formatThaiDateTimeForSpeech(d) {
+    function formatThaiDateOnlyForSpeech(d) {
       const dateObj = d || new Date();
       const thaiMonths = [
         'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -2662,41 +3111,64 @@
       const day = dateObj.getDate();
       const month = thaiMonths[dateObj.getMonth()];
       const yearBE = dateObj.getFullYear() + 543;
+      return 'วันที่ ' + day + ' ' + month + ' ' + yearBE;
+    }
+
+    function formatThaiDateTimeForSpeech(d) {
+      const dateObj = d || new Date();
+      const datePart = formatThaiDateOnlyForSpeech(dateObj);
       const timeSpeech = formatTimeForSpeech(dateObj);
-      return 'วันที่ ' + day + ' ' + month + ' ' + yearBE + ' เวลา ' + timeSpeech;
+      return datePart + ' เวลา ' + timeSpeech;
     }
 
     function buildGreetingMessage(type, personName, personType) {
-      const particle = state.voiceParticle || 'ค่ะ';
-      if (type === 'known') {
-        const isVip = (personType === 'vip');
-        const safeName = (personName || 'ธนกร').trim();
+      const now = new Date();
+      const dtText = formatThaiDateTimeForSpeech(now);
+      const dateOnlyText = formatThaiDateOnlyForSpeech(now);
+      const timeOnlyText = formatTimeForSpeech(now);
+      const safeName = (personName || 'ธนกร').trim();
 
-        if (isVip) {
-          // VIP format: สวัสดี{particle}คุณ {name}
-          const rawTemplate = (state.knownGreetingTemplate && state.knownGreetingTemplate.trim())
-            ? state.knownGreetingTemplate
-            : DEFAULT_KNOWN_GREETING_TEMPLATE;
-          let msg = rawTemplate.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle);
-          const hasNameTag = /\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi.test(msg);
-          if (hasNameTag) {
-            msg = msg.replace(/\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi, safeName);
-          } else {
-            msg = msg.trim() + ' ' + safeName;
-          }
-          return msg.trim();
+      let category = 'unknown';
+      if (type === 'employee') {
+        category = 'employee';
+      } else if (type === 'vip') {
+        category = 'vip';
+      } else if (type === 'known') {
+        category = (personType === 'vip') ? 'vip' : 'employee';
+      }
+
+      const catCfg = getCategoryVoiceConfig(category);
+      const particle = (catCfg && catCfg.voiceParticle) ? catCfg.voiceParticle : (state.voiceParticle || 'ค่ะ');
+
+      if (category === 'employee' || category === 'vip') {
+        const rawTemplate = (category === 'vip')
+          ? ((state.vipGreetingTemplate && state.vipGreetingTemplate.trim()) ? state.vipGreetingTemplate : ((state.knownGreetingTemplate && state.knownGreetingTemplate.trim()) ? state.knownGreetingTemplate : DEFAULT_VIP_GREETING_TEMPLATE))
+          : ((state.employeeGreetingTemplate && state.employeeGreetingTemplate.trim()) ? state.employeeGreetingTemplate : DEFAULT_EMPLOYEE_GREETING_TEMPLATE);
+
+        let msg = rawTemplate
+          .replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle)
+          .replace(/\{datetime\}|\{วันเวลา\}|\[วันเวลา\]/gi, dtText)
+          .replace(/\{date\}|\{วันที่\}|\[วันที่\]/gi, dateOnlyText)
+          .replace(/\{time\}|\{เวลา\}|\[เวลา\]/gi, timeOnlyText);
+
+        const hasNameTag = /\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi.test(rawTemplate);
+        if (hasNameTag) {
+          msg = msg.replace(/\{name\}|\{ชื่อ\}|\[ชื่อ\]|\[name\]/gi, safeName);
         } else {
-          // พนักงาน (Employee) format: สวัสดี{particle}คุณ {name} วันนี้วันที่ {วันที่ เดือน(ไทย) ปี(พ.ศ.) เวลา(24 ชั่วโมง)}
-          const dtText = formatThaiDateTimeForSpeech(new Date());
-          const baseGreeting = 'สวัสดี' + particle + 'คุณ ' + safeName;
-          return (baseGreeting + ' วันนี้' + dtText).trim();
+          msg = msg.trim() + ' ' + safeName;
         }
+        return msg.trim();
       }
 
       const rawUnknown = (state.unknownGreetingText && state.unknownGreetingText.trim())
         ? state.unknownGreetingText
         : DEFAULT_UNKNOWN_GREETING_TEXT;
-      return rawUnknown.replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle).trim();
+      return rawUnknown
+        .replace(/\{particle\}|\{คำลงท้าย\}|\[คำลงท้าย\]|\[ค่ะ\/ครับ\]/gi, particle)
+        .replace(/\{datetime\}|\{วันเวลา\}|\[วันเวลา\]/gi, dtText)
+        .replace(/\{date\}|\{วันที่\}|\[วันที่\]/gi, dateOnlyText)
+        .replace(/\{time\}|\{เวลา\}|\[เวลา\]/gi, timeOnlyText)
+        .trim();
     }
 
     // --- Employee Attendance Evaluation & Synchronization ---
@@ -2715,7 +3187,8 @@
       const currentTimeStr = formatHHMM(dateObj);
       const workStart = state.workStartTime || DEFAULT_WORK_START_TIME;
       const workEnd = state.workEndTime || DEFAULT_WORK_END_TIME;
-      const particle = state.voiceParticle || 'ค่ะ';
+      const empCfg = getCategoryVoiceConfig('employee');
+      const particle = (empCfg && empCfg.voiceParticle) ? empCfg.voiceParticle : (state.voiceParticle || 'ค่ะ');
       const timeSpeech = formatTimeForSpeech(dateObj);
 
       // Case 1: First scan of today -> Record Check-In
@@ -3154,11 +3627,16 @@
       if (text) text.textContent = 'กำลังบันทึก...';
       if (statusEl) statusEl.textContent = 'กำลังบันทึกค่าลง Google Sheets...';
 
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
+
       const payload = {
-        knownGreetingTemplate: state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
+        employeeGreetingTemplate: state.employeeGreetingTemplate || DEFAULT_EMPLOYEE_GREETING_TEMPLATE,
+        vipGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_VIP_GREETING_TEMPLATE,
+        knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
+        voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime,
         workEndTime: state.workEndTime
       };
@@ -3763,6 +4241,7 @@
       const remainingMsg = state.speechQueue.length > 0 ? ' (มีรอในคิวอีก ' + state.speechQueue.length + ' ท่าน)' : '';
       logStatus('[SPEAK] เริ่มอ่านข้อความ: ' + task.label + remainingMsg);
 
+      const taskCategory = task.category || (task.type === 'unknown' ? 'unknown' : 'employee');
       executePhrasesSequence(task.phrases, function() {
         state.currentSpeakingTask = null;
         // หน่วงเวลาสั้นๆ 400ms ระหว่างบุคคลเพื่อให้เสียงมีความเป็นธรรมชาติและไม่ต่อกันกระชั้นชิดเกินไป
@@ -3770,7 +4249,7 @@
           state.isSpeakingQueue = false;
           processSpeechQueue();
         }, 400);
-      }, task.withChime);
+      }, task.withChime, taskCategory);
     }
 
     function clearSpeechQueue() {
@@ -3780,7 +4259,7 @@
       stopActiveAudioPlayback();
     }
 
-    function executePhrasesSequence(phrases, onFinished, withChime) {
+    function executePhrasesSequence(phrases, onFinished, withChime, category) {
       if (!state.soundEnabled || !phrases || phrases.length === 0) {
         if (typeof onFinished === 'function') onFinished();
         return;
@@ -3789,14 +4268,25 @@
       stopActiveAudioPlayback();
       const currentSessionId = state.speechSessionId;
 
+      if (category) {
+        applyCategoryVoiceToActiveState(category);
+      }
+
+      const restoreAndFinish = function() {
+        if (category && state.activeVoiceCategory) {
+          applyCategoryVoiceToActiveState(state.activeVoiceCategory);
+        }
+        if (typeof onFinished === 'function') onFinished();
+      };
+
       let index = 0;
       function playNext() {
         if (currentSessionId !== state.speechSessionId) {
-          if (typeof onFinished === 'function') onFinished();
+          restoreAndFinish();
           return;
         }
         if (index >= phrases.length) {
-          if (typeof onFinished === 'function') onFinished();
+          restoreAndFinish();
           return;
         }
         const text = phrases[index++];
@@ -3807,8 +4297,8 @@
         speakSinglePhrase(text, function() {
           if (currentSessionId === state.speechSessionId) {
             setTimeout(playNext, 280);
-          } else if (typeof onFinished === 'function') {
-            onFinished();
+          } else {
+            restoreAndFinish();
           }
         }, currentSessionId);
       }
@@ -3817,8 +4307,8 @@
         playBellChime(function() {
           if (currentSessionId === state.speechSessionId) {
             playNext();
-          } else if (typeof onFinished === 'function') {
-            onFinished();
+          } else {
+            restoreAndFinish();
           }
         }, currentSessionId);
       } else {
@@ -3826,14 +4316,14 @@
       }
     }
 
-    function speakPhrasesSequence(phrases, onFinished, withChime) {
+    function speakPhrasesSequence(phrases, onFinished, withChime, category) {
       // เรียกใช้โดยตรงจากปุ่มกดทดสอบ (Manual Preview/Test): ล้างคิวพื้นหลังและอ่านทดสอบทันที
       clearSpeechQueue();
-      executePhrasesSequence(phrases, onFinished, withChime);
+      executePhrasesSequence(phrases, onFinished, withChime, category);
     }
 
-    function speakText(text, onComplete, withChime) {
-      speakPhrasesSequence([text], onComplete, withChime);
+    function speakText(text, onComplete, withChime, category) {
+      speakPhrasesSequence([text], onComplete, withChime, category);
     }
 
     function showGreetingBanner(text) {
@@ -4452,8 +4942,9 @@
                         });
         const profileId = profile ? profile.id : null;
         const personType = (profile && profile.personType) ? String(profile.personType).toLowerCase() : 'employee';
+        const category = (personType === 'vip') ? 'vip' : 'employee';
 
-        const greetingMsg = buildGreetingMessage('known', cleanName, personType);
+        const greetingMsg = buildGreetingMessage(category, cleanName, personType);
         const messages = getProfileMessages(profileId, cleanName);
 
         const phrases = [greetingMsg];
@@ -4467,7 +4958,8 @@
         }
 
         if (messages && messages.length > 0) {
-          const particle = state.voiceParticle || 'ค่ะ';
+          const catCfg = getCategoryVoiceConfig(category);
+          const particle = (catCfg && catCfg.voiceParticle) ? catCfg.voiceParticle : (state.voiceParticle || 'ค่ะ');
           phrases.push('คุณมี ' + messages.length + ' ข้อความ' + particle);
           messages.forEach((m, idx) => {
             phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
@@ -4478,6 +4970,7 @@
         enqueueGreetingTask({
           id: 'greet_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           type: 'known',
+          category: category,
           label: cleanName,
           phrases: phrases,
           withChime: true
@@ -4500,6 +4993,7 @@
         enqueueGreetingTask({
           id: 'greet_unknown_' + Date.now(),
           type: 'unknown',
+          category: 'unknown',
           label: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
           phrases: [buildGreetingMessage('unknown')],
           withChime: true
@@ -5462,13 +5956,16 @@
         return;
       }
       unlockSpeechEngine();
-      const greetingMsg = buildGreetingMessage('known', name);
-      const particle = state.voiceParticle || 'ค่ะ';
+      const matchedProf = (state.profiles || []).find(p => p.id === id || (p.name || '').trim() === (name || '').trim());
+      const pType = (matchedProf && matchedProf.personType === 'vip') ? 'vip' : 'employee';
+      const catCfg = getCategoryVoiceConfig(pType);
+      const particle = (catCfg && catCfg.voiceParticle) ? catCfg.voiceParticle : (state.voiceParticle || 'ค่ะ');
+      const greetingMsg = buildGreetingMessage(pType, name, pType);
       const phrases = [greetingMsg, 'คุณมี ' + messages.length + ' ข้อความ' + particle];
       messages.forEach((m, idx) => {
         phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
       });
-      speakPhrasesSequence(phrases, null, true);
+      speakPhrasesSequence(phrases, null, true, pType);
     }
 
     // --- Navigation Dropdown Controllers (Settings & Management) ---
@@ -5648,10 +6145,12 @@
 
     function testGreetingSpeech(type) {
       unlockSpeechEngine();
-      if (type === 'known') {
-        speakText(buildGreetingMessage('known', 'ธนกร'), null, true);
+      if (type === 'employee') {
+        speakText(buildGreetingMessage('employee', 'ธนกร', 'employee'), null, true, 'employee');
+      } else if (type === 'vip' || type === 'known') {
+        speakText(buildGreetingMessage('vip', 'ธนกร', 'vip'), null, true, 'vip');
       } else {
-        speakText(buildGreetingMessage('unknown'), null, true);
+        speakText(buildGreetingMessage('unknown'), null, true, 'unknown');
       }
     }
 
@@ -6103,6 +6602,10 @@
     window.switchTab = switchTab;
     window.toggleSound = toggleSound;
     window.testGreetingSpeech = testGreetingSpeech;
+    window.switchVoiceSettingCategory = switchVoiceSettingCategory;
+    window.applyCurrentVoiceConfigToAllCategories = applyCurrentVoiceConfigToAllCategories;
+    window.getCategoryVoiceConfig = getCategoryVoiceConfig;
+    window.formatThaiDateOnlyForSpeech = formatThaiDateOnlyForSpeech;
     window.handleVoiceSelectionChange = handleVoiceSelectionChange;
     window.setVoiceParticle = setVoiceParticle;
     window.updateVoiceSlider = updateVoiceSlider;
