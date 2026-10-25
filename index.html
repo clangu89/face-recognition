@@ -1273,7 +1273,7 @@
                   <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
                   เสียงกระดิ่งเตือนก่อนทักทาย (Bell Chime)
                 </h3>
-                <p class="text-xs text-[#6E6B62] mt-1">เปิด/ปิดเสียงกระดิ่ง "ดิ่ง-ด่อง" ก่อนเริ่มอ่านคำทักทายของหมวดหมู่นี้</p>
+                <p class="text-xs text-[#6E6B62] mt-1">เปิด/ปิดเสียงกระดิ่ง "ดิ่ง-ด่อง" ทันทีที่ตรวจพบใบหน้า และนำหน้าเสียงพูดทักทาย</p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="bellChimeToggleCheckbox" onchange="toggleBellChime(this.checked)" class="sr-only peer" checked>
@@ -2191,7 +2191,10 @@
           return s ? (Number(s) || 0) : 0;
         } catch(e) { return 0; }
       })(),
-      activeScanningStations: []
+      activeScanningStations: [],
+      lastFacePresenceChimeTime: 0,
+      isFacePresenceInView: false,
+      lastFaceSeenTime: 0
     };
 
     function loadProfileMessagesFromStorage() {
@@ -4120,6 +4123,39 @@
       }
     }
 
+    // --- Immediate Face Presence Bell Chime Subsystem ---
+    const FACE_PRESENCE_CHIME_COOLDOWN_MS = 6000;
+    const FACE_PRESENCE_EXIT_RESET_MS = 2500;
+
+    function triggerImmediateFacePresenceChime(now) {
+      if (!state.soundEnabled || state.bellChimeEnabled === false) return;
+      if (state.currentTab !== 'scanner') return;
+
+      const curTime = now || Date.now();
+      state.lastFaceSeenTime = curTime;
+      const timeSinceLastChime = curTime - (state.lastFacePresenceChimeTime || 0);
+
+      // หากบุคคลยังคงยืนอยู่หน้ากล้องและยังไม่พ้นระยะ Cooldown ให้ข้าม
+      if (state.isFacePresenceInView && timeSinceLastChime < FACE_PRESENCE_CHIME_COOLDOWN_MS) {
+        return;
+      }
+
+      state.isFacePresenceInView = true;
+      state.lastFacePresenceChimeTime = curTime;
+
+      logStatus('[BELL] 🔔 ตรวจพบใบหน้าหน้ากล้อง (ทันที): เล่นเสียงกระดิ่งเตือน');
+      playBellChime();
+    }
+
+    function handleNoFacePresenceDetected(now) {
+      const curTime = now || Date.now();
+      if (state.isFacePresenceInView) {
+        if (curTime - (state.lastFaceSeenTime || 0) > FACE_PRESENCE_EXIT_RESET_MS) {
+          state.isFacePresenceInView = false;
+        }
+      }
+    }
+
     function stopActiveAudioPlayback() {
       state.speechSessionId = (state.speechSessionId || 0) + 1;
       clearTimeout(state.speechTimer);
@@ -5804,6 +5840,7 @@
             let pendingVerificationThisFrame = false;
 
             if (resizedDetections.length > 0) {
+              triggerImmediateFacePresenceChime(now);
               const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
 
               resizedDetections.forEach(detection => {
@@ -5885,6 +5922,7 @@
                 state.unknownTracker.confirmCount = 0;
               }
             } else {
+              handleNoFacePresenceDetected(now);
               state.unknownTracker.confirmCount = 0;
               state.candidateMatches.forEach((candData, key) => {
                 if (now - candData.lastSeen > 900) state.candidateMatches.delete(key);
@@ -6022,7 +6060,7 @@
           category: category,
           label: cleanName,
           phrases: phrases,
-          withChime: true
+          withChime: (now - (state.lastFacePresenceChimeTime || 0) > 4000)
         });
         logStatus('[GREET] ยืนยันตัวตนสำเร็จ: คุณ ' + cleanName + ' (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ', ความแม่นยำ ' + confPct + '%)');
         
@@ -6061,7 +6099,7 @@
           category: 'unknown',
           label: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
           phrases: [buildGreetingMessage('unknown')],
-          withChime: true
+          withChime: (now - (state.lastFacePresenceChimeTime || 0) > 4000)
         });
         logStatus('[GREET] ตรวจพบผู้มาติดต่อ / ลูกค้าทั่วไป (บันทึกลงคิวทักทาย)');
         
@@ -6099,6 +6137,10 @@
         state.unknownTracker.lastSeen = 0;
         state.unknownTracker.confirmCount = 0;
         logStatus('[EXIT] ผู้มาติดต่อเดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
+      }
+
+      if (detectedKeys.size === 0 && !unknownDetected && now - (state.lastFaceSeenTime || 0) > state.EXIT_THRESHOLD_MS) {
+        state.isFacePresenceInView = false;
       }
     }
 
@@ -8531,6 +8573,9 @@
     window.formatThaiDateOnlyForSpeech = formatThaiDateOnlyForSpeech;
     window.handleVoiceSelectionChange = handleVoiceSelectionChange;
     window.setVoiceParticle = setVoiceParticle;
+    window.triggerImmediateFacePresenceChime = triggerImmediateFacePresenceChime;
+    window.handleNoFacePresenceDetected = handleNoFacePresenceDetected;
+    window.playBellChime = playBellChime;
     window.updateVoiceSlider = updateVoiceSlider;
     window.resetVoiceSettings = resetVoiceSettings;
     window.toggleBellChime = toggleBellChime;
