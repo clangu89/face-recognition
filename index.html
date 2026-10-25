@@ -741,15 +741,15 @@
 
                 <!-- Biometric Positioning Oval Guide -->
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div id="regOvalGuide" class="w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_20px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between py-6 transition-all duration-300">
-                    <span id="regOvalTopTag" class="text-[11px] font-bold text-white bg-[#1F1E1B]/80 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow transition-all">
+                  <div id="regOvalGuide" class="relative w-[270px] h-[360px] sm:w-[320px] sm:h-[420px] md:w-[350px] md:h-[455px] rounded-[50%] border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_25px_rgba(0,0,0,0.45)] flex items-center justify-center transition-all duration-300">
+                    <span id="regOvalTopTag" class="absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] font-bold text-white bg-[#1F1E1B]/85 px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow whitespace-nowrap transition-all">
                       กรุณาจัดใบหน้าในกรอบ
                     </span>
                     <!-- Center reticle crosshair (fades out when ready) -->
                     <div id="regCenterReticle" class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 text-[10px] transition-opacity">
                       +
                     </div>
-                    <span id="regOvalBottomTag" class="text-[10px] font-bold text-[#DCD6C4] bg-[#1F1E1B]/60 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                    <span id="regOvalBottomTag" class="absolute -bottom-3.5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-[#DCD6C4] bg-[#1F1E1B]/75 px-3 py-0.5 rounded-full backdrop-blur-sm whitespace-nowrap border border-white/10">
                       ดวงตาและคางอยู่ในวงรี
                     </span>
                   </div>
@@ -6195,14 +6195,16 @@
       const reticle = document.getElementById('regCenterReticle');
       if (!oval || !topTag) return;
 
+      const baseClass = 'relative w-[270px] h-[360px] sm:w-[320px] sm:h-[420px] md:w-[350px] md:h-[455px] rounded-[50%] flex items-center justify-center transition-all duration-300';
+
       if (theme === 'ready') {
-        oval.className = 'w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3.5px] border-[#28AE60] shadow-[0_0_35px_rgba(40,174,96,0.65)] flex flex-col items-center justify-between py-6 transition-all duration-300 scale-102';
-        topTag.className = 'text-[11px] font-bold text-white bg-[#28AE60] px-3.5 py-1 rounded-full border border-white/40 shadow-lg';
+        oval.className = baseClass + ' border-[3.5px] border-[#28AE60] shadow-[0_0_35px_rgba(40,174,96,0.65)] scale-102';
+        topTag.className = 'absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] font-bold text-white bg-[#28AE60] px-3.5 py-1 rounded-full border border-white/40 shadow-lg whitespace-nowrap';
         topTag.textContent = '✓ ตำแหน่งสมบูรณ์แบบ';
         if (reticle) reticle.className = 'w-8 h-8 rounded-full border border-[#28AE60] flex items-center justify-center text-[#28AE60] text-[10px] transition-opacity opacity-40';
       } else {
-        oval.className = 'w-56 h-76 sm:w-68 sm:h-92 rounded-[50%] border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_20px_rgba(0,0,0,0.4)] flex flex-col items-center justify-between py-6 transition-all duration-300';
-        topTag.className = 'text-[11px] font-bold text-white bg-[#1F1E1B]/80 px-3 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow';
+        oval.className = baseClass + ' border-[3px] border-dashed border-[#DCD6C4] shadow-[0_0_25px_rgba(0,0,0,0.45)]';
+        topTag.className = 'absolute -top-3.5 left-1/2 -translate-x-1/2 text-[11px] font-bold text-white bg-[#1F1E1B]/85 px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-sm shadow whitespace-nowrap';
         topTag.textContent = 'กรุณาจัดใบหน้าในกรอบ';
         if (reticle) reticle.className = 'w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 text-[10px] transition-opacity opacity-80';
       }
@@ -6363,13 +6365,13 @@
 
       // 2. Distance / Size check
       const faceRatio = box.width / vw;
-      if (faceRatio < 0.23) {
+      if (faceRatio < 0.20) {
         distanceLabel = 'ไกลเกินไป';
         if (!guidanceText) {
           guidanceIcon = '📏';
           guidanceText = 'ขยับเข้าใกล้กล้องอีกนิด';
         }
-      } else if (faceRatio > 0.60) {
+      } else if (faceRatio > 0.65) {
         distanceLabel = 'ใกล้เกินไป';
         if (!guidanceText) {
           guidanceIcon = '📏';
