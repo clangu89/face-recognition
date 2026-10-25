@@ -51,12 +51,10 @@ function doGet(e) {
       var gType = e.parameter.personType;
       var gName = e.parameter.name || e.parameter.personName;
       result = updateProfileType(gId, gType, gName);
-    } else if (action === "getActiveCameras") {
-      result = getActiveCameras();
-    } else if (action === "getCameraFrame") {
-      result = getRemoteCameraFrame(e.parameter.sessionId);
-    } else if (action === "stopCameraPublish") {
-      result = unregisterCameraSession(e.parameter.sessionId);
+    } else if (action === "getRealtimeLogs") {
+      result = getRealtimeDetectionLogs(e.parameter);
+    } else if (action === "clearRealtimeLogs") {
+      result = clearRealtimeDetectionLogs();
     } else if (action === "triggerGlobalReload") {
       result = triggerGlobalForceReload(e.parameter);
     } else if (action === "clientPulse") {
@@ -144,14 +142,20 @@ function initSheetAndFolder() {
 
     // 2. ตรวจสอบ Sheet ประวัติการสแกน (ScanLogs)
     var logSheet = ss.getSheetByName(SHEET_LOGS);
+    var logHeaders = ["Timestamp", "Person_Name", "Match_Status", "Confidence", "Person_Type", "Detected_By_User", "Detected_By_Name", "Detail"];
     if (!logSheet) {
       logSheet = ss.insertSheet(SHEET_LOGS);
-      logSheet.appendRow(["Timestamp", "Person_Name", "Match_Status", "Confidence"]);
-      logSheet.getRange(1, 1, 1, 4)
+      logSheet.appendRow(logHeaders);
+      logSheet.getRange(1, 1, 1, logHeaders.length)
         .setBackground("#1E293B")
         .setFontColor("#FFFFFF")
         .setFontWeight("bold");
       logSheet.setFrozenRows(1);
+    } else if (logSheet.getLastColumn() < logHeaders.length) {
+      logSheet.getRange(1, 1, 1, logHeaders.length).setValues([logHeaders])
+        .setBackground("#1E293B")
+        .setFontColor("#FFFFFF")
+        .setFontWeight("bold");
     }
 
     // 3. ตรวจสอบ Sheet ข้อมูลผู้ใช้งานระบบ (SystemUsers)
@@ -543,22 +547,109 @@ function deleteFaceProfile(profileId) {
 }
 
 /**
- * บันทึกประวัติการตรวจจับใบหน้า (Log)
+ * บันทึกประวัติการตรวจจับใบหน้า (Log) พร้อมอัปเดต Real-Time Buffer ใน CacheService ทันที
+ * รองรับทั้งแบบส่ง Object รายละเอียดครบถ้วน หรือแบบเดิม (name, status, confidence)
  */
-function logScanEvent(name, status, confidence) {
+function logScanEvent(payloadOrName, status, confidence) {
   try {
-    var ss = getDatabaseSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_LOGS);
-    if (!sheet) return { success: false };
-    
-    sheet.appendRow([
-      new Date(),
-      name || "ลูกค้าทั่วไป",
-      status || "UNKNOWN",
-      confidence ? (confidence * 100).toFixed(1) + "%" : "-"
-    ]);
+    var now = new Date();
+    var nowMs = now.getTime();
+    var isObj = (payloadOrName && typeof payloadOrName === "object");
+    var p = isObj ? payloadOrName : {};
 
-    return { success: true };
+    var id = String(p.id || p.eventId || ("LOG_" + nowMs + "_" + Math.random().toString(36).substr(2, 4).toUpperCase()));
+    var timestampMs = Number(p.timestamp || p.timestampMs) || nowMs;
+    var dateObj = new Date(timestampMs);
+    var timeStr = Utilities.formatDate(dateObj, "GMT+7", "HH:mm:ss");
+    var dateStr = Utilities.formatDate(dateObj, "GMT+7", "dd/MM/yyyy");
+
+    var personName = String(isObj ? (p.personName || p.name || "") : (payloadOrName || "")).trim() || "ลูกค้าทั่วไป";
+    var matchStatus = String(isObj ? (p.status || p.matchStatus || "") : (status || "")).trim().toUpperCase() || (personName === "ลูกค้าทั่วไป" ? "UNKNOWN" : "KNOWN");
+    
+    var confVal = isObj ? (p.confidence !== undefined ? p.confidence : p.confidencePct) : confidence;
+    var confPct = 0;
+    if (typeof confVal === "number") {
+      confPct = confVal <= 1 ? Math.round(confVal * 100) : Math.round(confVal);
+    } else if (typeof confVal === "string" && confVal.indexOf("%") !== -1) {
+      confPct = Math.round(parseFloat(confVal)) || 0;
+    }
+    var confStr = confPct > 0 ? (confPct + "%") : "-";
+
+    var personType = String(p.personType || (matchStatus === "KNOWN" ? "employee" : "unknown")).toLowerCase();
+    var detectedByUsername = String(p.detectedByUsername || p.username || "unknown");
+    var detectedByFullName = String(p.detectedByFullName || p.fullName || detectedByUsername);
+    var detectedByRole = String(p.detectedByRole || p.role || "operator");
+    var sessionId = String(p.sessionId || "");
+    var detail = String(p.detail || (matchStatus === "KNOWN" ? "ยืนยันตัวตนสำเร็จ" : "ตรวจพบผู้มาติดต่อ"));
+
+    var logItem = {
+      id: id,
+      timestamp: timestampMs,
+      timeStr: timeStr,
+      dateStr: dateStr,
+      personName: personName,
+      profileId: String(p.profileId || ""),
+      personType: personType,
+      status: matchStatus,
+      confidencePct: confPct,
+      detectedByUsername: detectedByUsername,
+      detectedByFullName: detectedByFullName,
+      detectedByRole: detectedByRole,
+      sessionId: sessionId,
+      detail: detail
+    };
+
+    // 1. บันทึกลง Real-Time Ring Buffer ใน CacheService (ดึงเร็วระดับ ms สำหรับ Admin)
+    try {
+      var cache = CacheService.getScriptCache();
+      var rawLogs = cache.get(REALTIME_SCAN_LOGS_KEY);
+      var logList = [];
+      if (rawLogs) {
+        try { logList = JSON.parse(rawLogs) || []; } catch (eJson) { logList = []; }
+      }
+      var existIdx = -1;
+      for (var li = 0; li < logList.length; li++) {
+        if (logList[li].id === id) { existIdx = li; break; }
+      }
+      if (existIdx >= 0) {
+        logList[existIdx] = logItem;
+      } else {
+        logList.unshift(logItem);
+      }
+      if (logList.length > MAX_REALTIME_SCAN_LOGS) {
+        logList = logList.slice(0, MAX_REALTIME_SCAN_LOGS);
+      }
+      cache.put(REALTIME_SCAN_LOGS_KEY, JSON.stringify(logList), 21600); // แคช 6 ชั่วโมง
+    } catch (eCache) {
+      console.warn("CacheService put error:", eCache);
+    }
+
+    // 2. บันทึกประวัติถาวรลงชีต ScanLogs
+    try {
+      var ss = getDatabaseSpreadsheet();
+      var sheet = ss.getSheetByName(SHEET_LOGS);
+      if (sheet) {
+        var logHeaders = ["Timestamp", "Person_Name", "Match_Status", "Confidence", "Person_Type", "Detected_By_User", "Detected_By_Name", "Detail"];
+        if (sheet.getLastColumn() < logHeaders.length) {
+          sheet.getRange(1, 1, 1, logHeaders.length).setValues([logHeaders])
+            .setBackground("#1E293B").setFontColor("#FFFFFF").setFontWeight("bold");
+        }
+        sheet.appendRow([
+          dateObj,
+          personName,
+          matchStatus,
+          confStr,
+          personType,
+          detectedByUsername,
+          detectedByFullName,
+          detail
+        ]);
+      }
+    } catch (eSheet) {
+      console.warn("Sheet append error:", eSheet);
+    }
+
+    return { success: true, log: logItem };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -827,7 +918,7 @@ function doPost(e) {
     } else if (action === "deleteProfile") {
       result = deleteFaceProfile(data.id || (e.parameter && e.parameter.id));
     } else if (action === "logScan") {
-      result = logScanEvent(data.name, data.status, data.confidence);
+      result = logScanEvent(data.payload || data, data.status, data.confidence);
     } else if (action === "getProfiles") {
       result = getFaceProfiles();
     } else if (action === "getMessages") {
@@ -851,14 +942,10 @@ function doPost(e) {
       var pType = data.personType || (e.parameter && e.parameter.personType);
       var pName = data.name || data.personName || (e.parameter && (e.parameter.name || e.parameter.personName));
       result = updateProfileType(pId, pType, pName);
-    } else if (action === "publishCamera") {
-      result = publishCameraHeartbeat(data.payload || data);
-    } else if (action === "stopCameraPublish") {
-      result = unregisterCameraSession(data.sessionId || (e.parameter && e.parameter.sessionId));
-    } else if (action === "getActiveCameras") {
-      result = getActiveCameras();
-    } else if (action === "getCameraFrame") {
-      result = getRemoteCameraFrame(data.sessionId || (e.parameter && e.parameter.sessionId));
+    } else if (action === "getRealtimeLogs") {
+      result = getRealtimeDetectionLogs(data.payload || data || (e.parameter && e.parameter));
+    } else if (action === "clearRealtimeLogs") {
+      result = clearRealtimeDetectionLogs();
     } else if (action === "triggerGlobalReload") {
       result = triggerGlobalForceReload(data.payload || data || (e.parameter && e.parameter));
     } else if (action === "clientPulse") {
@@ -1427,14 +1514,14 @@ function getTodayAttendance(targetDate) {
 
 /**
  * ==============================================================================
- * ระบบติดตามกล้องตรวจจับระยะไกล (Admin Remote Camera Monitor via CacheService)
+ * ระบบติดตามสถานะเครื่องออนไลน์และรายการตรวจจับใบหน้าแบบ Real-Time (CacheService)
  * ==============================================================================
  */
-var CAM_INDEX_KEY = "ACTIVE_CAM_INDEX_V1";
-var CAM_SESSION_TTL_MS = 28000; // หมดอายุหากไม่มีสัญญาณ Heartbeat เกิน 28 วินาที
 var CLIENT_PRESENCE_INDEX_KEY = "ACTIVE_CLIENT_SESSIONS_V1";
 var CLIENT_SESSION_TTL_MS = 28000;
 var GLOBAL_RELOAD_CMD_KEY = "GLOBAL_FORCE_RELOAD_CMD_V1";
+var REALTIME_SCAN_LOGS_KEY = "REALTIME_SCAN_LOGS_V1";
+var MAX_REALTIME_SCAN_LOGS = 80;
 
 /**
  * ดึงคำสั่ง Force Reload ล่าสุดจาก CacheService (หรือสำรองจาก ScriptProperties)
@@ -1503,7 +1590,7 @@ function triggerGlobalForceReload(payload) {
 }
 
 /**
- * Helper ดึงข้อมูลและจำนวนเครื่องที่ออนไลน์ (รวมทั้งเครื่องที่เปิดกล้องและไม่ได้เปิดกล้อง)
+ * Helper ดึงข้อมูลและจำนวนเครื่องที่ออนไลน์ (นับทั้งจำนวนผู้ใช้ออนไลน์ และจำนวนที่เปิดกล้องตรวจจับ)
  */
 function getOnlineClientsInfo_() {
   var cache = CacheService.getScriptCache();
@@ -1517,6 +1604,8 @@ function getOnlineClientsInfo_() {
   var activeUsers = [];
   var changed = false;
   var keys = Object.keys(presenceMap);
+  var activeCamerasCount = 0;
+
   for (var i = 0; i < keys.length; i++) {
     var k = keys[i];
     var item = presenceMap[k];
@@ -1524,6 +1613,9 @@ function getOnlineClientsInfo_() {
       delete presenceMap[k];
       changed = true;
     } else {
+      if (item.cameraStarted) {
+        activeCamerasCount++;
+      }
       activeUsers.push(item);
     }
   }
@@ -1532,9 +1624,19 @@ function getOnlineClientsInfo_() {
     cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
   }
 
+  // เรียงลำดับ: เครื่องที่เปิดกล้องขึ้นก่อน ตามด้วยเวลาล่าสุด
+  activeUsers.sort(function(a, b) {
+    if (!!b.cameraStarted !== !!a.cameraStarted) {
+      return (b.cameraStarted ? 1 : 0) - (a.cameraStarted ? 1 : 0);
+    }
+    return (b.lastSeen || 0) - (a.lastSeen || 0);
+  });
+
   return {
     onlineCount: activeUsers.length,
-    users: activeUsers
+    activeCameraCount: activeCamerasCount,
+    users: activeUsers,
+    clients: activeUsers
   };
 }
 
@@ -1579,265 +1681,158 @@ function syncClientPresenceAndCommands(payload) {
     cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
 
     var latestReload = getLatestReloadCommand_();
-
-    return {
-      success: true,
-      onlineCount: Object.keys(presenceMap).length,
-      reloadCommand: latestReload,
-      timestamp: nowMs
-    };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
-
-/**
- * บันทึกสัญญาณชีพ (Heartbeat) และเฟรมภาพล่าสุดจากเครื่องที่เปิดกล้องใช้งานอยู่
- */
-function publishCameraHeartbeat(payload) {
-  try {
-    if (!payload || !payload.sessionId) {
-      return { success: false, message: "Missing sessionId" };
-    }
-    var cache = CacheService.getScriptCache();
-    var nowMs = Date.now();
-    var timeStr = Utilities.formatDate(new Date(nowMs), "GMT+7", "HH:mm:ss");
-    var sessionId = String(payload.sessionId).trim();
-
-    // 1. อ่านและอัปเดตดัชนีกล้องที่กำลังทำงานอยู่
-    var rawIndex = cache.get(CAM_INDEX_KEY);
-    var indexMap = {};
-    if (rawIndex) {
-      try {
-        indexMap = JSON.parse(rawIndex) || {};
-      } catch (e) {
-        indexMap = {};
-      }
-    }
-
-    // ล้างรายการที่หมดอายุเกิน CAM_SESSION_TTL_MS
-    var activeKeys = Object.keys(indexMap);
-    for (var i = 0; i < activeKeys.length; i++) {
-      var k = activeKeys[i];
-      if (!indexMap[k] || (nowMs - (indexMap[k].lastHeartbeat || 0) > CAM_SESSION_TTL_MS)) {
-        delete indexMap[k];
-      }
-    }
-
-    var existing = indexMap[sessionId] || {};
-    var meta = {
-      sessionId: sessionId,
-      username: String(payload.username || existing.username || "unknown"),
-      fullName: String(payload.fullName || existing.fullName || payload.username || "ผู้ใช้งาน"),
-      role: String(payload.role || existing.role || "operator"),
-      peerId: String(payload.peerId || existing.peerId || ""),
-      startedAt: existing.startedAt || payload.startedAt || nowMs,
-      startedAtFormatted: existing.startedAtFormatted || timeStr,
-      lastHeartbeat: nowMs,
-      lastHeartbeatFormatted: timeStr,
-      detectedCount: Number(payload.detectedCount !== undefined ? payload.detectedCount : (existing.detectedCount || 0)),
-      lastDetected: String(payload.lastDetected !== undefined ? payload.lastDetected : (existing.lastDetected || "กำลังสแกน...")),
-      lastGreeting: String(payload.lastGreeting !== undefined ? payload.lastGreeting : (existing.lastGreeting || "")),
-      lastGreetingId: String(payload.lastGreetingId !== undefined ? payload.lastGreetingId : (existing.lastGreetingId || ""))
-    };
-
-    indexMap[sessionId] = meta;
-    cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
-
-    // อัปเดต Client Presence ด้วยเพื่อให้นับยอดออนไลน์รวมได้ครบถ้วน
-    try {
-      var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
-      var presenceMap = rawPresence ? (JSON.parse(rawPresence) || {}) : {};
-      presenceMap[sessionId] = {
-        sessionId: sessionId,
-        username: meta.username,
-        fullName: meta.fullName,
-        role: meta.role,
-        cameraStarted: true,
-        currentTab: "scanner",
-        lastSeen: nowMs
-      };
-      cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
-    } catch (ePres) {}
-
-    // 2. บันทึกเฟรมภาพและสถานะลงแคชเฉพาะของ sessionId นั้น
-    if (payload.frameDataUrl) {
-      var frameObj = {
-        sessionId: sessionId,
-        username: meta.username,
-        fullName: meta.fullName,
-        role: meta.role,
-        peerId: meta.peerId,
-        frameDataUrl: String(payload.frameDataUrl),
-        detectedCount: meta.detectedCount,
-        lastDetected: meta.lastDetected,
-        lastGreeting: meta.lastGreeting,
-        lastGreetingId: meta.lastGreetingId,
-        timestamp: nowMs,
-        timeStr: timeStr
-      };
-      var serializedFrame = JSON.stringify(frameObj);
-      if (serializedFrame.length < 98000) {
-        cache.put("CAM_FRAME_" + sessionId, serializedFrame, 60);
-      }
-    }
-
-    var latestReload = getLatestReloadCommand_();
-
-    return {
-      success: true,
-      sessionId: sessionId,
-      activeCount: Object.keys(indexMap).length,
-      reloadCommand: latestReload,
-      timestamp: nowMs
-    };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
-
-/**
- * ยกเลิกสถานะการเปิดกล้องทันทีเมื่อผู้ใช้กดปิดกล้องหรือออกจากระบบ
- */
-function unregisterCameraSession(sessionId) {
-  try {
-    if (!sessionId) return { success: false, message: "Missing sessionId" };
-    var cache = CacheService.getScriptCache();
-    var sId = String(sessionId).trim();
-
-    var rawIndex = cache.get(CAM_INDEX_KEY);
-    if (rawIndex) {
-      try {
-        var indexMap = JSON.parse(rawIndex) || {};
-        if (indexMap[sId]) {
-          delete indexMap[sId];
-          cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
-        }
-      } catch (e) {}
-    }
-    cache.remove("CAM_FRAME_" + sId);
-
-    try {
-      var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
-      if (rawPresence) {
-        var presenceMap = JSON.parse(rawPresence) || {};
-        if (presenceMap[sId]) {
-          presenceMap[sId].cameraStarted = false;
-          presenceMap[sId].lastSeen = Date.now();
-          cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
-        }
-      }
-    } catch (ePres) {}
-
-    return { success: true, sessionId: sId };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
-
-/**
- * ดึงรายชื่อกล้องของผู้ใช้งานทั้งหมดที่กำลังเปิดทำงานอยู่ในปัจจุบัน
- */
-function getActiveCameras() {
-  try {
-    var cache = CacheService.getScriptCache();
-    var nowMs = Date.now();
-    var rawIndex = cache.get(CAM_INDEX_KEY);
-    var indexMap = {};
-    if (rawIndex) {
-      try {
-        indexMap = JSON.parse(rawIndex) || {};
-      } catch (e) {
-        indexMap = {};
-      }
-    }
-
-    var cameras = [];
-    var changed = false;
-    var keys = Object.keys(indexMap);
-    for (var i = 0; i < keys.length; i++) {
-      var k = keys[i];
-      var item = indexMap[k];
-      if (!item || (nowMs - (item.lastHeartbeat || 0) > CAM_SESSION_TTL_MS)) {
-        delete indexMap[k];
-        changed = true;
-      } else {
-        cameras.push(item);
-      }
-    }
-
-    if (changed) {
-      cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
-    }
-
-    // เรียงลำดับตามเวลาที่เริ่มเปิดล่าสุด
-    cameras.sort(function(a, b) {
-      return (b.lastHeartbeat || 0) - (a.lastHeartbeat || 0);
-    });
-
-    var latestReload = getLatestReloadCommand_();
     var onlineInfo = getOnlineClientsInfo_();
 
     return {
       success: true,
-      cameras: cameras,
-      count: cameras.length,
-      onlineUsersCount: onlineInfo.onlineCount,
+      onlineCount: onlineInfo.onlineCount,
+      activeCameraCount: onlineInfo.activeCameraCount,
+      clients: onlineInfo.clients,
       reloadCommand: latestReload,
-      serverTime: nowMs
+      timestamp: nowMs
     };
   } catch (e) {
-    return { success: false, cameras: [], count: 0, message: e.toString() };
+    return { success: false, message: e.toString() };
   }
 }
 
 /**
- * ดึงข้อมูลเฟรมภาพล่าสุดและสถานะการตรวจจับของกล้องที่เลือกดู
+ * ดึงรายการตรวจจับใบหน้าแบบ Real-Time จาก CacheService Ring Buffer
+ * หาก Cache ว่าง (Cold start) จะอ่านจากชีต ScanLogs ล่าสุด 40 รายการมาเติมให้อัตโนมัติ
  */
-function getRemoteCameraFrame(sessionId) {
+function getRealtimeDetectionLogs(params) {
   try {
-    if (!sessionId) return { success: false, active: false, message: "Missing sessionId" };
+    var p = params || {};
     var cache = CacheService.getScriptCache();
-    var sId = String(sessionId).trim();
-    var nowMs = Date.now();
+    var rawLogs = cache.get(REALTIME_SCAN_LOGS_KEY);
+    var logList = [];
+    var isCold = false;
 
-    var rawIndex = cache.get(CAM_INDEX_KEY);
-    var sessionMeta = null;
-    if (rawIndex) {
+    if (rawLogs) {
       try {
-        var indexMap = JSON.parse(rawIndex) || {};
-        if (indexMap[sId] && (nowMs - (indexMap[sId].lastHeartbeat || 0) <= CAM_SESSION_TTL_MS)) {
-          sessionMeta = indexMap[sId];
+        logList = JSON.parse(rawLogs) || [];
+      } catch (eJson) {
+        logList = [];
+      }
+    }
+
+    // หาก Cache ยังว่างเปล่า ให้อ่านจากชีต ScanLogs ล่าสุด 40 แถว
+    if (!logList || logList.length === 0) {
+      isCold = true;
+      try {
+        var ss = getDatabaseSpreadsheet();
+        var sheet = ss.getSheetByName(SHEET_LOGS);
+        if (sheet && sheet.getLastRow() > 1) {
+          var lastRow = sheet.getLastRow();
+          var startRow = Math.max(2, lastRow - 39);
+          var numRows = (lastRow - startRow) + 1;
+          var numCols = Math.max(4, sheet.getLastColumn());
+          var rangeVals = sheet.getRange(startRow, 1, numRows, numCols).getValues();
+
+          for (var r = rangeVals.length - 1; r >= 0; r--) {
+            var row = rangeVals[r];
+            var dateVal = row[0];
+            var dateObj = (dateVal instanceof Date && !isNaN(dateVal.getTime())) ? dateVal : new Date(dateVal);
+            var timestampMs = (!isNaN(dateObj.getTime())) ? dateObj.getTime() : Date.now();
+            var timeStr = Utilities.formatDate(dateObj, "GMT+7", "HH:mm:ss");
+            var dateStr = Utilities.formatDate(dateObj, "GMT+7", "dd/MM/yyyy");
+
+            var pName = String(row[1] || "").trim() || "ลูกค้าทั่วไป";
+            var mStatus = String(row[2] || "").trim().toUpperCase() || (pName === "ลูกค้าทั่วไป" ? "UNKNOWN" : "KNOWN");
+            var cStr = String(row[3] || "").trim();
+            var cPct = 0;
+            if (cStr && cStr.indexOf("%") !== -1) {
+              cPct = Math.round(parseFloat(cStr)) || 0;
+            } else if (!isNaN(Number(cStr)) && Number(cStr) > 0) {
+              var n = Number(cStr);
+              cPct = n <= 1 ? Math.round(n * 100) : Math.round(n);
+            }
+
+            var pType = row.length >= 5 ? String(row[4] || "").trim().toLowerCase() : (mStatus === "KNOWN" ? "employee" : "unknown");
+            var detUser = row.length >= 6 ? String(row[5] || "").trim() : "unknown";
+            var detName = row.length >= 7 ? String(row[6] || "").trim() : detUser;
+            var detDetail = row.length >= 8 ? String(row[7] || "").trim() : (mStatus === "KNOWN" ? "ยืนยันตัวตนสำเร็จ" : "ตรวจพบผู้มาติดต่อ");
+
+            logList.push({
+              id: "SEED_" + timestampMs + "_" + r,
+              timestamp: timestampMs,
+              timeStr: timeStr,
+              dateStr: dateStr,
+              personName: pName,
+              profileId: "",
+              personType: pType || (mStatus === "KNOWN" ? "employee" : "unknown"),
+              status: mStatus,
+              confidencePct: cPct,
+              detectedByUsername: detUser || "unknown",
+              detectedByFullName: detName || detUser || "ไม่ระบุเครื่อง",
+              detectedByRole: "operator",
+              sessionId: "",
+              detail: detDetail
+            });
+          }
+
+          if (logList.length > 0) {
+            cache.put(REALTIME_SCAN_LOGS_KEY, JSON.stringify(logList), 21600);
+          }
         }
-      } catch (e) {}
+      } catch (eSeed) {
+        console.warn("ScanLogs seed error:", eSeed);
+      }
     }
 
-    var rawFrame = cache.get("CAM_FRAME_" + sId);
-    var frameData = null;
-    if (rawFrame) {
-      try {
-        frameData = JSON.parse(rawFrame);
-      } catch (e) {}
+    var sinceTs = Number(p.since || p.sinceTimestamp) || 0;
+    var limit = Math.min(100, Math.max(1, Number(p.limit) || 50));
+    var filtered = logList;
+
+    if (sinceTs > 0) {
+      filtered = logList.filter(function(item) {
+        return (item.timestamp || 0) > sinceTs;
+      });
     }
 
-    if (!sessionMeta && !frameData) {
-      return {
-        success: true,
-        active: false,
-        sessionId: sId,
-        message: "กล้องของผู้ใช้งานนี้ปิดการทำงานหรือออฟไลน์แล้ว"
-      };
+    if (filtered.length > limit) {
+      filtered = filtered.slice(0, limit);
     }
+
+    var onlineInfo = getOnlineClientsInfo_();
+    var latestReload = getLatestReloadCommand_();
 
     return {
       success: true,
-      active: true,
-      sessionId: sId,
-      meta: sessionMeta || frameData,
-      frame: frameData
+      logs: filtered,
+      count: filtered.length,
+      totalCached: logList.length,
+      isColdStartSeeded: isCold,
+      onlineCount: onlineInfo.onlineCount,
+      activeCameraCount: onlineInfo.activeCameraCount,
+      onlineClients: onlineInfo.clients,
+      reloadCommand: latestReload,
+      serverTime: Date.now()
     };
   } catch (e) {
-    return { success: false, active: false, message: e.toString() };
+    return {
+      success: false,
+      message: e.toString(),
+      logs: [],
+      count: 0
+    };
+  }
+}
+
+/**
+ * ล้างข้อมูลรายการตรวจจับบนหน้าจอแสดงผลสด (ล้างเฉพาะ Cache ไม่ลบชีตประวัติถาวร)
+ */
+function clearRealtimeDetectionLogs() {
+  try {
+    var cache = CacheService.getScriptCache();
+    cache.put(REALTIME_SCAN_LOGS_KEY, JSON.stringify([]), 21600);
+    return {
+      success: true,
+      message: "ล้างรายการตรวจจับบนหน้าจอแสดงผลสดเรียบร้อยแล้ว (ประวัติในชีตยังคงอยู่ครบถ้วน)",
+      timestamp: Date.now()
+    };
+  } catch (e) {
+    return { success: false, message: e.toString() };
   }
 }
 

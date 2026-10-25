@@ -377,6 +377,95 @@
         </span>
       </div>
 
+      <!-- Admin Real-Time Detection Logs Monitor (Visible ONLY to Admin) -->
+      <div id="adminRealtimeLogsPanel" class="hidden glass-card rounded-[28px] p-4 sm:p-5 border border-[#E2DDD0] shadow-sm space-y-3.5">
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#EFECE2]">
+          <div class="flex items-center gap-2.5">
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-[#EAF7EF] text-[#1E824C] text-sm font-bold border border-[#BEE6CE]">
+              📡
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-[#28AE60] bg-[#EAF7EF] px-2 py-0.5 rounded-full border border-[#BEE6CE] flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-ping"></span>
+                  <span id="realtimeLogsLivePulseText">LIVE STREAM</span>
+                </span>
+                <span class="text-sm font-extrabold text-[#1F1E1B]">รายการตรวจจับใบหน้าแบบ Real-Time จากทุกจุดบริการ</span>
+              </div>
+              <p class="text-[11px] text-[#6E6B62] mt-0.5">
+                ติดตามการสแกนและผลการยืนยันตัวตนของเจ้าหน้าที่ทุกเครื่องแบบเรียลไทม์
+              </p>
+            </div>
+          </div>
+
+          <!-- Live Badges & Controls -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span id="activeCameraStationsBadge" class="text-xs px-3 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold border border-[#BEE6CE] flex items-center gap-1.5 shadow-xs">
+              <span class="w-2 h-2 rounded-full bg-[#28AE60] animate-pulse"></span>
+              <span id="activeCameraStationsCountText">กำลังเปิดกล้อง 0 เครื่อง</span>
+            </span>
+            <span id="realtimeLogsTotalBadge" class="text-xs px-2.5 py-1 rounded-full bg-[#F7F5EE] text-[#5C5950] font-bold border border-[#DCD6C4]">
+              0 รายการ
+            </span>
+            <button type="button" id="realtimeLogsPauseBtn" onclick="toggleRealtimeLogsPause()" class="px-2.5 py-1 rounded-full bg-white hover:bg-[#F7F5EE] text-[#1F1E1B] border border-[#DCD6C4] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="พักหรือเล่นการอัปเดตสดต่อ">
+              <span id="realtimeLogsPauseIcon">⏸️</span>
+              <span id="realtimeLogsPauseText">พักชั่วคราว</span>
+            </button>
+            <button type="button" onclick="fetchRealtimeLogs(true)" class="px-2.5 py-1 rounded-full bg-white hover:bg-[#F7F5EE] text-[#1F1E1B] border border-[#DCD6C4] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="รีเฟรชข้อมูลทันที">
+              <span>🔄</span>
+              <span class="hidden sm:inline">รีเฟรช</span>
+            </button>
+            <button type="button" onclick="promptClearRealtimeLogsFeed()" class="px-2.5 py-1 rounded-full bg-[#FDECEB] hover:bg-[#FBD8D6] text-[#D94338] border border-[#F5C2C0] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="ล้างหน้าจอแสดงผลสด">
+              <span>🧹</span>
+              <span class="hidden sm:inline">ล้างจอ</span>
+            </button>
+            <button type="button" id="realtimeLogsCollapseBtn" onclick="toggleRealtimeLogsCollapse()" class="px-2 py-1 rounded-full bg-white hover:bg-[#F7F5EE] text-[#5C5950] border border-[#DCD6C4] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="ย่อหรือขยายแผง">
+              <span id="realtimeLogsCollapseIcon">🔼</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Body Content -->
+        <div id="realtimeLogsBodyContainer" class="space-y-3">
+          <!-- Filters Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+            <!-- Station Filter Pills -->
+            <div class="flex flex-wrap items-center gap-1.5" id="realtimeStationPillsContainer">
+              <span class="text-[11px] font-bold text-[#5C5950] mr-1">จุดตรวจจับ:</span>
+              <button type="button" onclick="filterRealtimeLogsStation('all')" id="stationPill_all" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#28AE60] text-white shadow-xs transition cursor-pointer">
+                ทุกจุดบริการ
+              </button>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="flex items-center gap-1.5 bg-[#F7F5EE] p-1 rounded-full border border-[#E2DDD0]">
+              <button type="button" onclick="filterRealtimeLogsCategory('all')" id="catPill_all" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-[#1F1E1B] shadow-xs transition cursor-pointer">
+                ทั้งหมด
+              </button>
+              <button type="button" onclick="filterRealtimeLogsCategory('employee')" id="catPill_employee" class="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#5C5950] hover:text-[#1F1E1B] transition cursor-pointer">
+                💼 พนักงาน
+              </button>
+              <button type="button" onclick="filterRealtimeLogsCategory('vip')" id="catPill_vip" class="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#5C5950] hover:text-[#1F1E1B] transition cursor-pointer">
+                ⭐ VIP
+              </button>
+              <button type="button" onclick="filterRealtimeLogsCategory('unknown')" id="catPill_unknown" class="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#5C5950] hover:text-[#1F1E1B] transition cursor-pointer">
+                🟡 ผู้มาติดต่อ
+              </button>
+            </div>
+          </div>
+
+          <!-- Feed Table / List Container -->
+          <div class="bg-white/80 rounded-[20px] border border-[#E5E0D0] overflow-hidden shadow-inner">
+            <div class="max-h-64 sm:max-h-72 overflow-y-auto divide-y divide-[#EFECE2]" id="realtimeLogsListContainer">
+              <div class="p-6 text-center text-xs text-[#8C877B] italic">
+                กำลังเชื่อมต่อและโหลดรายการตรวจจับใบหน้าแบบ Real-Time...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Main Video Viewport & Controls -->
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
@@ -402,32 +491,6 @@
               </div>
             </div>
 
-            <!-- Admin Remote Camera Selector Bar (Visible ONLY to Admin) -->
-            <div id="adminRemoteCameraBar" class="hidden mb-3 p-3 rounded-[20px] bg-[#F7F5EE] border border-[#E2DDD0] shadow-inner">
-              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-[#EAF7EF] text-[#1E824C] text-xs font-bold border border-[#BEE6CE]">📡</span>
-                  <span class="text-xs font-extrabold text-[#1F1E1B]">ระบบดูกล้องตรวจจับของผู้ใช้อื่น (Admin Camera Monitor)</span>
-                  <span id="activeRemoteCamerasCountBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#EAE6DA] text-[#5C5950] font-bold border border-[#DCD6C4]">
-                    0 กล้องออนไลน์
-                  </span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <button type="button" id="refreshActiveCamerasBtn" onclick="fetchActiveCameras(true)" class="px-2.5 py-1 rounded-full bg-white hover:bg-[#EAE6DA] text-[#1F1E1B] border border-[#DCD6C4] text-[11px] font-bold transition flex items-center gap-1 shadow-sm cursor-pointer">
-                    <span id="refreshActiveCamerasIcon" class="inline-block">🔄</span>
-                    <span>ค้นหากล้องที่เปิดอยู่</span>
-                  </button>
-                </div>
-              </div>
-              <div id="activeCamerasListContainer" class="flex flex-wrap items-center gap-2">
-                <button type="button" onclick="stopWatchingRemoteCamera()" class="px-3.5 py-1.5 rounded-full bg-[#28AE60] text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-                  <span>📷</span>
-                  <span>กล้องเครื่องนี้ (Local)</span>
-                </button>
-                <span class="text-xs text-[#8C877B] italic pl-1">กำลังตรวจสอบกล้องของเจ้าหน้าที่ที่เปิดใช้งานอยู่...</span>
-              </div>
-            </div>
-
             <div id="scannerViewport" ondblclick="handleScannerViewportDblClick(event)" class="relative w-full aspect-[4/3] sm:aspect-video rounded-[22px] overflow-hidden bg-[#1F1E1B] border-2 border-[#E5E0D0] shadow-inner flex items-center justify-center group">
               
               <!-- Webcam Video Element -->
@@ -435,40 +498,6 @@
 
               <!-- Real-time Bounding Box Canvas -->
               <canvas id="overlayCanvas" class="absolute inset-0 w-full h-full object-cover pointer-events-none"></canvas>
-
-              <!-- Remote Camera WebRTC Video Stream (For Admin Remote Viewing) -->
-              <video id="remoteStreamVideo" autoplay muted playsinline class="hidden absolute inset-0 w-full h-full object-cover z-[5] bg-[#1F1E1B]"></video>
-
-              <!-- Remote Camera Snapshot Sync Image (Fallback / Instant Preview for Admin) -->
-              <img id="remoteSnapshotImg" alt="Remote Camera Feed" class="hidden absolute inset-0 w-full h-full object-cover z-[4] bg-[#1F1E1B]" />
-
-              <!-- Remote Camera Top HUD Banner (Shown when Admin is watching another user's camera) -->
-              <div id="remoteMonitorHud" class="hidden absolute top-3 left-3 right-3 z-20 flex-wrap items-center justify-between gap-2 pointer-events-none">
-                <div class="flex flex-wrap items-center gap-2 px-3.5 py-2 rounded-full bg-[#1F1E1B]/85 backdrop-blur-md border border-white/20 text-white shadow-lg">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60] animate-ping"></span>
-                  <span id="remoteHudStreamModeBadge" class="text-[11px] font-extrabold tracking-wide text-[#28AE60] uppercase">LIVE MONITOR</span>
-                  <span class="text-white/30">|</span>
-                  <span class="text-xs font-bold text-white">กำลังดูกล้อง: <span id="remoteHudOwnerName" class="text-[#F7DC6F] font-extrabold">-</span></span>
-                  <span class="text-white/30 hidden sm:inline">|</span>
-                  <span id="remoteHudDetectionStatus" class="text-xs font-semibold text-[#A3E4D7] hidden sm:inline">กำลังสแกน...</span>
-                </div>
-                <button type="button" onclick="stopWatchingRemoteCamera()" class="pointer-events-auto px-3.5 py-2 rounded-full bg-[#FDECEB]/95 hover:bg-[#FBD8D6] text-[#D94338] text-xs font-bold backdrop-blur-md border border-[#F5C2C0] shadow-md transition flex items-center space-x-1.5 cursor-pointer">
-                  <span>🔙</span>
-                  <span>กลับไปใช้กล้องเครื่องนี้</span>
-                </button>
-              </div>
-
-              <!-- Remote Camera Connecting / Offline Overlay -->
-              <div id="remoteConnectingOverlay" class="hidden absolute inset-0 z-[12] flex-col items-center justify-center bg-[#1F1E1B]/90 backdrop-blur-md p-6 text-center text-white">
-                <div class="w-16 h-16 rounded-2xl bg-[#28AE60]/20 border-2 border-[#28AE60] flex items-center justify-center mb-4 text-3xl animate-pulse">
-                  📡
-                </div>
-                <h4 id="remoteConnectingTitle" class="text-lg font-extrabold text-white mb-1">กำลังเชื่อมต่อกล้องระยะไกล...</h4>
-                <p id="remoteConnectingDesc" class="text-xs text-white/75 max-w-md mb-5">ระบบกำลังดึงสัญญาณภาพสดและการตรวจจับใบหน้าจากเครื่องผู้ใช้งาน</p>
-                <button type="button" onclick="stopWatchingRemoteCamera()" class="px-5 py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white border border-white/25 text-xs font-bold transition cursor-pointer">
-                  🔙 ยกเลิกและกลับไปใช้กล้องเครื่องนี้
-                </button>
-              </div>
 
               <!-- Animated Radar Scan Line -->
               <div class="scan-line"></div>
@@ -2086,18 +2115,11 @@
       modelsLoaded: false,
       cameraStarted: false,
       operatorAutoStarted: false,
-      cameraSessionId: null,
-      peerInstance: null,
-      peerId: null,
-      activeRemoteCameras: [],
-      watchingRemoteSessionId: null,
-      watchingRemoteMeta: null,
-      remoteStreamMode: 'sync',
-      lastBroadcastDetectedText: 'กำลังสแกนใบหน้า...',
-      lastBroadcastDetectedCount: 0,
-      lastBroadcastGreetingText: '',
-      lastBroadcastGreetingId: '',
-      lastSeenRemoteGreetingId: '',
+      realtimeLogs: [],
+      realtimeLogsFilter: { station: 'all', category: 'all' },
+      realtimeLogsPaused: false,
+      realtimeLogsCollapsed: false,
+      activeScanningStations: [],
       isScannerFullscreen: false,
       scannerVideoFit: 'cover',
       currentTab: 'scanner',
@@ -4566,14 +4588,7 @@
       speakPhrasesSequence([text], onComplete, withChime, category);
     }
 
-    function showGreetingBanner(text, isFromRemoteMonitor) {
-      if (!isFromRemoteMonitor) {
-        state.lastBroadcastGreetingText = text || '';
-        state.lastBroadcastGreetingId = 'gr_' + Date.now();
-        if (state.cameraStarted && typeof publishCameraFrameNow === 'function') {
-          setTimeout(function() { publishCameraFrameNow(); }, 250);
-        }
-      }
+    function showGreetingBanner(text) {
       const banner = document.getElementById('greetingBanner');
       const bannerText = document.getElementById('greetingBannerText');
       if (banner && bannerText) {
@@ -5277,9 +5292,6 @@
       // ปลดล็อกระบบเสียงทันทีในจังหวะที่ผู้ใช้กดปุ่ม (ก่อนเข้า await getUserMedia)
       unlockSpeechEngine();
 
-      if (state.watchingRemoteSessionId && typeof stopWatchingRemoteCamera === 'function') {
-        stopWatchingRemoteCamera();
-      }
       if (state.cameraStarted) return;
       const video = document.getElementById('webcamVideo');
       const cameraBadge = document.getElementById('cameraStatusBadge');
@@ -5330,8 +5342,8 @@
         logStatus('[OK] กล้อง Webcam เปิดใช้งานแล้ว เริ่มการสแกนใบหน้า');
 
         startRecognitionLoop();
-        if (typeof startCameraBroadcastLoop === 'function') {
-          startCameraBroadcastLoop();
+        if (typeof sendClientPresencePulse === 'function') {
+          sendClientPresencePulse(false);
         }
         if (state.currentTab === 'register' && !state.capturedDescriptor) {
           startRegistrationGuideLoop();
@@ -5352,9 +5364,6 @@
 
     function stopCamera() {
       stopRegistrationGuideLoop();
-      if (typeof stopCameraBroadcastLoop === 'function') {
-        stopCameraBroadcastLoop();
-      }
       if (state.stream) {
         state.stream.getTracks().forEach(track => track.stop());
         state.stream = null;
@@ -5377,6 +5386,10 @@
       cameraBadge.innerHTML = '<span class="text-[#8C877B]">●</span> กล้องปิดอยู่';
       cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap';
       logStatus('[CAMERA] กล้อง Webcam ปิดการทำงานแล้ว');
+
+      if (typeof sendClientPresencePulse === 'function') {
+        sendClientPresencePulse(false);
+      }
     }
 
     // --- Operator Auto-Start Camera & Readiness Coordinator ---
@@ -5631,15 +5644,6 @@
                 }
               });
 
-              state.lastBroadcastDetectedCount = resizedDetections.length;
-              if (detectedCurrentFrameDisplayNames.size > 0) {
-                state.lastBroadcastDetectedText = 'ตรวจพบ: คุณ ' + Array.from(detectedCurrentFrameDisplayNames).join(', ');
-              } else if (pendingVerificationThisFrame) {
-                state.lastBroadcastDetectedText = 'กำลังตรวจสอบและยืนยันเอกลักษณ์ใบหน้า...';
-              } else if (unknownDetectedThisFrame) {
-                state.lastBroadcastDetectedText = 'ตรวจพบ: ผู้มาติดต่อ / ลูกค้าทั่วไป';
-              }
-
               if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
                 handleUnknownGreeting();
               } else if (!unknownDetectedThisFrame) {
@@ -5650,12 +5654,6 @@
               state.candidateMatches.forEach((candData, key) => {
                 if (now - candData.lastSeen > 900) state.candidateMatches.delete(key);
               });
-              state.lastBroadcastDetectedCount = 0;
-              state.lastBroadcastDetectedText = 'กำลังสแกนใบหน้า...';
-            }
-
-            if (typeof updateBroadcastCompositeCanvas === 'function') {
-              updateBroadcastCompositeCanvas();
             }
 
             cleanupExitedPersons(now, detectedCurrentFrameKeys, unknownDetectedThisFrame || pendingVerificationThisFrame);
@@ -5761,11 +5759,13 @@
 
         const phrases = [greetingMsg];
 
+        let detailNote = (personType === 'vip') ? 'ต้อนรับบุคคลสำคัญ (VIP)' : 'ยืนยันตัวตนสำเร็จ';
         // Attendance evaluation for employees (Check-In or Check-Out)
         if (personType === 'employee') {
           const attendancePhrase = evaluateEmployeeAttendance(profile, cleanName, new Date());
           if (attendancePhrase) {
             phrases.push(attendancePhrase);
+            detailNote = attendancePhrase.replace(/[ค่ะ|ครับ]$/, '').trim();
           }
         }
 
@@ -5777,6 +5777,7 @@
             phrases.push('ข้อความที่ ' + (idx + 1) + ' ' + m.text);
           });
           logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + cleanName + ' (กำลังอ่านตามลำดับ)');
+          detailNote += (detailNote ? ' · ' : '') + 'มี ' + messages.length + ' ข้อความฝาก';
         }
 
         const confPct = Math.round((Number(confidence) || 0) * 100);
@@ -5789,7 +5790,23 @@
           withChime: true
         });
         logStatus('[GREET] ยืนยันตัวตนสำเร็จ: คุณ ' + cleanName + ' (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ', ความแม่นยำ ' + confPct + '%)');
-        recordScanLog(cleanName, 'KNOWN', confidence);
+        
+        const scanPayload = {
+          id: 'SCAN_' + now + '_' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+          timestamp: now,
+          personName: cleanName,
+          profileId: profileId || '',
+          personType: personType,
+          status: 'KNOWN',
+          confidence: confidence,
+          confidencePct: confPct,
+          detectedByUsername: state.currentUser ? state.currentUser.username : 'unknown',
+          detectedByFullName: state.currentUser ? (state.currentUser.fullName || state.currentUser.username) : 'จุดบริการ',
+          detectedByRole: state.currentUser ? state.currentUser.role : 'operator',
+          sessionId: (typeof getOrCreateClientSessionId === 'function') ? getOrCreateClientSessionId() : '',
+          detail: detailNote
+        };
+        recordScanLog(scanPayload, 'KNOWN', confidence);
       } else {
         person.lastSeen = now;
       }
@@ -5812,7 +5829,23 @@
           withChime: true
         });
         logStatus('[GREET] ตรวจพบผู้มาติดต่อ / ลูกค้าทั่วไป (บันทึกลงคิวทักทาย)');
-        recordScanLog('ลูกค้าทั่วไป', 'UNKNOWN', 0);
+        
+        const scanPayload = {
+          id: 'SCAN_' + now + '_' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+          timestamp: now,
+          personName: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
+          profileId: '',
+          personType: 'unknown',
+          status: 'UNKNOWN',
+          confidence: 0,
+          confidencePct: 0,
+          detectedByUsername: state.currentUser ? state.currentUser.username : 'unknown',
+          detectedByFullName: state.currentUser ? (state.currentUser.fullName || state.currentUser.username) : 'จุดบริการ',
+          detectedByRole: state.currentUser ? state.currentUser.role : 'operator',
+          sessionId: (typeof getOrCreateClientSessionId === 'function') ? getOrCreateClientSessionId() : '',
+          detail: 'ตรวจพบผู้มาติดต่อ / ลูกค้าทั่วไป'
+        };
+        recordScanLog(scanPayload, 'UNKNOWN', 0);
       }
     }
 
@@ -5834,15 +5867,35 @@
       }
     }
 
-    function recordScanLog(name, status, confidence) {
+    function recordScanLog(payloadOrName, status, confidence) {
+      const isObj = (payloadOrName && typeof payloadOrName === 'object');
+      const payload = isObj ? payloadOrName : {
+        id: 'SCAN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4).toUpperCase(),
+        timestamp: Date.now(),
+        personName: String(payloadOrName || 'ลูกค้าทั่วไป'),
+        status: status || 'UNKNOWN',
+        confidence: confidence || 0,
+        confidencePct: Math.round((Number(confidence) || 0) * 100),
+        detectedByUsername: state.currentUser ? state.currentUser.username : 'unknown',
+        detectedByFullName: state.currentUser ? (state.currentUser.fullName || state.currentUser.username) : 'จุดบริการ',
+        detectedByRole: state.currentUser ? state.currentUser.role : 'operator',
+        sessionId: (typeof getOrCreateClientSessionId === 'function') ? getOrCreateClientSessionId() : '',
+        detail: (status === 'KNOWN' ? 'ยืนยันตัวตนสำเร็จ' : 'ตรวจพบผู้มาติดต่อ')
+      };
+
+      // หากเป็น Admin กำลังดูกระดาน Real-Time Logs ให้แทรกเข้าจอทันทีแบบ Optimistic
+      if (state.currentUser && state.currentUser.role === 'admin' && typeof pushOptimisticRealtimeLog === 'function') {
+        pushOptimisticRealtimeLog(payload);
+      }
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.logScanEvent(name, status, confidence);
+        google.script.run.logScanEvent(payload);
       } else {
         fetch(GAS_API_URL, {
           method: 'POST',
           redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'logScan', name: name, status: status, confidence: confidence })
+          body: JSON.stringify({ action: 'logScan', payload: payload })
         }).catch(function(e) { console.warn('Log scan error:', e); });
       }
     }
@@ -7147,26 +7200,23 @@
         }
       }
 
-      var adminRemoteBar = document.getElementById('adminRemoteCameraBar');
+      var adminRealtimePanel = document.getElementById('adminRealtimeLogsPanel');
       if (user.role === 'admin') {
         if (userTabBtn) userTabBtn.classList.remove('hidden');
         if (userDropdownItem) userDropdownItem.classList.remove('hidden');
         if (attendanceTabBtn) attendanceTabBtn.classList.remove('hidden');
-        if (adminRemoteBar) adminRemoteBar.classList.remove('hidden');
+        if (adminRealtimePanel) adminRealtimePanel.classList.remove('hidden');
         loadSystemUsers();
-        if (typeof startAdminCameraDiscoveryPolling === 'function') {
-          startAdminCameraDiscoveryPolling();
+        if (typeof startRealtimeLogsPolling === 'function') {
+          startRealtimeLogsPolling();
         }
       } else {
         if (userTabBtn) userTabBtn.classList.add('hidden');
         if (userDropdownItem) userDropdownItem.classList.add('hidden');
         if (attendanceTabBtn) attendanceTabBtn.classList.add('hidden');
-        if (adminRemoteBar) adminRemoteBar.classList.add('hidden');
-        if (typeof stopWatchingRemoteCamera === 'function') {
-          stopWatchingRemoteCamera();
-        }
-        if (typeof stopAdminCameraDiscoveryPolling === 'function') {
-          stopAdminCameraDiscoveryPolling();
+        if (adminRealtimePanel) adminRealtimePanel.classList.add('hidden');
+        if (typeof stopRealtimeLogsPolling === 'function') {
+          stopRealtimeLogsPolling();
         }
         if (state.currentTab === 'attendance' || state.currentTab === 'users') {
           switchTab('scanner');
@@ -7176,16 +7226,10 @@
       renderProfilesList();
     }
 
-    // --- Remote Camera Broadcaster & Admin Remote Camera Monitor ---
-    let _broadcastCanvas = null;
-    let _broadcastCtx = null;
-    let _broadcastTimer = null;
-    let _adminDiscoveryTimer = null;
-    let _remoteFramePollTimer = null;
-    let _viewerPeer = null;
-    let _activeViewerCall = null;
-    let _peerJsLoadPromise = null;
-    let _isPublishingFrame = false;
+    // --- Admin Real-Time Face Detection Logs Monitor ---
+    let _realtimeLogsTimer = null;
+    let _isFetchingRealtimeLogs = false;
+    let _lastKnownLogIds = new Set();
 
     function escapeHtml(str) {
       return String(str == null ? '' : str)
@@ -7196,621 +7240,375 @@
         .replace(/'/g, '&#39;');
     }
 
-    function getOrCreateCameraSessionId() {
-      const uname = (state.currentUser && state.currentUser.username)
-        ? String(state.currentUser.username).replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
-        : 'user';
-      if (state.cameraSessionId && state.cameraSessionId.indexOf('cam_' + uname + '_') === 0) {
-        return state.cameraSessionId;
-      }
-      let tabSuffix = '';
-      try {
-        tabSuffix = sessionStorage.getItem('face_cam_tab_id') || '';
-        if (!tabSuffix) {
-          tabSuffix = Math.random().toString(36).substr(2, 6);
-          sessionStorage.setItem('face_cam_tab_id', tabSuffix);
+    function formatRelativeTime(timestamp) {
+      const ts = Number(timestamp);
+      if (!ts || isNaN(ts)) return '';
+      const diffMs = Math.max(0, Date.now() - ts);
+      const diffSec = Math.floor(diffMs / 1000);
+      if (diffSec < 8) return 'เมื่อสักครู่';
+      if (diffSec < 60) return diffSec + ' วินาทีที่แล้ว';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return diffMin + ' นาทีที่แล้ว';
+      const diffHour = Math.floor(diffMin / 60);
+      if (diffHour < 24) return diffHour + ' ชม. ที่แล้ว';
+      return 'เมื่อวานนี้';
+    }
+
+    function startRealtimeLogsPolling() {
+      if (!state.currentUser || state.currentUser.role !== 'admin') return;
+      clearInterval(_realtimeLogsTimer);
+      fetchRealtimeLogs(false);
+      _realtimeLogsTimer = setInterval(function() {
+        if (!state.currentUser || state.currentUser.role !== 'admin') {
+          stopRealtimeLogsPolling();
+          return;
         }
-      } catch (e) {
-        tabSuffix = Math.random().toString(36).substr(2, 6);
-      }
-      state.cameraSessionId = 'cam_' + uname + '_' + tabSuffix;
-      return state.cameraSessionId;
+        if (state.realtimeLogsPaused) return;
+        if (document.visibilityState === 'hidden') return;
+        if (state.currentTab !== 'scanner') return;
+        fetchRealtimeLogs(false);
+      }, 3000);
     }
 
-    function ensurePeerJsLoaded() {
-      if (typeof Peer !== 'undefined') return Promise.resolve(true);
-      if (_peerJsLoadPromise) return _peerJsLoadPromise;
-
-      _peerJsLoadPromise = new Promise(function(resolve) {
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
-        script.async = true;
-        script.onload = function() { resolve(typeof Peer !== 'undefined'); };
-        script.onerror = function() {
-          _peerJsLoadPromise = null;
-          resolve(false);
-        };
-        document.head.appendChild(script);
-      });
-      return _peerJsLoadPromise;
+    function stopRealtimeLogsPolling() {
+      clearInterval(_realtimeLogsTimer);
+      _realtimeLogsTimer = null;
+      _isFetchingRealtimeLogs = false;
     }
 
-    function updateBroadcastCompositeCanvas() {
-      const video = document.getElementById('webcamVideo');
-      const overlay = document.getElementById('overlayCanvas');
-      if (!video || video.readyState < 2) return null;
+    function toggleRealtimeLogsPause() {
+      state.realtimeLogsPaused = !state.realtimeLogsPaused;
+      const pauseIcon = document.getElementById('realtimeLogsPauseIcon');
+      const pauseText = document.getElementById('realtimeLogsPauseText');
+      const pulseText = document.getElementById('realtimeLogsLivePulseText');
 
-      if (!_broadcastCanvas) {
-        _broadcastCanvas = document.createElement('canvas');
-        _broadcastCanvas.width = 420;
-        _broadcastCanvas.height = 315;
-        _broadcastCtx = _broadcastCanvas.getContext('2d');
+      if (state.realtimeLogsPaused) {
+        if (pauseIcon) pauseIcon.textContent = '▶️';
+        if (pauseText) pauseText.textContent = 'ทำงานต่อ';
+        if (pulseText) pulseText.textContent = 'PAUSED';
+        logStatus('[MONITOR] พักการอัปเดต Real-time Logs ชั่วคราว');
+      } else {
+        if (pauseIcon) pauseIcon.textContent = '⏸️';
+        if (pauseText) pauseText.textContent = 'พักชั่วคราว';
+        if (pulseText) pulseText.textContent = 'LIVE STREAM';
+        logStatus('[MONITOR] เล่นการอัปเดต Real-time Logs ต่อ');
+        fetchRealtimeLogs(false);
       }
+    }
 
-      try {
-        _broadcastCtx.drawImage(video, 0, 0, _broadcastCanvas.width, _broadcastCanvas.height);
-        if (overlay && overlay.width > 0 && overlay.height > 0) {
-          _broadcastCtx.drawImage(overlay, 0, 0, _broadcastCanvas.width, _broadcastCanvas.height);
+    function toggleRealtimeLogsCollapse() {
+      state.realtimeLogsCollapsed = !state.realtimeLogsCollapsed;
+      const body = document.getElementById('realtimeLogsBodyContainer');
+      const icon = document.getElementById('realtimeLogsCollapseIcon');
+      if (body) {
+        if (state.realtimeLogsCollapsed) {
+          body.classList.add('hidden');
+          if (icon) icon.textContent = '🔽';
+        } else {
+          body.classList.remove('hidden');
+          if (icon) icon.textContent = '🔼';
         }
-        return _broadcastCanvas;
-      } catch (e) {
-        return null;
       }
     }
 
-    function getBroadcasterMediaStream() {
-      updateBroadcastCompositeCanvas();
-      if (_broadcastCanvas && typeof _broadcastCanvas.captureStream === 'function') {
-        try {
-          return _broadcastCanvas.captureStream(15);
-        } catch (e) {}
+    function filterRealtimeLogsStation(stationUsername) {
+      state.realtimeLogsFilter.station = String(stationUsername || 'all').trim();
+      renderRealtimeStationPills();
+      renderRealtimeLogs();
+    }
+
+    function filterRealtimeLogsCategory(cat) {
+      state.realtimeLogsFilter.category = String(cat || 'all').trim();
+      const catPillAll = document.getElementById('catPill_all');
+      const catPillEmp = document.getElementById('catPill_employee');
+      const catPillVip = document.getElementById('catPill_vip');
+      const catPillUnk = document.getElementById('catPill_unknown');
+
+      const activeClass = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-white text-[#1F1E1B] shadow-xs transition cursor-pointer';
+      const inactiveClass = 'px-2 py-0.5 rounded-full text-[11px] font-bold text-[#5C5950] hover:text-[#1F1E1B] transition cursor-pointer';
+
+      if (catPillAll) catPillAll.className = (cat === 'all') ? activeClass : inactiveClass;
+      if (catPillEmp) catPillEmp.className = (cat === 'employee') ? activeClass : inactiveClass;
+      if (catPillVip) catPillVip.className = (cat === 'vip') ? activeClass : inactiveClass;
+      if (catPillUnk) catPillUnk.className = (cat === 'unknown') ? activeClass : inactiveClass;
+
+      renderRealtimeLogs();
+    }
+
+    function promptClearRealtimeLogsFeed() {
+      if (confirm('คุณต้องการล้างรายการตรวจจับบนหน้าจอแสดงผลสดใช่หรือไม่?\n(ข้อมูลประวัติทั้งหมดใน Google Sheets ยังคงถูกบันทึกไว้อย่างปลอดภัย)')) {
+        clearRealtimeLogsFeed();
       }
-      return state.stream || null;
     }
 
-    async function initBroadcasterPeer() {
-      const sessionId = getOrCreateCameraSessionId();
-      const targetPeerId = 'fcam-' + sessionId.replace(/[^a-zA-Z0-9_-]/g, '-');
-      state.peerId = targetPeerId;
-
-      const loaded = await ensurePeerJsLoaded();
-      if (!loaded || !state.cameraStarted) return;
-
-      try {
-        if (state.peerInstance) {
-          try { state.peerInstance.destroy(); } catch (e) {}
-          state.peerInstance = null;
-        }
-        const peer = new Peer(targetPeerId);
-        state.peerInstance = peer;
-
-        peer.on('open', function(id) {
-          state.peerId = id;
-        });
-
-        peer.on('call', function(call) {
-          const streamToSend = getBroadcasterMediaStream();
-          if (streamToSend) {
-            call.answer(streamToSend);
-          }
-        });
-
-        peer.on('connection', function(conn) {
-          conn.on('data', function(data) {
-            if (data && data.type === 'REQUEST_STREAM' && data.viewerPeerId && state.cameraStarted) {
-              const streamToSend = getBroadcasterMediaStream();
-              if (streamToSend && state.peerInstance) {
-                try {
-                  state.peerInstance.call(data.viewerPeerId, streamToSend);
-                } catch (e) {}
-              }
-            }
-          });
-        });
-
-        peer.on('error', function() {});
-      } catch (e) {}
-    }
-
-    function publishCameraFrameNow() {
-      if (!state.cameraStarted || !state.currentUser || _isPublishingFrame) return;
-      const canvas = updateBroadcastCompositeCanvas();
-      if (!canvas) return;
-
-      let frameDataUrl = '';
-      try {
-        frameDataUrl = canvas.toDataURL('image/jpeg', 0.52);
-      } catch (e) {}
-
-      const sessionId = getOrCreateCameraSessionId();
-      const payload = {
-        sessionId: sessionId,
-        username: state.currentUser.username || 'user',
-        fullName: state.currentUser.fullName || state.currentUser.username || 'ผู้ใช้งาน',
-        role: state.currentUser.role || 'operator',
-        peerId: state.peerId || ('fcam-' + sessionId.replace(/[^a-zA-Z0-9_-]/g, '-')),
-        frameDataUrl: frameDataUrl,
-        detectedCount: state.lastBroadcastDetectedCount || 0,
-        lastDetected: state.lastBroadcastDetectedText || 'กำลังสแกนใบหน้า...',
-        lastGreeting: state.lastBroadcastGreetingText || '',
-        lastGreetingId: state.lastBroadcastGreetingId || ''
-      };
-
-      _isPublishingFrame = true;
-      const onFinish = function(res) {
-        _isPublishingFrame = false;
-        if (res && res.reloadCommand && typeof handleIncomingReloadCommand === 'function') {
-          handleIncomingReloadCommand(res.reloadCommand);
-        }
-      };
+    function clearRealtimeLogsFeed() {
+      state.realtimeLogs = [];
+      _lastKnownLogIds.clear();
+      renderRealtimeLogs();
+      showToast('ล้างหน้าจอแสดงผล Real-time เรียบร้อยแล้ว', 'info');
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(onFinish)
-          .withFailureHandler(onFinish)
-          .publishCameraHeartbeat(payload);
+        google.script.run.withSuccessHandler(function() {}).clearRealtimeDetectionLogs();
       } else {
         fetch(GAS_API_URL, {
           method: 'POST',
           redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'publishCamera', payload: payload })
-        })
-          .then(onFinish)
-          .catch(onFinish);
+          body: JSON.stringify({ action: 'clearRealtimeLogs' })
+        }).catch(function(e) { console.warn('Clear realtime logs error:', e); });
       }
     }
 
-    function startCameraBroadcastLoop() {
-      if (!state.currentUser) return;
-      getOrCreateCameraSessionId();
-      initBroadcasterPeer();
+    function pushOptimisticRealtimeLog(payload) {
+      if (!payload) return;
+      const now = Date.now();
+      const pName = String(payload.personName || 'ลูกค้าทั่วไป').trim();
+      const mStatus = String(payload.status || (pName === 'ลูกค้าทั่วไป' ? 'UNKNOWN' : 'KNOWN')).toUpperCase();
+      const pType = String(payload.personType || (mStatus === 'KNOWN' ? 'employee' : 'unknown')).toLowerCase();
+      
+      const newLog = {
+        id: payload.id || ('OPT_' + now + '_' + Math.random().toString(36).substr(2, 4)),
+        timestamp: Number(payload.timestamp) || now,
+        timeStr: payload.timeStr || (new Date(now).toTimeString().substr(0, 8)),
+        dateStr: payload.dateStr || '',
+        personName: pName,
+        profileId: payload.profileId || '',
+        personType: pType,
+        status: mStatus,
+        confidencePct: Number(payload.confidencePct) || 0,
+        detectedByUsername: payload.detectedByUsername || (state.currentUser ? state.currentUser.username : 'user'),
+        detectedByFullName: payload.detectedByFullName || (state.currentUser ? (state.currentUser.fullName || state.currentUser.username) : 'เครื่องนี้'),
+        detectedByRole: payload.detectedByRole || 'operator',
+        sessionId: payload.sessionId || '',
+        detail: payload.detail || (mStatus === 'KNOWN' ? 'ยืนยันตัวตนสำเร็จ' : 'ตรวจพบผู้มาติดต่อ'),
+        isOptimistic: true
+      };
 
-      clearInterval(_broadcastTimer);
-      setTimeout(publishCameraFrameNow, 500);
-      _broadcastTimer = setInterval(function() {
-        if (!state.cameraStarted) {
-          stopCameraBroadcastLoop();
-          return;
-        }
-        publishCameraFrameNow();
-      }, 2200);
-    }
-
-    function stopCameraBroadcastLoop() {
-      clearInterval(_broadcastTimer);
-      _broadcastTimer = null;
-      _isPublishingFrame = false;
-
-      if (state.peerInstance) {
-        try { state.peerInstance.destroy(); } catch (e) {}
-        state.peerInstance = null;
-      }
-
-      const sId = state.cameraSessionId;
-      if (!sId) return;
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.unregisterCameraSession(sId);
+      const existingIdx = (state.realtimeLogs || []).findIndex(x => x.id === newLog.id);
+      if (existingIdx >= 0) {
+        state.realtimeLogs[existingIdx] = newLog;
       } else {
-        fetch(GAS_API_URL + '?action=stopCameraPublish&sessionId=' + encodeURIComponent(sId), { redirect: 'follow' })
-          .catch(function() {});
+        state.realtimeLogs.unshift(newLog);
       }
-    }
-
-    window.addEventListener('beforeunload', function() {
-      if (state.cameraStarted && state.cameraSessionId) {
-        stopCameraBroadcastLoop();
+      if (state.realtimeLogs.length > 80) {
+        state.realtimeLogs = state.realtimeLogs.slice(0, 80);
       }
-    });
-
-    // --- Admin Discovery & Remote Camera Viewer Functions ---
-    function startAdminCameraDiscoveryPolling() {
-      if (!state.currentUser || state.currentUser.role !== 'admin') return;
-      fetchActiveCameras(false);
-      clearInterval(_adminDiscoveryTimer);
-      _adminDiscoveryTimer = setInterval(function() {
-        if (state.currentUser && state.currentUser.role === 'admin' && state.currentTab === 'scanner') {
-          fetchActiveCameras(false);
-        }
-      }, 5000);
+      renderRealtimeLogs();
     }
 
-    function stopAdminCameraDiscoveryPolling() {
-      clearInterval(_adminDiscoveryTimer);
-      _adminDiscoveryTimer = null;
-    }
-
-    function fetchActiveCameras(isManual) {
+    function fetchRealtimeLogs(isManual) {
       if (!state.currentUser || state.currentUser.role !== 'admin') return;
-      const icon = document.getElementById('refreshActiveCamerasIcon');
-      if (isManual && icon) icon.classList.add('animate-spin');
+      if (_isFetchingRealtimeLogs) return;
+      _isFetchingRealtimeLogs = true;
 
-      const handleRes = function(res) {
-        if (icon) icon.classList.remove('animate-spin');
-        if (res && res.reloadCommand && typeof handleIncomingReloadCommand === 'function') {
+      const handleSuccess = function(res) {
+        _isFetchingRealtimeLogs = false;
+        if (!res || !res.success) return;
+
+        // 1. ตรวจรับคำสั่ง Force Reload จากเซิร์ฟเวอร์
+        if (res.reloadCommand && typeof handleIncomingReloadCommand === 'function') {
           handleIncomingReloadCommand(res.reloadCommand);
         }
-        if (res && typeof res.onlineUsersCount === 'number') {
-          state.onlineClientsCount = res.onlineUsersCount;
-          if (typeof updateGlobalReloadUI === 'function') updateGlobalReloadUI();
+
+        // 2. อัปเดตข้อมูลสถานะกล้องที่กำลังเปิดอยู่จากทุกเครื่อง
+        state.activeScanningStations = res.onlineClients || [];
+        const activeCamCount = (typeof res.activeCameraCount === 'number') ? res.activeCameraCount : 0;
+        const camCountText = document.getElementById('activeCameraStationsCountText');
+        if (camCountText) {
+          camCountText.textContent = 'กำลังเปิดกล้อง ' + activeCamCount + ' เครื่อง';
         }
-        if (res && res.success && Array.isArray(res.cameras)) {
-          const mySessionId = state.cameraSessionId || '';
-          state.activeRemoteCameras = res.cameras.filter(function(c) {
-            return c && c.sessionId && c.sessionId !== mySessionId;
+
+        // 3. รวมรายการ Logs ใหม่เข้ากับ Array เดิมแบบไม่ซ้ำ ID
+        const incoming = Array.isArray(res.logs) ? res.logs : [];
+        if (incoming.length > 0) {
+          const idMap = new Map();
+          incoming.forEach(item => { if (item && item.id) idMap.set(item.id, item); });
+          (state.realtimeLogs || []).forEach(item => {
+            if (item && item.id && !idMap.has(item.id)) {
+              idMap.set(item.id, item);
+            }
           });
-          renderActiveCamerasBar();
-          if (isManual) {
-            showToast('อัปเดตรายการกล้องที่กำลังทำงานแล้ว (พบ ' + state.activeRemoteCameras.length + ' กล้อง)', 'info');
-          }
+          const merged = Array.from(idMap.values());
+          merged.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+          state.realtimeLogs = merged.slice(0, 80);
+        }
+
+        renderRealtimeStationPills();
+        renderRealtimeLogs();
+        if (isManual) {
+          showToast('อัปเดตรายการตรวจจับเรียบร้อย (' + state.realtimeLogs.length + ' รายการ)', 'success');
         }
       };
 
-      const handleErr = function() {
-        if (icon) icon.classList.remove('animate-spin');
+      const handleFail = function(err) {
+        _isFetchingRealtimeLogs = false;
+        console.warn('Realtime logs fetch error:', err);
       };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(handleRes)
-          .withFailureHandler(handleErr)
-          .getActiveCameras();
+          .withSuccessHandler(handleSuccess)
+          .withFailureHandler(handleFail)
+          .getRealtimeDetectionLogs({ limit: 60 });
       } else {
-        fetch(GAS_API_URL + '?action=getActiveCameras&_t=' + Date.now(), { redirect: 'follow' })
-          .then(function(r) { return r.json(); })
-          .then(handleRes)
-          .catch(handleErr);
+        fetch(GAS_API_URL + '?action=getRealtimeLogs&limit=60')
+          .then(r => r.json())
+          .then(handleSuccess)
+          .catch(handleFail);
       }
     }
 
-    function renderActiveCamerasBar() {
-      const container = document.getElementById('activeCamerasListContainer');
-      const countBadge = document.getElementById('activeRemoteCamerasCountBadge');
+    function renderRealtimeStationPills() {
+      const container = document.getElementById('realtimeStationPillsContainer');
       if (!container) return;
 
-      const list = state.activeRemoteCameras || [];
-      if (countBadge) {
-        if (list.length > 0) {
-          countBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-extrabold border border-[#BEE6CE] flex items-center gap-1';
-          countBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span> <span>' + list.length + ' กล้องกำลังทำงาน</span>';
-        } else {
-          countBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#EAE6DA] text-[#5C5950] font-bold border border-[#DCD6C4]';
-          countBadge.textContent = '0 กล้องออนไลน์';
+      const currentStation = state.realtimeLogsFilter.station || 'all';
+      const stationsMap = new Map();
+
+      // รวบรวมเครื่องที่ออนไลน์อยู่
+      (state.activeScanningStations || []).forEach(c => {
+        if (c && c.username) {
+          stationsMap.set(c.username, {
+            username: c.username,
+            fullName: c.fullName || c.username,
+            cameraStarted: !!c.cameraStarted
+          });
         }
-      }
+      });
 
-      const isLocalActive = !state.watchingRemoteSessionId;
-      let html = '';
+      // รวบรวมเครื่องที่พบในรายการ Logs
+      (state.realtimeLogs || []).forEach(l => {
+        const u = l.detectedByUsername;
+        if (u && u !== 'unknown' && !stationsMap.has(u)) {
+          stationsMap.set(u, {
+            username: u,
+            fullName: l.detectedByFullName || u,
+            cameraStarted: false
+          });
+        }
+      });
 
-      // 1. ปุ่มกล้องเครื่องนี้ (Local Camera)
-      const localBtnClass = isLocalActive
-        ? 'px-3.5 py-1.5 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-sm transition flex items-center gap-1.5 cursor-pointer'
-        : 'px-3.5 py-1.5 rounded-full bg-white hover:bg-[#EAE6DA] text-[#1F1E1B] border border-[#DCD6C4] text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer';
+      let html = '<span class="text-[11px] font-bold text-[#5C5950] mr-1">จุดตรวจจับ:</span>';
+      
+      const allActive = (currentStation === 'all');
+      html += '<button type="button" onclick="filterRealtimeLogsStation(\'all\')" id="stationPill_all" class="px-2.5 py-0.5 rounded-full text-xs font-bold ' + 
+        (allActive ? 'bg-[#28AE60] text-white shadow-xs' : 'bg-white text-[#5C5950] hover:text-[#1F1E1B] border border-[#DCD6C4]') + ' transition cursor-pointer">' +
+        'ทุกจุดบริการ' +
+      '</button>';
 
-      html += '<button type="button" onclick="stopWatchingRemoteCamera()" class="' + localBtnClass + '">' +
-                '<span>📷</span>' +
-                '<span>กล้องเครื่องนี้ (Local)</span>' +
-              '</button>';
+      stationsMap.forEach(st => {
+        const isActive = (currentStation === st.username);
+        const camDot = st.cameraStarted ? '<span class="w-1.5 h-1.5 rounded-full bg-[#28AE60] animate-pulse"></span>' : '';
+        const btnClass = isActive
+          ? 'bg-[#1F1E1B] text-white shadow-xs'
+          : 'bg-white text-[#5C5950] hover:text-[#1F1E1B] border border-[#DCD6C4]';
 
-      // 2. รายการกล้องของผู้ใช้อื่นที่กำลังเปิดอยู่
-      if (list.length === 0) {
-        html += '<span class="text-xs text-[#8C877B] pl-1">ยังไม่มีผู้ใช้อื่นเปิดกล้องในขณะนี้</span>';
-      } else {
-        list.forEach(function(cam) {
-          const isSelected = state.watchingRemoteSessionId === cam.sessionId;
-          const btnClass = isSelected
-            ? 'px-3.5 py-1.5 rounded-full bg-[#1F1E1B] text-[#F7DC6F] border-2 border-[#28AE60] text-xs font-extrabold shadow-md transition flex items-center gap-2 cursor-pointer'
-            : 'px-3.5 py-1.5 rounded-full bg-white hover:bg-[#EAF7EF] text-[#1F1E1B] border border-[#BEE6CE] text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer';
-
-          const roleLabel = cam.role === 'admin' ? 'Admin' : 'เจ้าหน้าที่';
-          const safeFullName = escapeHtml(cam.fullName || cam.username || 'ผู้ใช้งาน');
-          const safeUsername = escapeHtml(cam.username || '');
-          const safeDetected = escapeHtml(cam.lastDetected || 'กำลังสแกน...');
-          const safeSessionId = escapeHtml(cam.sessionId);
-
-          html += '<button type="button" onclick="watchRemoteCamera(\'' + safeSessionId + '\')" class="' + btnClass + '" title="คลิกเพื่อเปิดดูกล้องของ ' + safeFullName + ' (' + safeDetected + ')">' +
-                    '<span class="w-2 h-2 rounded-full bg-[#28AE60] animate-ping"></span>' +
-                    '<span>📡 ' + safeFullName + ' (' + safeUsername + ' • ' + roleLabel + ')</span>' +
-                    '<span class="text-[10px] px-2 py-0.5 rounded-full ' + (isSelected ? 'bg-[#28AE60]/25 text-[#A3E4D7]' : 'bg-[#EAF7EF] text-[#1E824C]') + ' font-bold">' +
-                      (cam.detectedCount > 0 ? ('พบ ' + cam.detectedCount + ' คน') : 'กำลังสแกน') +
-                    '</span>' +
-                  '</button>';
-        });
-      }
+        html += '<button type="button" onclick="filterRealtimeLogsStation(\'' + escapeHtml(st.username) + '\')" class="px-2.5 py-0.5 rounded-full text-xs font-bold ' + btnClass + ' transition flex items-center gap-1 cursor-pointer">' +
+          camDot +
+          '<span>📹 ' + escapeHtml(st.fullName || st.username) + '</span>' +
+        '</button>';
+      });
 
       container.innerHTML = html;
     }
 
-    async function connectWebRtcToRemoteCamera(remotePeerId, targetSessionId) {
-      if (!remotePeerId) return;
-      const loaded = await ensurePeerJsLoaded();
-      if (!loaded || state.watchingRemoteSessionId !== targetSessionId) return;
+    function renderRealtimeLogs() {
+      const container = document.getElementById('realtimeLogsListContainer');
+      const totalBadge = document.getElementById('realtimeLogsTotalBadge');
+      if (!container) return;
 
-      try {
-        if (_activeViewerCall) {
-          try { _activeViewerCall.close(); } catch (e) {}
-          _activeViewerCall = null;
-        }
-        if (!_viewerPeer || _viewerPeer.destroyed) {
-          _viewerPeer = new Peer();
-        }
+      const stFilter = state.realtimeLogsFilter.station || 'all';
+      const catFilter = state.realtimeLogsFilter.category || 'all';
 
-        const attachStream = function(remoteStream) {
-          if (state.watchingRemoteSessionId !== targetSessionId) return;
-          const remoteVideo = document.getElementById('remoteStreamVideo');
-          const connectingOverlay = document.getElementById('remoteConnectingOverlay');
-          const modeBadge = document.getElementById('remoteHudStreamModeBadge');
+      let list = state.realtimeLogs || [];
 
-          if (remoteVideo && remoteStream) {
-            remoteVideo.srcObject = remoteStream;
-            remoteVideo.classList.remove('hidden');
-            remoteVideo.play().catch(function() {});
-            state.remoteStreamMode = 'webrtc';
-            if (connectingOverlay) {
-              connectingOverlay.classList.add('hidden');
-              connectingOverlay.classList.remove('flex');
-            }
-            if (modeBadge) {
-              modeBadge.textContent = 'LIVE WebRTC (15 FPS)';
-            }
-          }
-        };
+      if (stFilter !== 'all') {
+        list = list.filter(item => (item.detectedByUsername === stFilter));
+      }
 
-        const initiateConnection = function() {
-          if (state.watchingRemoteSessionId !== targetSessionId || !_viewerPeer) return;
+      if (catFilter !== 'all') {
+        list = list.filter(item => {
+          const type = String(item.personType || '').toLowerCase();
+          return type === catFilter;
+        });
+      }
 
-          // รับสายกรณีที่เครื่องปลายทางโทรกลับมาด้วยวิดีโอสตรีม
-          _viewerPeer.on('call', function(incomingCall) {
-            _activeViewerCall = incomingCall;
-            incomingCall.answer();
-            incomingCall.on('stream', attachStream);
-          });
+      if (totalBadge) {
+        totalBadge.textContent = list.length + ' รายการ';
+      }
 
-          // 1. ส่งคำขอสตรีมผ่าน DataChannel
-          try {
-            const conn = _viewerPeer.connect(remotePeerId);
-            conn.on('open', function() {
-              conn.send({ type: 'REQUEST_STREAM', viewerPeerId: _viewerPeer.id });
-            });
-          } catch (e) {}
-
-          // 2. โทรออกพร้อม Dummy Canvas Stream เพื่อรับวิดีโอสตรีมทันที
-          try {
-            const dummyCanvas = document.createElement('canvas');
-            dummyCanvas.width = 2;
-            dummyCanvas.height = 2;
-            if (typeof dummyCanvas.captureStream === 'function') {
-              const dummyStream = dummyCanvas.captureStream(1);
-              const call = _viewerPeer.call(remotePeerId, dummyStream);
-              if (call) {
-                _activeViewerCall = call;
-                call.on('stream', attachStream);
-              }
-            }
-          } catch (e) {}
-        };
-
-        if (_viewerPeer.open) {
-          initiateConnection();
-        } else {
-          _viewerPeer.once('open', initiateConnection);
-        }
-      } catch (e) {}
-    }
-
-    function watchRemoteCamera(sessionId) {
-      if (!state.currentUser || state.currentUser.role !== 'admin') {
-        showToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถดูกล้องของผู้ใช้อื่นได้', 'error');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center space-y-1.5">' +
+          '<div class="text-2xl">📋</div>' +
+          '<div class="text-xs font-bold text-[#5C5950]">ไม่พบรายการตรวจจับตามเงื่อนไขที่เลือก</div>' +
+          '<div class="text-[11px] text-[#8C877B]">เมื่อมีเจ้าหน้าที่เปิดกล้องสแกนใบหน้า รายการจะปรากฏบนหน้านี้แบบเรียลไทม์</div>' +
+        '</div>';
         return;
       }
-      if (!sessionId) return;
 
-      // หากกล้องเครื่อง Admin เปิดอยู่ ให้หยุดก่อนเพื่อสลับไปดูกล้องระยะไกล
-      if (state.cameraStarted) {
-        stopCamera();
-      }
+      let html = '';
+      list.forEach(item => {
+        const isNew = !_lastKnownLogIds.has(item.id);
+        const pType = String(item.personType || 'unknown').toLowerCase();
+        const isVip = (pType === 'vip');
+        const isEmployee = (pType === 'employee');
+        const isKnown = (item.status === 'KNOWN' || isVip || isEmployee);
 
-      state.watchingRemoteSessionId = sessionId;
-      state.remoteStreamMode = 'sync';
-
-      const camMeta = (state.activeRemoteCameras || []).find(function(c) { return c.sessionId === sessionId; }) || {
-        sessionId: sessionId,
-        fullName: sessionId,
-        username: 'operator'
-      };
-      state.watchingRemoteMeta = camMeta;
-
-      // อัปเดต UI บน Viewport
-      const startOverlay = document.getElementById('startCameraOverlay');
-      const stopBtn = document.getElementById('stopCameraBtn');
-      const remoteHud = document.getElementById('remoteMonitorHud');
-      const remoteOwnerEl = document.getElementById('remoteHudOwnerName');
-      const remoteStatusEl = document.getElementById('remoteHudDetectionStatus');
-      const remoteModeBadge = document.getElementById('remoteHudStreamModeBadge');
-      const connectingOverlay = document.getElementById('remoteConnectingOverlay');
-      const connectingTitle = document.getElementById('remoteConnectingTitle');
-      const connectingDesc = document.getElementById('remoteConnectingDesc');
-      const remoteVideo = document.getElementById('remoteStreamVideo');
-      const remoteImg = document.getElementById('remoteSnapshotImg');
-      const cameraBadge = document.getElementById('cameraStatusBadge');
-      const fsStatusHud = document.getElementById('fullscreenStatusHud');
-
-      if (startOverlay) startOverlay.classList.add('hidden');
-      if (stopBtn) stopBtn.classList.add('hidden');
-      if (fsStatusHud) {
-        fsStatusHud.classList.add('hidden');
-        fsStatusHud.classList.remove('flex');
-      }
-
-      if (remoteVideo) {
-        remoteVideo.srcObject = null;
-        remoteVideo.classList.add('hidden');
-      }
-      if (remoteImg) {
-        remoteImg.classList.add('hidden');
-      }
-
-      if (remoteOwnerEl) {
-        remoteOwnerEl.textContent = (camMeta.fullName || camMeta.username) + ' (' + (camMeta.username || '') + ')';
-      }
-      if (remoteStatusEl) {
-        remoteStatusEl.textContent = camMeta.lastDetected || 'กำลังสแกนใบหน้า...';
-      }
-      if (remoteModeBadge) {
-        remoteModeBadge.textContent = 'LIVE CLOUD SYNC';
-      }
-      if (remoteHud) {
-        remoteHud.classList.remove('hidden');
-        remoteHud.classList.add('flex');
-      }
-
-      if (connectingTitle) connectingTitle.textContent = 'กำลังเชื่อมต่อกล้องของ ' + (camMeta.fullName || camMeta.username) + '...';
-      if (connectingDesc) connectingDesc.textContent = 'กำลังดึงสัญญาณภาพสดและข้อมูลการตรวจจับใบหน้าแบบ Real-time';
-      if (connectingOverlay) {
-        connectingOverlay.classList.remove('hidden');
-        connectingOverlay.classList.add('flex');
-      }
-
-      if (cameraBadge) {
-        cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-ping">●</span> ดูกล้อง: ' + escapeHtml(camMeta.fullName || camMeta.username);
-        cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-extrabold whitespace-nowrap';
-      }
-
-      renderActiveCamerasBar();
-      logStatus('[MONITOR] ผู้ดูแลระบบเริ่มเปิดดูกล้องของ: ' + (camMeta.fullName || camMeta.username) + ' (' + sessionId + ')');
-      showToast('กำลังเปิดดูกล้องของ ' + (camMeta.fullName || camMeta.username), 'info');
-
-      // 1. เชื่อมต่อ WebRTC P2P คู่ขนานเพื่อภาพวิดีโอความละเอียดสูง
-      const peerIdToCall = camMeta.peerId || ('fcam-' + sessionId.replace(/[^a-zA-Z0-9_-]/g, '-'));
-      connectWebRtcToRemoteCamera(peerIdToCall, sessionId);
-
-      // 2. เริ่มดึงเฟรมภาพและสถานะการตรวจจับจาก Cloud Sync ทันที
-      clearInterval(_remoteFramePollTimer);
-      let isPollingFrame = false;
-
-      const pollFrameOnce = function() {
-        if (state.watchingRemoteSessionId !== sessionId || isPollingFrame) return;
-        isPollingFrame = true;
-
-        const handleFrameRes = function(res) {
-          isPollingFrame = false;
-          if (state.watchingRemoteSessionId !== sessionId) return;
-
-          if (!res || !res.success || res.active === false) {
-            if (connectingTitle) connectingTitle.textContent = 'กล้องของผู้ใช้งานนี้ปิดการทำงานแล้ว';
-            if (connectingDesc) connectingDesc.textContent = 'ผู้ใช้งานได้หยุดการทำงานกล้องหรือออกจากระบบแล้ว';
-            if (connectingOverlay) {
-              connectingOverlay.classList.remove('hidden');
-              connectingOverlay.classList.add('flex');
-            }
-            return;
-          }
-
-          const frameInfo = res.frame || res.meta || {};
-          if (remoteOwnerEl && (frameInfo.fullName || frameInfo.username)) {
-            remoteOwnerEl.textContent = (frameInfo.fullName || frameInfo.username) + ' (' + (frameInfo.username || '') + ')';
-          }
-          if (remoteStatusEl && frameInfo.lastDetected) {
-            remoteStatusEl.textContent = frameInfo.lastDetected + (frameInfo.timeStr ? ' • ' + frameInfo.timeStr : '');
-          }
-
-          // แสดงเฟรมภาพจาก Cloud Sync (และซ่อนหน้าโหลดทันที)
-          if (frameInfo.frameDataUrl && remoteImg) {
-            remoteImg.src = frameInfo.frameDataUrl;
-            remoteImg.classList.remove('hidden');
-            if (connectingOverlay) {
-              connectingOverlay.classList.add('hidden');
-              connectingOverlay.classList.remove('flex');
-            }
-          }
-
-          // ซิงค์แบนเนอร์ข้อความทักทายเมื่อกล้องปลายทางตรวจพบใบหน้า
-          if (frameInfo.lastGreetingId && frameInfo.lastGreeting && frameInfo.lastGreetingId !== state.lastSeenRemoteGreetingId) {
-            state.lastSeenRemoteGreetingId = frameInfo.lastGreetingId;
-            const ownerTag = frameInfo.fullName || frameInfo.username || 'กล้องระยะไกล';
-            showGreetingBanner('📡 [' + ownerTag + '] ' + frameInfo.lastGreeting, true);
-            logStatus('[MONITOR] กล้องของ ' + ownerTag + ': ' + frameInfo.lastGreeting);
-          }
-        };
-
-        const handleFrameErr = function() {
-          isPollingFrame = false;
-        };
-
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(handleFrameRes)
-            .withFailureHandler(handleFrameErr)
-            .getRemoteCameraFrame(sessionId);
+        // Badge บุคคล
+        let typeBadge = '';
+        if (isVip) {
+          typeBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF9E7] text-[#9A7D0A] border border-[#F7DC6F] font-bold">⭐ VIP</span>';
+        } else if (isEmployee) {
+          typeBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold">💼 พนักงาน</span>';
         } else {
-          fetch(GAS_API_URL + '?action=getCameraFrame&sessionId=' + encodeURIComponent(sessionId) + '&_t=' + Date.now(), { redirect: 'follow' })
-            .then(function(r) { return r.json(); })
-            .then(handleFrameRes)
-            .catch(handleFrameErr);
+          typeBadge = '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-bold">🟡 ผู้มาติดต่อ</span>';
         }
-      };
 
-      pollFrameOnce();
-      _remoteFramePollTimer = setInterval(pollFrameOnce, 1300);
-    }
-
-    function stopWatchingRemoteCamera() {
-      const wasWatching = !!state.watchingRemoteSessionId;
-      state.watchingRemoteSessionId = null;
-      state.watchingRemoteMeta = null;
-      state.remoteStreamMode = 'sync';
-
-      clearInterval(_remoteFramePollTimer);
-      _remoteFramePollTimer = null;
-
-      if (_activeViewerCall) {
-        try { _activeViewerCall.close(); } catch (e) {}
-        _activeViewerCall = null;
-      }
-
-      const remoteVideo = document.getElementById('remoteStreamVideo');
-      const remoteImg = document.getElementById('remoteSnapshotImg');
-      const remoteHud = document.getElementById('remoteMonitorHud');
-      const connectingOverlay = document.getElementById('remoteConnectingOverlay');
-      const startOverlay = document.getElementById('startCameraOverlay');
-      const cameraBadge = document.getElementById('cameraStatusBadge');
-      const fsStatusHud = document.getElementById('fullscreenStatusHud');
-
-      if (remoteVideo) {
-        remoteVideo.srcObject = null;
-        remoteVideo.classList.add('hidden');
-      }
-      if (remoteImg) {
-        remoteImg.removeAttribute('src');
-        remoteImg.classList.add('hidden');
-      }
-      if (remoteHud) {
-        remoteHud.classList.add('hidden');
-        remoteHud.classList.remove('flex');
-      }
-      if (connectingOverlay) {
-        connectingOverlay.classList.add('hidden');
-        connectingOverlay.classList.remove('flex');
-      }
-
-      if (state.isScannerFullscreen && fsStatusHud) {
-        fsStatusHud.classList.remove('hidden');
-        fsStatusHud.classList.add('flex');
-      }
-
-      if (!state.cameraStarted) {
-        if (startOverlay) startOverlay.classList.remove('hidden');
-        if (cameraBadge) {
-          cameraBadge.innerHTML = '<span class="text-[#8C877B]">●</span> กล้องปิดอยู่';
-          cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAE6DA] text-[#5C5950] border border-[#DCD6C4] font-medium whitespace-nowrap';
+        // ความแม่นยำ %
+        let confHtml = '';
+        if (isKnown && typeof item.confidencePct === 'number' && item.confidencePct > 0) {
+          confHtml = '<span class="text-[11px] px-2 py-0.5 rounded-full bg-[#F7F5EE] text-[#5C5950] border border-[#E2DDD0] font-bold">🎯 ' + item.confidencePct + '%</span>';
         }
-      }
 
-      renderActiveCamerasBar();
-      if (wasWatching) {
-        logStatus('[MONITOR] สลับกลับมายังโหมดกล้องเครื่องนี้ (Local Camera)');
-      }
+        const timeStr = item.timeStr || (item.timestamp ? new Date(item.timestamp).toTimeString().substr(0, 8) : '');
+        const relTime = formatRelativeTime(item.timestamp);
+        const detName = item.detectedByFullName || item.detectedByUsername || 'ไม่ระบุ';
+        const detUser = item.detectedByUsername ? ('@' + item.detectedByUsername) : '';
+        const flashClass = isNew ? ' animate-[pulse_1.2s_ease-out_1] bg-[#EAF7EF]/40' : '';
+
+        html += '<div class="p-3 sm:p-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 hover:bg-[#FBF9F4] transition' + flashClass + '">' +
+          '<div class="flex items-center gap-3 min-w-0">' +
+            '<div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ' + (isVip ? 'bg-[#FEF9E7] border border-[#F7DC6F]' : (isEmployee ? 'bg-[#EAF7EF] border border-[#BEE6CE]' : 'bg-[#FEF6E6] border border-[#F5DFB0]')) + '">' +
+              (isVip ? '⭐' : (isEmployee ? '💼' : '👤')) +
+            '</div>' +
+            '<div class="min-w-0">' +
+              '<div class="flex items-center gap-1.5 flex-wrap">' +
+                '<span class="text-xs sm:text-sm font-extrabold text-[#1F1E1B] truncate">' + escapeHtml(item.personName) + '</span>' +
+                typeBadge +
+                confHtml +
+              '</div>' +
+              '<div class="text-[11px] text-[#6E6B62] mt-0.5 flex items-center gap-2 flex-wrap">' +
+                '<span>' + escapeHtml(item.detail || 'บันทึกการตรวจจับ') + '</span>' +
+                '<span class="text-[#DCD6C4]">|</span>' +
+                '<span class="text-[#5C5950] font-medium flex items-center gap-1">' +
+                  '<span>📹 โดย:</span>' +
+                  '<span class="font-bold text-[#1F1E1B]">' + escapeHtml(detName) + '</span>' +
+                  '<span class="text-[10px] text-[#8C877B]">' + escapeHtml(detUser) + '</span>' +
+                '</span>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="text-right flex-shrink-0 ml-auto sm:ml-0">' +
+            '<div class="text-xs font-mono font-bold text-[#1F1E1B]">' + escapeHtml(timeStr) + ' น.</div>' +
+            '<div class="text-[10px] font-medium text-[#8C877B]">' + escapeHtml(relTime) + '</div>' +
+          '</div>' +
+        '</div>';
+      });
+
+      container.innerHTML = html;
+
+      // บันทึก ID ทั้งหมดไว้เพื่อไม่ให้ติดแอนิเมชันแฟลชรอบหน้า
+      list.forEach(i => { if (i && i.id) _lastKnownLogIds.add(i.id); });
     }
 
     // --- Remote Global Force Reload (Ctrl+F5) & Client Presence Subsystem ---
@@ -7844,10 +7642,7 @@
           stopClientPresenceLoop();
           return;
         }
-        // หากเปิดกล้องอยู่ publishCameraHeartbeat จะส่งสัญญาณชีพพร้อมเช็ค reloadCommand ให้แล้ว
-        if (!state.cameraStarted) {
-          sendClientPresencePulse(false);
-        }
+        sendClientPresencePulse(false);
       }, 5000);
     }
 
@@ -8038,9 +7833,7 @@
       }
 
       // 1. ปิดการเชื่อมต่อกล้องอย่างปลอดภัยเพื่อคืน Hardware Lock
-      try { if (typeof stopWatchingRemoteCamera === 'function') stopWatchingRemoteCamera(); } catch(e) {}
-      try { if (typeof stopCameraBroadcastLoop === 'function') stopCameraBroadcastLoop(); } catch(e) {}
-      try { if (typeof stopAdminCameraDiscoveryPolling === 'function') stopAdminCameraDiscoveryPolling(); } catch(e) {}
+      try { if (typeof stopRealtimeLogsPolling === 'function') stopRealtimeLogsPolling(); } catch(e) {}
       try { if (typeof stopClientPresenceLoop === 'function') stopClientPresenceLoop(); } catch(e) {}
       try { if (typeof stopCamera === 'function') stopCamera(); } catch(e) {}
 
@@ -8173,13 +7966,14 @@
 
     function logoutUser() {
       if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
-        stopWatchingRemoteCamera();
-        stopAdminCameraDiscoveryPolling();
+        if (typeof stopRealtimeLogsPolling === 'function') stopRealtimeLogsPolling();
         stopCamera();
         if (typeof stopClientPresenceLoop === 'function') stopClientPresenceLoop();
+        const adminRealtimePanel = document.getElementById('adminRealtimeLogsPanel');
+        if (adminRealtimePanel) adminRealtimePanel.classList.add('hidden');
         state.currentUser = null;
         state.operatorAutoStarted = false;
-        state.cameraSessionId = null;
+        state.realtimeLogs = [];
         _appInitPromise = null;
         try {
           sessionStorage.removeItem('face_app_user');
@@ -8538,13 +8332,17 @@
     window.recordAttendanceLogToBackend = recordAttendanceLogToBackend;
     window.waitForInitialDataAndModels = waitForInitialDataAndModels;
     window.triggerOperatorAutoStart = triggerOperatorAutoStart;
-    window.fetchActiveCameras = fetchActiveCameras;
-    window.renderActiveCamerasBar = renderActiveCamerasBar;
-    window.watchRemoteCamera = watchRemoteCamera;
-    window.stopWatchingRemoteCamera = stopWatchingRemoteCamera;
-    window.startCameraBroadcastLoop = startCameraBroadcastLoop;
-    window.stopCameraBroadcastLoop = stopCameraBroadcastLoop;
-    window.publishCameraFrameNow = publishCameraFrameNow;
+    window.startRealtimeLogsPolling = startRealtimeLogsPolling;
+    window.stopRealtimeLogsPolling = stopRealtimeLogsPolling;
+    window.fetchRealtimeLogs = fetchRealtimeLogs;
+    window.renderRealtimeLogs = renderRealtimeLogs;
+    window.toggleRealtimeLogsPause = toggleRealtimeLogsPause;
+    window.toggleRealtimeLogsCollapse = toggleRealtimeLogsCollapse;
+    window.filterRealtimeLogsStation = filterRealtimeLogsStation;
+    window.filterRealtimeLogsCategory = filterRealtimeLogsCategory;
+    window.promptClearRealtimeLogsFeed = promptClearRealtimeLogsFeed;
+    window.clearRealtimeLogsFeed = clearRealtimeLogsFeed;
+    window.pushOptimisticRealtimeLog = pushOptimisticRealtimeLog;
     window.onFaceThresholdSliderInput = onFaceThresholdSliderInput;
     window.applyFaceThresholdPreset = applyFaceThresholdPreset;
     window.syncFaceThresholdUI = syncFaceThresholdUI;
