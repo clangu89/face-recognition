@@ -57,6 +57,10 @@ function doGet(e) {
       result = getRemoteCameraFrame(e.parameter.sessionId);
     } else if (action === "stopCameraPublish") {
       result = unregisterCameraSession(e.parameter.sessionId);
+    } else if (action === "triggerGlobalReload") {
+      result = triggerGlobalForceReload(e.parameter);
+    } else if (action === "clientPulse") {
+      result = syncClientPresenceAndCommands(e.parameter);
     }
     return ContentService.createTextOutput(JSON.stringify(result))
       .setMimeType(ContentService.MimeType.JSON);
@@ -855,6 +859,10 @@ function doPost(e) {
       result = getActiveCameras();
     } else if (action === "getCameraFrame") {
       result = getRemoteCameraFrame(data.sessionId || (e.parameter && e.parameter.sessionId));
+    } else if (action === "triggerGlobalReload") {
+      result = triggerGlobalForceReload(data.payload || data || (e.parameter && e.parameter));
+    } else if (action === "clientPulse") {
+      result = syncClientPresenceAndCommands(data.payload || data || (e.parameter && e.parameter));
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -1424,6 +1432,164 @@ function getTodayAttendance(targetDate) {
  */
 var CAM_INDEX_KEY = "ACTIVE_CAM_INDEX_V1";
 var CAM_SESSION_TTL_MS = 28000; // หมดอายุหากไม่มีสัญญาณ Heartbeat เกิน 28 วินาที
+var CLIENT_PRESENCE_INDEX_KEY = "ACTIVE_CLIENT_SESSIONS_V1";
+var CLIENT_SESSION_TTL_MS = 28000;
+var GLOBAL_RELOAD_CMD_KEY = "GLOBAL_FORCE_RELOAD_CMD_V1";
+
+/**
+ * ดึงคำสั่ง Force Reload ล่าสุดจาก CacheService (หรือสำรองจาก ScriptProperties)
+ */
+function getLatestReloadCommand_() {
+  try {
+    var cache = CacheService.getScriptCache();
+    var raw = cache.get(GLOBAL_RELOAD_CMD_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+    var props = PropertiesService.getScriptProperties();
+    var pRaw = props.getProperty(GLOBAL_RELOAD_CMD_KEY);
+    if (pRaw) {
+      var cmd = JSON.parse(pRaw);
+      if (cmd && (Date.now() - (cmd.timestamp || 0) < 21600000)) {
+        cache.put(GLOBAL_RELOAD_CMD_KEY, pRaw, 21600);
+        return cmd;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+/**
+ * สั่งให้ทุกเครื่องที่ออนไลน์อยู่ทำการ Hard Reload (Ctrl+F5)
+ */
+function triggerGlobalForceReload(payload) {
+  try {
+    var p = payload || {};
+    var cache = CacheService.getScriptCache();
+    var nowMs = Date.now();
+    var timeStr = Utilities.formatDate(new Date(nowMs), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+    var reloadId = "RLD_" + nowMs + "_" + Math.random().toString(36).substr(2, 4).toUpperCase();
+
+    var reloadCmd = {
+      reloadId: reloadId,
+      timestamp: nowMs,
+      timeStr: timeStr,
+      triggeredBy: String(p.username || p.triggeredBy || "admin"),
+      includeSelf: p.includeSelf !== false,
+      reason: String(p.reason || "ผู้ดูแลระบบสั่งอัปเดตและรีโหลดหน้าจอใหม่ (Ctrl+F5)")
+    };
+
+    var cmdJson = JSON.stringify(reloadCmd);
+    cache.put(GLOBAL_RELOAD_CMD_KEY, cmdJson, 21600); // แคช 6 ชั่วโมง
+
+    try {
+      var props = PropertiesService.getScriptProperties();
+      props.setProperty(GLOBAL_RELOAD_CMD_KEY, cmdJson);
+    } catch (eProp) {}
+
+    // คำนวณจำนวนเครื่องที่ออนไลน์ขณะนี้
+    var presenceRes = getOnlineClientsInfo_();
+
+    return {
+      success: true,
+      message: "ส่งคำสั่ง Hard Reload ไปยังทุกเครื่องสำเร็จ",
+      reloadCommand: reloadCmd,
+      onlineCount: presenceRes.onlineCount,
+      timestamp: nowMs
+    };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
+
+/**
+ * Helper ดึงข้อมูลและจำนวนเครื่องที่ออนไลน์ (รวมทั้งเครื่องที่เปิดกล้องและไม่ได้เปิดกล้อง)
+ */
+function getOnlineClientsInfo_() {
+  var cache = CacheService.getScriptCache();
+  var nowMs = Date.now();
+  var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
+  var presenceMap = {};
+  if (rawPresence) {
+    try { presenceMap = JSON.parse(rawPresence) || {}; } catch (e) {}
+  }
+
+  var activeUsers = [];
+  var changed = false;
+  var keys = Object.keys(presenceMap);
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    var item = presenceMap[k];
+    if (!item || (nowMs - (item.lastSeen || 0) > CLIENT_SESSION_TTL_MS)) {
+      delete presenceMap[k];
+      changed = true;
+    } else {
+      activeUsers.push(item);
+    }
+  }
+
+  if (changed) {
+    cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
+  }
+
+  return {
+    onlineCount: activeUsers.length,
+    users: activeUsers
+  };
+}
+
+/**
+ * รับ Heartbeat จากเครื่องผู้ใช้งานทั่วไป (Client Presence Pulse)
+ */
+function syncClientPresenceAndCommands(payload) {
+  try {
+    var p = payload || {};
+    var cache = CacheService.getScriptCache();
+    var nowMs = Date.now();
+    var sessionId = String(p.sessionId || "").trim();
+    if (!sessionId) {
+      return { success: false, message: "Missing sessionId" };
+    }
+
+    var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
+    var presenceMap = {};
+    if (rawPresence) {
+      try { presenceMap = JSON.parse(rawPresence) || {}; } catch (e) {}
+    }
+
+    // ล้างตัวหมดอายุ
+    var keys = Object.keys(presenceMap);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (!presenceMap[k] || (nowMs - (presenceMap[k].lastSeen || 0) > CLIENT_SESSION_TTL_MS)) {
+        delete presenceMap[k];
+      }
+    }
+
+    presenceMap[sessionId] = {
+      sessionId: sessionId,
+      username: String(p.username || "user"),
+      fullName: String(p.fullName || p.username || "ผู้ใช้งาน"),
+      role: String(p.role || "operator"),
+      cameraStarted: !!p.cameraStarted,
+      currentTab: String(p.currentTab || "scanner"),
+      lastSeen: nowMs
+    };
+
+    cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
+
+    var latestReload = getLatestReloadCommand_();
+
+    return {
+      success: true,
+      onlineCount: Object.keys(presenceMap).length,
+      reloadCommand: latestReload,
+      timestamp: nowMs
+    };
+  } catch (e) {
+    return { success: false, message: e.toString() };
+  }
+}
 
 /**
  * บันทึกสัญญาณชีพ (Heartbeat) และเฟรมภาพล่าสุดจากเครื่องที่เปิดกล้องใช้งานอยู่
@@ -1478,6 +1644,22 @@ function publishCameraHeartbeat(payload) {
     indexMap[sessionId] = meta;
     cache.put(CAM_INDEX_KEY, JSON.stringify(indexMap), 300);
 
+    // อัปเดต Client Presence ด้วยเพื่อให้นับยอดออนไลน์รวมได้ครบถ้วน
+    try {
+      var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
+      var presenceMap = rawPresence ? (JSON.parse(rawPresence) || {}) : {};
+      presenceMap[sessionId] = {
+        sessionId: sessionId,
+        username: meta.username,
+        fullName: meta.fullName,
+        role: meta.role,
+        cameraStarted: true,
+        currentTab: "scanner",
+        lastSeen: nowMs
+      };
+      cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
+    } catch (ePres) {}
+
     // 2. บันทึกเฟรมภาพและสถานะลงแคชเฉพาะของ sessionId นั้น
     if (payload.frameDataUrl) {
       var frameObj = {
@@ -1500,10 +1682,13 @@ function publishCameraHeartbeat(payload) {
       }
     }
 
+    var latestReload = getLatestReloadCommand_();
+
     return {
       success: true,
       sessionId: sessionId,
       activeCount: Object.keys(indexMap).length,
+      reloadCommand: latestReload,
       timestamp: nowMs
     };
   } catch (e) {
@@ -1531,6 +1716,19 @@ function unregisterCameraSession(sessionId) {
       } catch (e) {}
     }
     cache.remove("CAM_FRAME_" + sId);
+
+    try {
+      var rawPresence = cache.get(CLIENT_PRESENCE_INDEX_KEY);
+      if (rawPresence) {
+        var presenceMap = JSON.parse(rawPresence) || {};
+        if (presenceMap[sId]) {
+          presenceMap[sId].cameraStarted = false;
+          presenceMap[sId].lastSeen = Date.now();
+          cache.put(CLIENT_PRESENCE_INDEX_KEY, JSON.stringify(presenceMap), 300);
+        }
+      }
+    } catch (ePres) {}
+
     return { success: true, sessionId: sId };
   } catch (e) {
     return { success: false, message: e.toString() };
@@ -1577,10 +1775,15 @@ function getActiveCameras() {
       return (b.lastHeartbeat || 0) - (a.lastHeartbeat || 0);
     });
 
+    var latestReload = getLatestReloadCommand_();
+    var onlineInfo = getOnlineClientsInfo_();
+
     return {
       success: true,
       cameras: cameras,
       count: cameras.length,
+      onlineUsersCount: onlineInfo.onlineCount,
+      reloadCommand: latestReload,
       serverTime: nowMs
     };
   } catch (e) {
