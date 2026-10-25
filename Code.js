@@ -1521,6 +1521,7 @@ var CLIENT_PRESENCE_INDEX_KEY = "ACTIVE_CLIENT_SESSIONS_V1";
 var CLIENT_SESSION_TTL_MS = 28000;
 var GLOBAL_RELOAD_CMD_KEY = "GLOBAL_FORCE_RELOAD_CMD_V1";
 var REALTIME_SCAN_LOGS_KEY = "REALTIME_SCAN_LOGS_V1";
+var REALTIME_SCAN_LOGS_CLEARED_KEY = "REALTIME_SCAN_LOGS_CLEARED_V1";
 var MAX_REALTIME_SCAN_LOGS = 80;
 
 /**
@@ -1705,19 +1706,21 @@ function getRealtimeDetectionLogs(params) {
     var p = params || {};
     var cache = CacheService.getScriptCache();
     var rawLogs = cache.get(REALTIME_SCAN_LOGS_KEY);
+    var rawCleared = cache.get(REALTIME_SCAN_LOGS_CLEARED_KEY);
+    var clearedAt = rawCleared ? Number(rawCleared) : 0;
+    if (isNaN(clearedAt)) clearedAt = 0;
     var logList = [];
     var isCold = false;
 
-    if (rawLogs) {
+    if (rawLogs !== null) {
       try {
         logList = JSON.parse(rawLogs) || [];
       } catch (eJson) {
         logList = [];
       }
-    }
-
-    // หาก Cache ยังว่างเปล่า ให้อ่านจากชีต ScanLogs ล่าสุด 40 แถว
-    if (!logList || logList.length === 0) {
+    } else {
+      // เฉพาะกรณีที่ Cache ยังไม่เคยถูกสร้าง (rawLogs === null เช่น เริ่มระบบใหม่) จึงจะอ่านจากชีต ScanLogs ล่าสุด 40 แถว
+      // หากมีการสั่งล้างจอไปแล้ว (rawLogs !== null แม้จะเป็น "[]") จะไม่ดึงข้อมูลเก่าจากชีตมาเติมซ้ำเด็ดขาด
       isCold = true;
       try {
         var ss = getDatabaseSpreadsheet();
@@ -1780,6 +1783,13 @@ function getRealtimeDetectionLogs(params) {
       }
     }
 
+    // กรองรายการตามเวลาสั่งล้างจอ (clearedAt)
+    if (clearedAt > 0 && logList.length > 0) {
+      logList = logList.filter(function(item) {
+        return (item.timestamp || 0) > clearedAt;
+      });
+    }
+
     var sinceTs = Number(p.since || p.sinceTimestamp) || 0;
     var limit = Math.min(100, Math.max(1, Number(p.limit) || 50));
     var filtered = logList;
@@ -1803,6 +1813,7 @@ function getRealtimeDetectionLogs(params) {
       count: filtered.length,
       totalCached: logList.length,
       isColdStartSeeded: isCold,
+      clearedAt: clearedAt,
       onlineCount: onlineInfo.onlineCount,
       activeCameraCount: onlineInfo.activeCameraCount,
       onlineClients: onlineInfo.clients,
@@ -1825,11 +1836,14 @@ function getRealtimeDetectionLogs(params) {
 function clearRealtimeDetectionLogs() {
   try {
     var cache = CacheService.getScriptCache();
+    var now = Date.now();
     cache.put(REALTIME_SCAN_LOGS_KEY, JSON.stringify([]), 21600);
+    cache.put(REALTIME_SCAN_LOGS_CLEARED_KEY, String(now), 21600);
     return {
       success: true,
       message: "ล้างรายการตรวจจับบนหน้าจอแสดงผลสดเรียบร้อยแล้ว (ประวัติในชีตยังคงอยู่ครบถ้วน)",
-      timestamp: Date.now()
+      clearedAt: now,
+      timestamp: now
     };
   } catch (e) {
     return { success: false, message: e.toString() };

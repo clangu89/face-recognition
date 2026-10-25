@@ -418,7 +418,7 @@
             </button>
             <button type="button" onclick="promptClearRealtimeLogsFeed()" class="px-2.5 py-1 rounded-full bg-[#FDECEB] hover:bg-[#FBD8D6] text-[#D94338] border border-[#F5C2C0] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="ล้างหน้าจอแสดงผลสด">
               <span>🧹</span>
-              <span class="hidden sm:inline">ล้างจอ</span>
+              <span>ล้างจอ</span>
             </button>
             <button type="button" id="realtimeLogsCollapseBtn" onclick="toggleRealtimeLogsCollapse()" class="px-2 py-1 rounded-full bg-white hover:bg-[#F7F5EE] text-[#5C5950] border border-[#DCD6C4] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer" title="ย่อหรือขยายแผง">
               <span id="realtimeLogsCollapseIcon">🔼</span>
@@ -2180,7 +2180,18 @@
       onlineClientsCount: 1,
       lastExecutedReloadId: null,
       lastSentReloadInfo: null,
-      isHardReloading: false
+      isHardReloading: false,
+      realtimeLogs: [],
+      realtimeLogsPaused: false,
+      realtimeLogsCollapsed: false,
+      realtimeLogsFilter: { station: 'all', category: 'all' },
+      realtimeLogsClearedAt: (function() {
+        try {
+          const s = sessionStorage.getItem('face_realtime_logs_cleared_at');
+          return s ? (Number(s) || 0) : 0;
+        } catch(e) { return 0; }
+      })(),
+      activeScanningStations: []
     };
 
     function loadProfileMessagesFromStorage() {
@@ -7568,20 +7579,35 @@
     }
 
     function clearRealtimeLogsFeed() {
+      const now = Date.now();
+      state.realtimeLogsClearedAt = now;
+      try { sessionStorage.setItem('face_realtime_logs_cleared_at', String(now)); } catch(e) {}
       state.realtimeLogs = [];
       _lastKnownLogIds.clear();
       renderRealtimeLogs();
       showToast('ล้างหน้าจอแสดงผล Real-time เรียบร้อยแล้ว', 'info');
 
+      const applyServerClear = function(res) {
+        if (res && res.clearedAt) {
+          state.realtimeLogsClearedAt = Number(res.clearedAt);
+          try { sessionStorage.setItem('face_realtime_logs_cleared_at', String(res.clearedAt)); } catch(e) {}
+        }
+      };
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(function() {}).clearRealtimeDetectionLogs();
+        google.script.run
+          .withSuccessHandler(applyServerClear)
+          .clearRealtimeDetectionLogs();
       } else {
         fetch(GAS_API_URL, {
           method: 'POST',
           redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'clearRealtimeLogs' })
-        }).catch(function(e) { console.warn('Clear realtime logs error:', e); });
+        })
+        .then(r => r.json())
+        .then(applyServerClear)
+        .catch(function(e) { console.warn('Clear realtime logs error:', e); });
       }
     }
 
@@ -7644,20 +7670,29 @@
           camCountText.textContent = 'กำลังเปิดกล้อง ' + activeCamCount + ' เครื่อง';
         }
 
-        // 3. รวมรายการ Logs ใหม่เข้ากับ Array เดิมแบบไม่ซ้ำ ID
-        const incoming = Array.isArray(res.logs) ? res.logs : [];
-        if (incoming.length > 0) {
-          const idMap = new Map();
-          incoming.forEach(item => { if (item && item.id) idMap.set(item.id, item); });
-          (state.realtimeLogs || []).forEach(item => {
-            if (item && item.id && !idMap.has(item.id)) {
-              idMap.set(item.id, item);
-            }
-          });
-          const merged = Array.from(idMap.values());
-          merged.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
-          state.realtimeLogs = merged.slice(0, 80);
+        // 3. ตรวจสอบสถานะการสั่งล้างจอจากเซิร์ฟเวอร์ (clearedAt)
+        if (res.clearedAt && Number(res.clearedAt) > (state.realtimeLogsClearedAt || 0)) {
+          state.realtimeLogsClearedAt = Number(res.clearedAt);
+          try { sessionStorage.setItem('face_realtime_logs_cleared_at', String(res.clearedAt)); } catch(e) {}
         }
+
+        const effectiveClearedAt = state.realtimeLogsClearedAt || 0;
+
+        // 4. รวมรายการ Logs ใหม่เข้ากับ Array เดิมแบบไม่ซ้ำ ID โดยตัดรายการก่อนหน้าเวลาล้างจอทิ้งทั้งหมด
+        const rawIncoming = Array.isArray(res.logs) ? res.logs : [];
+        const incoming = rawIncoming.filter(item => item && (Number(item.timestamp) || 0) > effectiveClearedAt);
+        const existingClean = (state.realtimeLogs || []).filter(item => item && (Number(item.timestamp) || 0) > effectiveClearedAt);
+
+        const idMap = new Map();
+        incoming.forEach(item => { if (item && item.id) idMap.set(item.id, item); });
+        existingClean.forEach(item => {
+          if (item && item.id && !idMap.has(item.id)) {
+            idMap.set(item.id, item);
+          }
+        });
+        const merged = Array.from(idMap.values());
+        merged.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+        state.realtimeLogs = merged.slice(0, 80);
 
         renderRealtimeStationPills();
         renderRealtimeLogs();
