@@ -5335,6 +5335,28 @@
         if (regOverlay) regOverlay.classList.add('hidden');
 
         state.cameraStarted = true;
+        // ล้างตัวนับข้อผิดพลาด ปิดไทเมอร์ และปิด Modal นับถอยหลังเมื่อกล้องทำงานสำเร็จ
+        try { sessionStorage.removeItem('face_camera_error_reload_count'); } catch(e) {}
+        if (typeof _cameraErrorReloadTimer !== 'undefined' && _cameraErrorReloadTimer) {
+          clearInterval(_cameraErrorReloadTimer);
+          _cameraErrorReloadTimer = null;
+        }
+        _isHandlingCameraError = false;
+        const errModal = document.getElementById('cameraErrorReloadModal');
+        if (errModal) errModal.remove();
+        const errBanner = document.getElementById('cameraTroubleshootBanner');
+        if (errBanner) errBanner.remove();
+
+        // ดักจับกรณีสายกล้องหลุดหรือฮาร์ดแวร์หยุดทำงานขณะกำลังสแกน
+        if (state.stream && state.stream.getVideoTracks) {
+          state.stream.getVideoTracks().forEach(function(track) {
+            track.addEventListener('ended', function() {
+              logStatus('[WARN] สัญญาณจากกล้อง Webcam ขาดหาย (Hardware Disconnected)', true);
+              handleCameraUnavailableError('สัญญาณจากกล้องขาดหายระหว่างทำงาน');
+            });
+          });
+        }
+
         cameraBadge.innerHTML = '<span class="text-[#28AE60] animate-pulse">●</span> กล้องกำลังทำงาน';
         cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-semibold whitespace-nowrap';
         document.getElementById('startCameraOverlay').classList.add('hidden');
@@ -5359,6 +5381,9 @@
         }
         cameraBadge.innerHTML = '<span class="text-[#E5534B]">●</span> กล้องไม่พร้อมใช้งาน';
         cameraBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
+
+        // รีโหลดหน้าจอ (Ctrl+F5) อัตโนมัติสำหรับ User เจ้าหน้าที่
+        handleCameraUnavailableError(errMsg);
       }
     }
 
@@ -5390,6 +5415,199 @@
       if (typeof sendClientPresencePulse === 'function') {
         sendClientPresencePulse(false);
       }
+    }
+
+    // --- Operator Auto-Reload on Camera Unavailable Subsystem ---
+    let _cameraErrorReloadTimer = null;
+    let _isHandlingCameraError = false;
+    const MAX_CAMERA_ERROR_RELOAD_ATTEMPTS = 3;
+    const CAMERA_ERROR_RELOAD_KEY = 'face_camera_error_reload_count';
+
+    function handleCameraUnavailableError(reason) {
+      if (_isHandlingCameraError) return;
+      if (!state.currentUser || state.currentUser.role !== 'operator') {
+        logStatus('[INFO] กล้องไม่พร้อมใช้งาน (Role: ' + (state.currentUser ? state.currentUser.role : 'unauthenticated') + ') - ไม่เข้าเงื่อนไขรีโหลดอัตโนมัติ');
+        return;
+      }
+
+      // ตรวจสอบจำนวนครั้งที่เคยรีโหลดไปแล้วจาก sessionStorage
+      let attempts = 0;
+      try {
+        const raw = sessionStorage.getItem(CAMERA_ERROR_RELOAD_KEY);
+        if (raw) attempts = parseInt(raw, 10);
+      } catch (e) {}
+      if (isNaN(attempts)) attempts = 0;
+
+      if (attempts >= MAX_CAMERA_ERROR_RELOAD_ATTEMPTS) {
+        logStatus('[CAMERA] กล้องตรวจจับไม่พร้อมใช้งานต่อเนื่องครบ ' + attempts + ' ครั้ง หยุดรีโหลดอัตโนมัติเพื่อป้องกัน Loop', true);
+        showCameraErrorHelpBanner(reason, attempts);
+        return;
+      }
+
+      _isHandlingCameraError = true;
+      attempts += 1;
+      try {
+        sessionStorage.setItem(CAMERA_ERROR_RELOAD_KEY, String(attempts));
+      } catch (e) {}
+
+      logStatus('[AUTO-RELOAD] กล้องไม่พร้อมใช้งาน (สาเหตุ: ' + (reason || 'ไม่ทราบสาเหตุ') + ') กำลังเตรียมรีโหลดหน้าจอ (Ctrl+F5) รอบที่ ' + attempts + '/' + MAX_CAMERA_ERROR_RELOAD_ATTEMPTS, true);
+      showCameraErrorCountdownModal(reason, attempts, MAX_CAMERA_ERROR_RELOAD_ATTEMPTS);
+    }
+
+    function showCameraErrorCountdownModal(reason, attempt, maxAttempts) {
+      if (_cameraErrorReloadTimer) {
+        clearInterval(_cameraErrorReloadTimer);
+        _cameraErrorReloadTimer = null;
+      }
+
+      let modal = document.getElementById('cameraErrorReloadModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'cameraErrorReloadModal';
+        document.body.appendChild(modal);
+      }
+
+      const displayReason = escapeHtml(reason || 'ไม่พบสัญญาณจากกล้องหรือถูกบล็อก');
+
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in';
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-rose-200 overflow-hidden transform transition-all scale-100">
+          <div class="bg-gradient-to-r from-rose-500 to-amber-500 p-5 text-white flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+              📷
+            </div>
+            <div>
+              <h3 class="text-lg font-bold">กล้องตรวจจับไม่พร้อมใช้งาน</h3>
+              <p class="text-xs text-rose-100">ระบบตรวจพบปัญหาอุปกรณ์กล้องสำหรับบัญชีเจ้าหน้าที่</p>
+            </div>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="bg-rose-50 border border-rose-100 rounded-xl p-3.5 text-xs text-rose-800 leading-relaxed">
+              <div class="font-semibold text-rose-900 mb-1 flex items-center justify-between">
+                <span>สาเหตุ: <span>${displayReason}</span></span>
+                <span class="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 font-bold">รอบที่ ${attempt}/${maxAttempts}</span>
+              </div>
+              <div>ระบบจะทำการ <strong>รีโหลดหน้าจอ (Ctrl+F5)</strong> อัตโนมัติเพื่อรีเซ็ตไดรเวอร์และระบบเชื่อมต่อกล้องใหม่</div>
+            </div>
+            
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-semibold text-stone-600">
+                <span>กำลังเตรียมรีโหลดใน...</span>
+                <span id="cameraReloadCountdownSec" class="text-rose-600 font-bold text-sm">3 วินาที</span>
+              </div>
+              <div class="w-full bg-stone-100 h-2.5 rounded-full overflow-hidden border border-stone-200">
+                <div id="cameraReloadProgressBar" class="h-full bg-gradient-to-r from-rose-500 to-amber-500 transition-all duration-1000 ease-linear rounded-full" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <div class="flex gap-2.5 pt-2">
+              <button type="button" onclick="cancelCameraErrorReload()" class="flex-1 py-2.5 px-3.5 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-xs font-semibold transition cursor-pointer">
+                ยกเลิกการรีโหลด
+              </button>
+              <button type="button" onclick="triggerImmediateCameraErrorReload(${attempt})" class="flex-1 py-2.5 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-md shadow-rose-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <span>รีโหลดทันที (Ctrl+F5)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      let countdown = 3;
+      const countEl = document.getElementById('cameraReloadCountdownSec');
+      const barEl = document.getElementById('cameraReloadProgressBar');
+
+      _cameraErrorReloadTimer = setInterval(function() {
+        countdown -= 1;
+        if (countEl) countEl.textContent = countdown + ' วินาที';
+        if (barEl) barEl.style.width = Math.max(0, (countdown / 3) * 100) + '%';
+
+        if (countdown <= 0) {
+          clearInterval(_cameraErrorReloadTimer);
+          _cameraErrorReloadTimer = null;
+          logStatus('[AUTO-RELOAD] หมดเวลานับถอยหลัง ดำเนินการรีโหลดหน้าจอ (Ctrl+F5)...');
+          executeHardReloadCtrlF5('ตรวจพบปัญหากล้องตรวจจับไม่พร้อมใช้งาน (รอบที่ ' + attempt + '/' + maxAttempts + ')');
+        }
+      }, 1000);
+    }
+
+    function cancelCameraErrorReload() {
+      if (_cameraErrorReloadTimer) {
+        clearInterval(_cameraErrorReloadTimer);
+        _cameraErrorReloadTimer = null;
+      }
+      _isHandlingCameraError = false;
+      const modal = document.getElementById('cameraErrorReloadModal');
+      if (modal) modal.remove();
+      logStatus('[CAMERA] ผู้ใช้กดยกเลิกการรีโหลดหน้าจออัตโนมัติ');
+      showToast('ยกเลิกการรีโหลดอัตโนมัติแล้ว คุณสามารถกดเปิดกล้องด้วยตนเองเมื่อพร้อม', 'info');
+    }
+
+    function triggerImmediateCameraErrorReload(attempt) {
+      if (_cameraErrorReloadTimer) {
+        clearInterval(_cameraErrorReloadTimer);
+        _cameraErrorReloadTimer = null;
+      }
+      logStatus('[CAMERA] ผู้ใช้กดรีโหลดหน้าจอทันที');
+      executeHardReloadCtrlF5('ผู้ใช้กดรีโหลดหน้าจอทันทีเนื่องจากกล้องไม่พร้อมใช้งาน (รอบที่ ' + (attempt || 1) + ')');
+    }
+
+    function showCameraErrorHelpBanner(reason, attempts) {
+      _isHandlingCameraError = false;
+      const modal = document.getElementById('cameraErrorReloadModal');
+      if (modal) modal.remove();
+
+      const overlay = document.getElementById('startCameraOverlay');
+      if (!overlay) return;
+
+      let banner = document.getElementById('cameraTroubleshootBanner');
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'cameraTroubleshootBanner';
+        const btn = document.getElementById('startCameraBtn');
+        if (btn && btn.parentNode) {
+          btn.parentNode.insertBefore(banner, btn);
+        } else {
+          overlay.appendChild(banner);
+        }
+      }
+
+      const displayReason = escapeHtml(reason || 'ไม่พบสัญญาณหรืออุปกรณ์ขัดข้อง');
+
+      banner.className = 'w-full max-w-md mx-auto mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-left text-xs shadow-sm animate-fade-in';
+      banner.innerHTML = `
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">⚠️</span>
+          <div class="flex-1 space-y-1.5">
+            <div class="font-bold text-amber-950 flex items-center justify-between">
+              <span>ระบบหยุดรีโหลดอัตโนมัติแล้ว (${attempts || 3}/${MAX_CAMERA_ERROR_RELOAD_ATTEMPTS} ครั้ง)</span>
+            </div>
+            <p class="text-stone-700 leading-relaxed">
+              ตรวจพบว่ากล้องไม่พร้อมใช้งาน (${displayReason}) เพื่อป้องกันหน้าจอรีเฟรชวนลูป กรุณาตรวจสอบ:
+            </p>
+            <ul class="list-disc pl-4 space-y-1 text-stone-600">
+              <li>สาย USB กล้องเว็บแคมเชื่อมต่อแน่นหนา หรือลองเปลี่ยนช่องเสียบ USB</li>
+              <li>ไม่มีโปรแกรมอื่น (เช่น Zoom, Teams, Camera App) แย่งใช้งานกล้องอยู่</li>
+              <li>ตรวจสอบการอนุญาตสิทธิ์กล้องในเบราว์เซอร์ (ไอคอนรูปแม่กุญแจหน้า URL)</li>
+            </ul>
+            <div class="pt-2 flex items-center gap-2">
+              <button type="button" onclick="resetCameraErrorReloadCountAndRetry()" class="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-sm transition cursor-pointer">
+                🔄 รีเซ็ตและลองเปิดกล้องใหม่อีกครั้ง
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function resetCameraErrorReloadCountAndRetry() {
+      try {
+        sessionStorage.removeItem(CAMERA_ERROR_RELOAD_KEY);
+      } catch (e) {}
+      const banner = document.getElementById('cameraTroubleshootBanner');
+      if (banner) banner.remove();
+      logStatus('[CAMERA] ผู้ใช้รีเซ็ตตัวนับการรีโหลด และสั่งเปิดกล้องใหม่');
+      startCamera();
     }
 
     // --- Operator Auto-Start Camera & Readiness Coordinator ---
@@ -5510,12 +5728,18 @@
         }
       } catch (err) {
         logStatus('[WARN] ไม่สามารถเปิดกล้องอัตโนมัติได้: ' + (err ? err.message : err), true);
+        if (state.currentUser && state.currentUser.role === 'operator') {
+          handleCameraUnavailableError(err ? (err.message || err.toString()) : 'ไม่สามารถเปิดกล้องอัตโนมัติได้');
+        }
       } finally {
         if (!state.cameraStarted) {
           if (overlayTitle) overlayTitle.textContent = 'ระบบกล้องตรวจจับใบหน้าพร้อมทำงาน';
           if (overlayDesc) overlayDesc.textContent = 'กดปุ่มด้านล่างเพื่อเปิดใช้งานกล้อง Webcam ระบบจะประมวลผลใบหน้าและกล่าวทักทายด้วยเสียงอัตโนมัติ';
           if (startBtn) {
             startBtn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg><span>เปิดการทำงานกล้องและเริ่มตรวจจับ</span>';
+          }
+          if (state.currentUser && state.currentUser.role === 'operator') {
+            handleCameraUnavailableError('กล้องไม่พร้อมทำงานเมื่อเริ่มต้นระบบอัตโนมัติ');
           }
         }
       }
@@ -8358,6 +8582,12 @@
     window.stopClientPresenceLoop = stopClientPresenceLoop;
     window.handleIncomingReloadCommand = handleIncomingReloadCommand;
     window.executeHardReloadCtrlF5 = executeHardReloadCtrlF5;
+    window.handleCameraUnavailableError = handleCameraUnavailableError;
+    window.showCameraErrorCountdownModal = showCameraErrorCountdownModal;
+    window.cancelCameraErrorReload = cancelCameraErrorReload;
+    window.triggerImmediateCameraErrorReload = triggerImmediateCameraErrorReload;
+    window.showCameraErrorHelpBanner = showCameraErrorHelpBanner;
+    window.resetCameraErrorReloadCountAndRetry = resetCameraErrorReloadCountAndRetry;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
