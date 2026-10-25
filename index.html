@@ -1744,6 +1744,43 @@
               <p class="text-[11px] text-[#8C877B]">บันทึกออกงานเฉพาะเวลา &ge; เวลานี้เท่านั้น</p>
             </div>
           </div>
+
+          <!-- AI Face Matching Precision / Sibling & Relative Separation Setting -->
+          <div class="glass-card p-4 rounded-2xl border border-[#BEE6CE] bg-[#EAF7EF]/40 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🧬</span>
+                <div>
+                  <h4 class="text-xs font-extrabold text-[#1F1E1B]">ความเข้มงวดในการแยกแยะใบหน้า AI (ป้องกันสับสนพี่น้อง / แม่ลูก)</h4>
+                  <p class="text-[11px] text-[#5C5950]">ค่าระยะห่างยิ่งต่ำ ระบบยิ่งตรวจสอบละเอียดและไม่ทักผิดคนในครอบครัวเดียวกัน</p>
+                </div>
+              </div>
+              <span id="settingFaceMatchThresholdBadge" class="px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs">
+                0.41 (แนะนำ: แยกพี่น้อง/แม่ลูก)
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="applyFaceThresholdPreset(0.38)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                🔒 เข้มงวดสูงสุด (0.38)<br><span class="text-[10px] font-normal text-[#6E6B62]">แฝด / คล้ายกันมาก</span>
+              </button>
+              <button type="button" onclick="applyFaceThresholdPreset(0.41)" class="py-2 px-2.5 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center">
+                ✅ มาตรฐานแนะนำ (0.41)<br><span class="text-[10px] font-normal text-[#2D6A4F]">แยกพี่น้อง / แม่ลูก</span>
+              </button>
+              <button type="button" onclick="applyFaceThresholdPreset(0.45)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#FEF6E6] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                🌤️ ผ่อนปรน (0.45)<br><span class="text-[10px] font-normal text-[#6E6B62]">แสงน้อย / ยืนไกล</span>
+              </button>
+            </div>
+
+            <div class="space-y-1 pt-1">
+              <input type="range" id="settingFaceMatchThreshold" min="0.35" max="0.50" step="0.01" value="0.41" oninput="onFaceThresholdSliderInput(this.value)" class="w-full accent-[#28AE60] cursor-pointer">
+              <div class="flex justify-between text-[10px] font-semibold text-[#6E6B62]">
+                <span>0.35 (เข้มงวดสูงสุด)</span>
+                <span>0.41 (ค่าแนะนำ)</span>
+                <span>0.50 (ผ่อนปรน)</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tab Content 2: Today's Attendance Logs -->
@@ -1995,6 +2032,10 @@
       };
     }
 
+    const DEFAULT_FACE_MATCH_THRESHOLD = 0.41; // ค่าแนะนำสำหรับแยกแยะพี่น้อง / แม่ลูก ในโครงหน้าเอเชีย
+    const MIN_FACE_MATCH_MARGIN = 0.038; // ระยะห่างขั้นต่ำระหว่างคนอันดับ 1 และอันดับ 2 ป้องกันทักสลับพี่น้อง
+    const REQUIRED_FACE_CONFIRM_FRAMES = 3; // จำนวนเฟรมต่อเนื่องขั้นต่ำก่อนฟันธงและลงเวลา
+
     const state = {
       currentUser: null,
       systemUsers: [],
@@ -2017,7 +2058,10 @@
       scannerVideoFit: 'cover',
       currentTab: 'scanner',
       profiles: [],
+      compiledProfiles: [],
       faceMatcher: null,
+      faceMatchThreshold: DEFAULT_FACE_MATCH_THRESHOLD,
+      candidateMatches: new Map(),
       stream: null,
       isDetecting: false,
       soundEnabled: true,
@@ -3041,6 +3085,14 @@
           if (s.workEndTime) {
             state.workEndTime = normalizeTimeValue(s.workEndTime, DEFAULT_WORK_END_TIME);
           }
+          if (s.faceMatchThreshold !== undefined && s.faceMatchThreshold !== null) {
+            const parsedThr = parseFloat(String(s.faceMatchThreshold));
+            if (!isNaN(parsedThr) && parsedThr >= 0.32 && parsedThr <= 0.52) {
+              state.faceMatchThreshold = Math.round(parsedThr * 1000) / 1000;
+              if (typeof syncFaceThresholdUI === 'function') syncFaceThresholdUI();
+              if (typeof updateFaceMatcher === 'function') updateFaceMatcher();
+            }
+          }
           const startInput = document.getElementById('settingWorkStartTime');
           if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
           const endInput = document.getElementById('settingWorkEndTime');
@@ -3102,7 +3154,8 @@
         bellChimeEnabled: state.bellChimeEnabled !== false,
         voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime || DEFAULT_WORK_START_TIME,
-        workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME
+        workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME,
+        faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD
       };
 
       const finishSave = function(success, msg) {
@@ -3649,6 +3702,34 @@
     }
 
     // --- System Settings Modal Controllers ---
+    function getFaceThresholdDescription(val) {
+      const v = Number(val);
+      if (v <= 0.385) return v.toFixed(2) + ' (เข้มงวดสูงสุด: แฝด/คล้ายมาก)';
+      if (v <= 0.425) return v.toFixed(2) + ' (แนะนำ: แยกพี่น้อง/แม่ลูก)';
+      return v.toFixed(2) + ' (ผ่อนปรน: แสงน้อย/ยืนไกล)';
+    }
+
+    function syncFaceThresholdUI() {
+      const thr = state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD;
+      const slider = document.getElementById('settingFaceMatchThreshold');
+      const badge = document.getElementById('settingFaceMatchThresholdBadge');
+      if (slider) slider.value = thr.toFixed(2);
+      if (badge) badge.textContent = getFaceThresholdDescription(thr);
+    }
+
+    function onFaceThresholdSliderInput(val) {
+      const parsed = parseFloat(val);
+      if (isNaN(parsed)) return;
+      state.faceMatchThreshold = Math.round(parsed * 100) / 100;
+      syncFaceThresholdUI();
+      if (typeof updateFaceMatcher === 'function') updateFaceMatcher();
+    }
+
+    function applyFaceThresholdPreset(val) {
+      onFaceThresholdSliderInput(val);
+      showToast('ตั้งค่าเกณฑ์ความแม่นยำเป็น ' + getFaceThresholdDescription(val) + ' (กดบันทึกเพื่อจำค่าถาวร)', 'info');
+    }
+
     function openSystemSettingsModal() {
       const modal = document.getElementById('systemSettingsModal');
       if (!modal) return;
@@ -3656,6 +3737,7 @@
       const endInput = document.getElementById('settingWorkEndTime');
       if (startInput) startInput.value = normalizeTimeValue(state.workStartTime, DEFAULT_WORK_START_TIME);
       if (endInput) endInput.value = normalizeTimeValue(state.workEndTime, DEFAULT_WORK_END_TIME);
+      syncFaceThresholdUI();
 
       switchSettingsModalTab('schedule');
       modal.classList.remove('hidden');
@@ -3691,6 +3773,7 @@
     function saveWorkScheduleFromModal() {
       const startInput = document.getElementById('settingWorkStartTime');
       const endInput = document.getElementById('settingWorkEndTime');
+      const thrInput = document.getElementById('settingFaceMatchThreshold');
       const btn = document.getElementById('saveWorkScheduleBtn');
       const icon = document.getElementById('saveWorkScheduleIcon');
       const text = document.getElementById('saveWorkScheduleText');
@@ -3698,11 +3781,18 @@
 
       const startTime = normalizeTimeValue(startInput ? startInput.value : '', DEFAULT_WORK_START_TIME);
       const endTime = normalizeTimeValue(endInput ? endInput.value : '', DEFAULT_WORK_END_TIME);
+      if (thrInput && thrInput.value) {
+        const parsedThr = parseFloat(thrInput.value);
+        if (!isNaN(parsedThr) && parsedThr >= 0.32 && parsedThr <= 0.52) {
+          state.faceMatchThreshold = Math.round(parsedThr * 100) / 100;
+        }
+      }
 
       state.workStartTime = startTime;
       state.workEndTime = endTime;
       if (startInput) startInput.value = startTime;
       if (endInput) endInput.value = endTime;
+      if (typeof updateFaceMatcher === 'function') updateFaceMatcher();
 
       if (btn) btn.disabled = true;
       if (icon) icon.textContent = '⏳';
@@ -3720,16 +3810,17 @@
         bellChimeEnabled: state.bellChimeEnabled !== false,
         voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime,
-        workEndTime: state.workEndTime
+        workEndTime: state.workEndTime,
+        faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD
       };
 
       const finish = function(success, err) {
         if (btn) btn.disabled = false;
         if (icon) icon.textContent = '💾';
-        if (text) text.textContent = 'บันทึกเวลาทำงาน';
+        if (text) text.textContent = 'บันทึกการตั้งค่าระบบ';
         if (success) {
-          if (statusEl) statusEl.textContent = '✓ บันทึกสำเร็จ (' + startTime + ' - ' + endTime + ')';
-          showToast('บันทึกเวลาเข้า-เลิกงานเรียบร้อยแล้ว', 'success');
+          if (statusEl) statusEl.textContent = '✓ บันทึกสำเร็จ (เกณฑ์ AI: ' + (state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD).toFixed(2) + ')';
+          showToast('บันทึกเวลาทำงานและเกณฑ์ความแม่นยำใบหน้าเรียบร้อยแล้ว', 'success');
           setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
         } else {
           if (statusEl) statusEl.textContent = '❌ บันทึกล้มเหลว';
@@ -4811,19 +4902,311 @@
       loadSystemSettingsFromBackend(false, checkAllDone);
     }
 
+    function extractDescriptorVectors(rawDescriptors) {
+      if (!rawDescriptors) return [];
+      if (rawDescriptors instanceof Float32Array) {
+        return rawDescriptors.length === 128 ? [rawDescriptors] : [];
+      }
+      if (!Array.isArray(rawDescriptors) || rawDescriptors.length === 0) return [];
+
+      // กรณี Multi-Sample 2D Array: [[128 floats], [128 floats], ...]
+      if (Array.isArray(rawDescriptors[0]) || (rawDescriptors[0] instanceof Float32Array)) {
+        const vectors = [];
+        for (let i = 0; i < rawDescriptors.length; i++) {
+          const item = rawDescriptors[i];
+          if ((Array.isArray(item) || item instanceof Float32Array) && item.length === 128) {
+            vectors.push(item instanceof Float32Array ? item : new Float32Array(item));
+          }
+        }
+        return vectors;
+      }
+
+      // กรณี Legacy 1D Array: [128 floats]
+      if (rawDescriptors.length === 128 && typeof rawDescriptors[0] === 'number') {
+        return [new Float32Array(rawDescriptors)];
+      }
+      return [];
+    }
+
+    function computeEuclideanAndCosine(vecA, vecB) {
+      if (!vecA || !vecB || vecA.length !== 128 || vecB.length !== 128) {
+        return { distance: 999, cosine: -1 };
+      }
+      let sumSqDiff = 0;
+      let dot = 0;
+      let normA = 0;
+      let normB = 0;
+      for (let i = 0; i < 128; i++) {
+        const a = vecA[i];
+        const b = vecB[i];
+        const diff = a - b;
+        sumSqDiff += diff * diff;
+        dot += a * b;
+        normA += a * a;
+        normB += b * b;
+      }
+      const distance = Math.sqrt(sumSqDiff);
+      const denom = Math.sqrt(normA) * Math.sqrt(normB);
+      const cosine = denom > 1e-8 ? (dot / denom) : -1;
+      return { distance: distance, cosine: cosine };
+    }
+
+    function buildMultiSampleCentroid(samples) {
+      if (!samples || samples.length === 0) return null;
+      const count = samples.length;
+      const mean = new Float64Array(128);
+      let avgNormSum = 0;
+
+      for (let s = 0; s < count; s++) {
+        const vec = samples[s];
+        let sq = 0;
+        for (let i = 0; i < 128; i++) {
+          const v = Number(vec[i]) || 0;
+          mean[i] += v / count;
+          sq += v * v;
+        }
+        avgNormSum += Math.sqrt(sq);
+      }
+
+      const targetNorm = avgNormSum / count;
+      let meanNormSq = 0;
+      for (let i = 0; i < 128; i++) {
+        meanNormSq += mean[i] * mean[i];
+      }
+      const meanNorm = Math.sqrt(meanNormSq);
+      const scale = (meanNorm > 1e-8 && targetNorm > 1e-8) ? (targetNorm / meanNorm) : 1;
+
+      const result = new Array(128);
+      for (let i = 0; i < 128; i++) {
+        result[i] = Number((mean[i] * scale).toFixed(6));
+      }
+      return result;
+    }
+
+    function roundDescriptorArray(vec) {
+      const out = new Array(128);
+      for (let i = 0; i < 128; i++) {
+        out[i] = Number((Number(vec[i]) || 0).toFixed(6));
+      }
+      return out;
+    }
+
     function updateFaceMatcher() {
+      state.compiledProfiles = [];
+      state.candidateMatches.clear();
+
       if (!state.profiles || state.profiles.length === 0) {
         state.faceMatcher = null;
         return;
       }
+
+      const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
       const labeledDescriptors = [];
-      state.profiles.forEach(p => {
-        if (p.descriptors && p.descriptors.length > 0) {
-          const floatArray = new Float32Array(p.descriptors);
-          labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(p.name, [floatArray]));
+
+      state.profiles.forEach((p, idx) => {
+        const vectors = extractDescriptorVectors(p.descriptors);
+        if (vectors.length > 0) {
+          const profileKey = p.id ? String(p.id) : ('idx_' + idx + '_' + (p.name || '').trim());
+          state.compiledProfiles.push({
+            key: profileKey,
+            id: p.id || null,
+            name: (p.name || '').trim(),
+            personType: (p.personType || 'employee').toLowerCase(),
+            profile: p,
+            vectors: vectors
+          });
+          if (typeof faceapi !== 'undefined' && faceapi.LabeledFaceDescriptors) {
+            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(profileKey, vectors));
+          }
         }
       });
-      state.faceMatcher = labeledDescriptors.length > 0 ? new faceapi.FaceMatcher(labeledDescriptors, 0.55) : null;
+
+      if (typeof faceapi !== 'undefined' && faceapi.FaceMatcher && labeledDescriptors.length > 0) {
+        state.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, activeThreshold);
+      } else {
+        state.faceMatcher = null;
+      }
+    }
+
+    function checkScannerFaceQuality(detection, frameWidth, frameHeight) {
+      if (!detection || !detection.detection || !detection.detection.box) {
+        return { ok: false, reason: 'ไม่พบกรอบใบหน้า' };
+      }
+      const box = detection.detection.box;
+      const score = Number(detection.detection.score || 0);
+      const minBoxWidth = Math.max(64, Math.round((frameWidth || 640) * 0.10));
+
+      if (score < 0.56) {
+        return { ok: false, reason: 'ภาพใบหน้าไม่ชัด', code: 'low_score' };
+      }
+      if (box.width < minBoxWidth || box.height < minBoxWidth * 0.85) {
+        return { ok: false, reason: 'ขยับเข้าใกล้กล้องอีกนิด', code: 'too_far' };
+      }
+
+      // ตรวจสอบองศาใบหน้าจาก 68 Landmarks (ป้องกันการหันข้างซึ่งทำให้พี่น้อง/แม่ลูกดูคล้ายกัน)
+      const landmarks = detection.landmarks;
+      if (landmarks && typeof landmarks.getLeftEye === 'function' && typeof landmarks.getRightEye === 'function' && typeof landmarks.getNose === 'function') {
+        const leftEyePts = landmarks.getLeftEye();
+        const rightEyePts = landmarks.getRightEye();
+        const nosePts = landmarks.getNose();
+
+        if (leftEyePts && leftEyePts.length > 0 && rightEyePts && rightEyePts.length > 0 && nosePts && nosePts.length > 0) {
+          const avgPt = function(pts) {
+            let sx = 0, sy = 0;
+            for (let i = 0; i < pts.length; i++) { sx += pts[i].x; sy += pts[i].y; }
+            return { x: sx / pts.length, y: sy / pts.length };
+          };
+          const leftEye = avgPt(leftEyePts);
+          const rightEye = avgPt(rightEyePts);
+          const noseTip = nosePts[Math.min(3, nosePts.length - 1)];
+
+          const eyeSpanX = rightEye.x - leftEye.x;
+          if (eyeSpanX < 18) {
+            return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'side_pose' };
+          }
+
+          const rollDeg = Math.abs(Math.atan2(rightEye.y - leftEye.y, eyeSpanX) * (180 / Math.PI));
+          if (rollDeg > 26) {
+            return { ok: false, reason: 'กรุณาตั้งศีรษะให้ตรง', code: 'head_tilt' };
+          }
+
+          const noseRatio = (noseTip.x - leftEye.x) / eyeSpanX;
+          if (noseRatio < 0.25 || noseRatio > 0.75) {
+            return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'yaw_turn' };
+          }
+
+          if (typeof landmarks.getJawOutline === 'function') {
+            const jawPts = landmarks.getJawOutline();
+            if (jawPts && jawPts.length >= 9) {
+              const chin = jawPts[8];
+              const eyeMidY = (leftEye.y + rightEye.y) / 2;
+              const faceVert = chin.y - eyeMidY;
+              if (faceVert > 10) {
+                const pitchRatio = (noseTip.y - eyeMidY) / faceVert;
+                if (pitchRatio < 0.20 || pitchRatio > 0.68) {
+                  return { ok: false, reason: 'กรุณามองตรงระดับกล้อง', code: 'pitch_angle' };
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return { ok: true, reason: '' };
+    }
+
+    function matchFaceWithPrecision(descriptor) {
+      const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
+      if (!descriptor || !state.compiledProfiles || state.compiledProfiles.length === 0) {
+        return {
+          status: 'unknown',
+          profile: null,
+          profileKey: null,
+          label: 'Unknown',
+          distance: 1.0,
+          secondDistance: 1.0,
+          cosine: 0,
+          confidence: 0,
+          confidencePct: 0
+        };
+      }
+
+      // คำนวณเกณฑ์ Cosine ขั้นต่ำตามสัดส่วนของ Euclidean Threshold เพื่อสกัดกั้นภาพแสงน้อยที่ Norm ต่ำผิดปกติ
+      const minCosine = Math.max(0.86, 1 - ((activeThreshold * activeThreshold) / 1.85));
+
+      let bestEntry = null;
+      let bestEffectiveDist = 999;
+      let bestRawMinDist = 999;
+      let bestCosine = -1;
+      let secondBestEffectiveDist = 999;
+      let secondBestEntry = null;
+
+      for (let i = 0; i < state.compiledProfiles.length; i++) {
+        const entry = state.compiledProfiles[i];
+        const vectors = entry.vectors;
+        let minDist = 999;
+        let sumDist = 0;
+        let maxCos = -1;
+
+        for (let v = 0; v < vectors.length; v++) {
+          const metric = computeEuclideanAndCosine(descriptor, vectors[v]);
+          if (metric.distance < minDist) minDist = metric.distance;
+          if (metric.cosine > maxCos) maxCos = metric.cosine;
+          sumDist += metric.distance;
+        }
+
+        const meanDist = sumDist / vectors.length;
+        // ถ่วงน้ำหนักระหว่างจุดที่ใกล้ที่สุดกับค่าเฉลี่ยทุกมุม เพื่อป้องกันเฟรมหลุดของพี่น้องไปแตะขอบตัวอย่างใดตัวอย่างหนึ่ง
+        const effectiveDist = vectors.length > 1 ? (minDist * 0.65 + meanDist * 0.35) : minDist;
+
+        if (effectiveDist < bestEffectiveDist) {
+          secondBestEffectiveDist = bestEffectiveDist;
+          secondBestEntry = bestEntry;
+          bestEffectiveDist = effectiveDist;
+          bestRawMinDist = minDist;
+          bestCosine = maxCos;
+          bestEntry = entry;
+        } else if (effectiveDist < secondBestEffectiveDist) {
+          secondBestEffectiveDist = effectiveDist;
+          secondBestEntry = entry;
+        }
+      }
+
+      if (!bestEntry) {
+        return { status: 'unknown', profile: null, profileKey: null, label: 'Unknown', distance: 1.0, secondDistance: 1.0, cosine: 0, confidence: 0, confidencePct: 0 };
+      }
+
+      // แปลงระยะห่างเป็นเปอร์เซ็นต์ความมั่นใจที่เข้าใจง่าย (d=0.20 -> ~98%, d=0.41 -> ~76%)
+      const confidence = Math.max(0, Math.min(0.99, 1 - (bestEffectiveDist * 0.58)));
+      const confidencePct = Math.round(confidence * 100);
+
+      // 1. เกินค่า Threshold หรือไม่ผ่านเกณฑ์มุม Cosine -> ไม่ใช่คนในทะเบียน (เช่น พี่น้อง/ญาติที่ไม่ได้ลงทะเบียน)
+      if (bestEffectiveDist > activeThreshold || bestCosine < minCosine) {
+        const isNearRelativeZone = (bestEffectiveDist <= activeThreshold + 0.065);
+        return {
+          status: isNearRelativeZone ? 'uncertain' : 'unknown',
+          profile: null,
+          profileKey: null,
+          label: 'Unknown',
+          distance: bestEffectiveDist,
+          rawMinDistance: bestRawMinDist,
+          secondDistance: secondBestEffectiveDist,
+          cosine: bestCosine,
+          confidence: confidence,
+          confidencePct: confidencePct
+        };
+      }
+
+      // 2. Top-2 Margin Guard: กรณีมีพี่น้อง/แม่ลูกลงทะเบียนไว้ทั้งคู่ แล้วเฟรมนี้ระยะห่างใกล้กันเกินไป
+      const margin = secondBestEffectiveDist - bestEffectiveDist;
+      if (secondBestEntry && secondBestEntry.key !== bestEntry.key && bestEffectiveDist > 0.32 && margin < MIN_FACE_MATCH_MARGIN) {
+        return {
+          status: 'ambiguous',
+          profile: bestEntry.profile,
+          profileKey: bestEntry.key,
+          label: bestEntry.name,
+          secondLabel: secondBestEntry.name,
+          distance: bestEffectiveDist,
+          secondDistance: secondBestEffectiveDist,
+          margin: margin,
+          cosine: bestCosine,
+          confidence: confidence,
+          confidencePct: confidencePct
+        };
+      }
+
+      return {
+        status: 'matched',
+        profile: bestEntry.profile,
+        profileKey: bestEntry.key,
+        label: bestEntry.name,
+        distance: bestEffectiveDist,
+        rawMinDistance: bestRawMinDist,
+        secondDistance: secondBestEffectiveDist,
+        cosine: bestCosine,
+        confidence: confidence,
+        confidencePct: confidencePct
+      };
     }
 
     // --- Camera & Real-time Recognition ---
@@ -5075,13 +5458,25 @@
         faceapi.matchDimensions(canvas, displaySize);
       }
 
-      const detectorOptions = typeof faceapi !== 'undefined' ? new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }) : null;
+      const detectorOptions = typeof faceapi !== 'undefined' ? new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.56 }) : null;
 
       async function detectFrame() {
         if (!state.cameraStarted || !state.isDetecting) return;
 
         if (video.readyState >= 2 && state.modelsLoaded && state.currentTab === 'scanner') {
           try {
+            const curW = video.videoWidth || 640;
+            const curH = video.videoHeight || 480;
+            if (canvas.width !== curW || canvas.height !== curH) {
+              displaySize.width = curW;
+              displaySize.height = curH;
+              canvas.width = curW;
+              canvas.height = curH;
+              if (typeof faceapi !== 'undefined' && faceapi.matchDimensions) {
+                faceapi.matchDimensions(canvas, displaySize);
+              }
+            }
+
             const detections = await faceapi.detectAllFaces(video, detectorOptions)
               .withFaceLandmarks()
               .withFaceDescriptors();
@@ -5091,47 +5486,107 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const now = Date.now();
-            let detectedCurrentFrameNames = new Set();
+            const detectedCurrentFrameKeys = new Set();
+            const detectedCurrentFrameDisplayNames = new Set();
+            const seenCandidateKeysThisFrame = new Set();
             let unknownDetectedThisFrame = false;
+            let pendingVerificationThisFrame = false;
 
             if (resizedDetections.length > 0) {
+              const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
+
               resizedDetections.forEach(detection => {
                 const { box } = detection.detection;
-                let label = 'Unknown';
-                let isKnown = false;
-                let distance = 1.0;
 
-                if (state.faceMatcher) {
-                  const bestMatch = state.faceMatcher.findBestMatch(detection.descriptor);
-                  label = bestMatch.label;
-                  distance = bestMatch.distance;
-                  isKnown = (label !== 'unknown');
+                // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่ (ป้องกันมุมเอียงที่ทำให้พี่น้อง/แม่ลูกดูคล้ายกัน)
+                const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
+                if (!quality.ok) {
+                  pendingVerificationThisFrame = true;
+                  drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
+                  return;
                 }
 
-                drawFaceBox(ctx, box, label, isKnown, distance);
+                // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
+                const matchRes = matchFaceWithPrecision(detection.descriptor);
 
-                if (isKnown) {
-                  detectedCurrentFrameNames.add(label);
-                  handlePersonGreeting(label, 1 - distance);
+                if (matchRes.status === 'matched') {
+                  const pKey = matchRes.profileKey || ('name:' + matchRes.label);
+                  seenCandidateKeysThisFrame.add(pKey);
+
+                  // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
+                  if (state.trackedPersons.has(pKey)) {
+                    detectedCurrentFrameKeys.add(pKey);
+                    detectedCurrentFrameDisplayNames.add(matchRes.label);
+                    drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
+                      profile: matchRes.profile,
+                      confidencePct: matchRes.confidencePct
+                    });
+                    handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
+                  } else {
+                    // Layer 3: Multi-Frame Temporal Consensus (ต้องตรงกันต่อเนื่องครบ REQUIRED_FACE_CONFIRM_FRAMES เฟรม)
+                    let cand = state.candidateMatches.get(pKey);
+                    if (!cand || (now - cand.lastSeen > 1100)) {
+                      cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
+                      state.candidateMatches.set(pKey, cand);
+                    } else {
+                      cand.count += 1;
+                      cand.distances.push(matchRes.distance);
+                      if (cand.distances.length > 5) cand.distances.shift();
+                      cand.lastSeen = now;
+                    }
+
+                    const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
+                    if (cand.count >= REQUIRED_FACE_CONFIRM_FRAMES && avgDist <= activeThreshold) {
+                      const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
+                      detectedCurrentFrameKeys.add(pKey);
+                      detectedCurrentFrameDisplayNames.add(matchRes.label);
+                      drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
+                        profile: matchRes.profile,
+                        confidencePct: Math.round(avgConf * 100)
+                      });
+                      handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
+                    } else {
+                      pendingVerificationThisFrame = true;
+                      const stepNum = Math.min(cand.count, REQUIRED_FACE_CONFIRM_FRAMES);
+                      drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + REQUIRED_FACE_CONFIRM_FRAMES + ')', 'verifying', matchRes.distance, null);
+                    }
+                  }
+                } else if (matchRes.status === 'ambiguous') {
+                  pendingVerificationThisFrame = true;
+                  if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
+                  drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
                 } else {
                   unknownDetectedThisFrame = true;
+                  drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
+                }
+              });
+
+              // ล้าง Candidate ที่หลุดเฟรมหรือไม่ต่อเนื่อง
+              state.candidateMatches.forEach((candData, key) => {
+                if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 900)) {
+                  state.candidateMatches.delete(key);
                 }
               });
 
               state.lastBroadcastDetectedCount = resizedDetections.length;
-              if (detectedCurrentFrameNames.size > 0) {
-                state.lastBroadcastDetectedText = 'ตรวจพบ: คุณ ' + Array.from(detectedCurrentFrameNames).join(', ');
+              if (detectedCurrentFrameDisplayNames.size > 0) {
+                state.lastBroadcastDetectedText = 'ตรวจพบ: คุณ ' + Array.from(detectedCurrentFrameDisplayNames).join(', ');
+              } else if (pendingVerificationThisFrame) {
+                state.lastBroadcastDetectedText = 'กำลังตรวจสอบและยืนยันเอกลักษณ์ใบหน้า...';
               } else if (unknownDetectedThisFrame) {
                 state.lastBroadcastDetectedText = 'ตรวจพบ: ผู้มาติดต่อ / ลูกค้าทั่วไป';
               }
 
-              if (unknownDetectedThisFrame && detectedCurrentFrameNames.size === 0) {
+              if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
                 handleUnknownGreeting();
               } else if (!unknownDetectedThisFrame) {
                 state.unknownTracker.confirmCount = 0;
               }
             } else {
               state.unknownTracker.confirmCount = 0;
+              state.candidateMatches.forEach((candData, key) => {
+                if (now - candData.lastSeen > 900) state.candidateMatches.delete(key);
+              });
               state.lastBroadcastDetectedCount = 0;
               state.lastBroadcastDetectedText = 'กำลังสแกนใบหน้า...';
             }
@@ -5140,7 +5595,7 @@
               updateBroadcastCompositeCanvas();
             }
 
-            cleanupExitedPersons(now, detectedCurrentFrameNames, unknownDetectedThisFrame);
+            cleanupExitedPersons(now, detectedCurrentFrameKeys, unknownDetectedThisFrame || pendingVerificationThisFrame);
           } catch (err) {
             console.error(err);
           }
@@ -5150,17 +5605,27 @@
       requestAnimationFrame(detectFrame);
     }
 
-    function drawFaceBox(ctx, box, label, isKnown, distance) {
+    function drawFaceBox(ctx, box, label, isKnownOrMode, distance, meta) {
+      const mode = (isKnownOrMode === true) ? 'known' : ((isKnownOrMode === false || !isKnownOrMode) ? 'unknown' : String(isKnownOrMode));
+      const isKnown = (mode === 'known');
       let isVip = false;
+
       if (isKnown) {
-        const cleanLabel = (label || '').trim();
-        const p = (state.profiles || []).find(x => (x.name || '').trim() === cleanLabel);
+        const p = (meta && meta.profile) ? meta.profile : (state.profiles || []).find(x => (x.name || '').trim() === (label || '').trim());
         if (p && p.personType === 'vip') isVip = true;
       }
 
-      const color = isKnown ? (isVip ? '#D4AC0D' : '#28AE60') : '#D9822B';
+      let color = '#D9822B';
+      if (isKnown) {
+        color = isVip ? '#D4AC0D' : '#28AE60';
+      } else if (mode === 'verifying' || mode === 'ambiguous') {
+        color = '#2E86C1';
+      } else if (mode === 'low_quality') {
+        color = '#6E6B62';
+      }
+
       ctx.strokeStyle = color;
-      ctx.lineWidth = 3.5;
+      ctx.lineWidth = (mode === 'low_quality') ? 2.5 : 3.5;
 
       if (ctx.roundRect) {
         ctx.beginPath();
@@ -5170,10 +5635,17 @@
         ctx.strokeRect(box.x, box.y, box.width, box.height);
       }
 
-      const displayText = isKnown
-        ? ((isVip ? '⭐ VIP: ' : '💼 ') + 'คุณ ' + label)
-        : 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
-      ctx.font = 'bold 15px "Plus Jakarta Sans", "Sarabun", sans-serif';
+      let displayText = 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
+      if (isKnown) {
+        const confSuffix = (meta && typeof meta.confidencePct === 'number' && meta.confidencePct > 0) ? (' · ' + meta.confidencePct + '%') : '';
+        displayText = (isVip ? '⭐ VIP: ' : '💼 ') + 'คุณ ' + label + confSuffix;
+      } else if (mode === 'verifying' || mode === 'ambiguous') {
+        displayText = '🔍 ' + label;
+      } else if (mode === 'low_quality') {
+        displayText = '📷 ' + label;
+      }
+
+      ctx.font = 'bold 14px "Plus Jakarta Sans", "Sarabun", sans-serif';
       const textWidth = ctx.measureText(displayText).width;
       const badgeWidth = textWidth + 24;
       const badgeHeight = 28;
@@ -5192,19 +5664,32 @@
       ctx.fillText(displayText, box.x + 12, badgeY + 19);
     }
 
-    function handlePersonGreeting(name, confidence) {
+    function handlePersonGreeting(profileOrName, confidence, explicitKey) {
       const now = Date.now();
-      let person = state.trackedPersons.get(name);
-      if (!person) {
-        state.trackedPersons.set(name, { lastSeen: now, hasGreeted: true });
+      let profile = null;
+      let cleanName = '';
 
-        const cleanName = (name || '').trim();
-        const profile = (state.profiles || []).find(p => (p.name || '').trim() === cleanName) ||
-                        (state.profiles || []).find(p => {
-                          const pName = (p.name || '').trim();
-                          return pName && (cleanName.includes(pName) || pName.includes(cleanName));
-                        });
-        const profileId = profile ? profile.id : null;
+      if (profileOrName && typeof profileOrName === 'object') {
+        profile = profileOrName;
+        cleanName = (profile.name || '').trim();
+      } else {
+        cleanName = String(profileOrName || '').trim();
+        // จับคู่ชื่อแบบตรงตัวเท่านั้น (ตัดการค้นหาแบบ includes ออกเพื่อไม่ให้ชื่อเครือญาติ/คนนามสกุลเดียวกันชนกัน)
+        profile = (state.profiles || []).find(p => (p.name || '').trim() === cleanName) || null;
+      }
+
+      const profileId = profile ? profile.id : null;
+      const trackingKey = explicitKey || (profileId ? String(profileId) : ('name:' + cleanName));
+
+      let person = state.trackedPersons.get(trackingKey);
+      if (!person) {
+        state.trackedPersons.set(trackingKey, {
+          lastSeen: now,
+          hasGreeted: true,
+          name: cleanName,
+          profileId: profileId
+        });
+
         const personType = (profile && profile.personType) ? String(profile.personType).toLowerCase() : 'employee';
         const category = (personType === 'vip') ? 'vip' : 'employee';
 
@@ -5231,6 +5716,7 @@
           logStatus('[MESSAGE] ตรวจพบ ' + messages.length + ' ข้อความสำหรับคุณ ' + cleanName + ' (กำลังอ่านตามลำดับ)');
         }
 
+        const confPct = Math.round((Number(confidence) || 0) * 100);
         enqueueGreetingTask({
           id: 'greet_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
           type: 'known',
@@ -5239,7 +5725,7 @@
           phrases: phrases,
           withChime: true
         });
-        logStatus('[GREET] ตรวจพบใบหน้า: คุณ ' + cleanName + ' (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ') (บันทึกลงคิวทักทาย)');
+        logStatus('[GREET] ยืนยันตัวตนสำเร็จ: คุณ ' + cleanName + ' (' + (personType === 'vip' ? 'VIP' : 'พนักงาน') + ', ความแม่นยำ ' + confPct + '%)');
         recordScanLog(cleanName, 'KNOWN', confidence);
       } else {
         person.lastSeen = now;
@@ -5251,8 +5737,8 @@
       state.unknownTracker.lastSeen = now;
       state.unknownTracker.confirmCount = (state.unknownTracker.confirmCount || 0) + 1;
 
-      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 3 เฟรม เพื่อป้องกันเฟรมแรกที่กล้องเพิ่งปรับโฟกัสแล้วเบลอ
-      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 3) {
+      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 4 เฟรม เพื่อป้องกันช่วงที่กล้องเพิ่งปรับโฟกัสหรือหันหน้าเข้าหากล้อง
+      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 4) {
         state.unknownTracker.hasGreeted = true;
         enqueueGreetingTask({
           id: 'greet_unknown_' + Date.now(),
@@ -5267,11 +5753,13 @@
       }
     }
 
-    function cleanupExitedPersons(now, detectedNames, unknownDetected) {
-      state.trackedPersons.forEach((data, name) => {
-        if (!detectedNames.has(name) && now - data.lastSeen > state.EXIT_THRESHOLD_MS) {
-          state.trackedPersons.delete(name);
-          logStatus('[EXIT] คุณ ' + name + ' เดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
+    function cleanupExitedPersons(now, detectedKeys, unknownDetected) {
+      state.trackedPersons.forEach((data, key) => {
+        if (!detectedKeys.has(key) && now - data.lastSeen > state.EXIT_THRESHOLD_MS) {
+          const displayName = (data && data.name) ? data.name : key;
+          state.trackedPersons.delete(key);
+          state.candidateMatches.delete(key);
+          logStatus('[EXIT] คุณ ' + displayName + ' เดินออกจากกล้องแล้ว (รีเซ็ตสถานะยืนยันตัวตน)');
         }
       });
 
@@ -5816,11 +6304,12 @@
       snapshotCanvas.height = video.videoHeight || 480;
       snapshotCtx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
 
-      captureStatus.textContent = 'กำลังประมวลผลใบหน้าและสกัด Vector 128 มิติ...';
+      captureStatus.textContent = 'กำลังสกัดอัตลักษณ์ใบหน้าความละเอียดสูงแบบหลายเฟรม (1/3)...';
       captureStatus.className = 'text-xs text-[#9C6214] mt-2 font-bold text-center';
 
       try {
-        const detection = await faceapi.detectSingleFace(snapshotCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 }))
+        const regDetOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.55 });
+        const detection = await faceapi.detectSingleFace(snapshotCanvas, regDetOptions)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
@@ -5835,6 +6324,35 @@
           return;
         }
 
+        const primarySample = Array.from(detection.descriptor);
+        const collectedSamples = [primarySample];
+
+        // Layer 5: Multi-Sample Burst Capture (เก็บเพิ่มอีก 2 เฟรมห่างกัน ~110ms เพื่อลด Noise และแยกแยะพี่น้อง/เครือญาติ)
+        if (video.readyState >= 2) {
+          const burstCanvas = document.createElement('canvas');
+          burstCanvas.width = snapshotCanvas.width;
+          burstCanvas.height = snapshotCanvas.height;
+          const burstCtx = burstCanvas.getContext('2d');
+
+          for (let step = 2; step <= 3; step++) {
+            await new Promise(function(resolve) { setTimeout(resolve, 110); });
+            if (video.readyState < 2) break;
+            captureStatus.textContent = 'กำลังสกัดอัตลักษณ์ใบหน้าความละเอียดสูงแบบหลายเฟรม (' + step + '/3)...';
+            burstCtx.drawImage(video, 0, 0, burstCanvas.width, burstCanvas.height);
+            try {
+              const extraDet = await faceapi.detectSingleFace(burstCanvas, regDetOptions)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+              if (extraDet && extraDet.descriptor) {
+                const checkSamePerson = computeEuclideanAndCosine(primarySample, extraDet.descriptor);
+                if (checkSamePerson.distance <= 0.32) {
+                  collectedSamples.push(Array.from(extraDet.descriptor));
+                }
+              }
+            } catch (burstErr) {}
+          }
+        }
+
         const base64 = snapshotCanvas.toDataURL('image/jpeg', 0.85);
         if (previewImg) previewImg.src = base64;
         if (previewContainer) previewContainer.classList.remove('hidden');
@@ -5843,15 +6361,47 @@
         if (retakeBtn) retakeBtn.classList.remove('hidden');
         if (regLiveBadge) {
           regLiveBadge.className = 'px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-bold flex items-center gap-1.5';
-          regLiveBadge.innerHTML = '<span class="text-[#28AE60]">✓</span> <span>ภาพถ่ายเรียบร้อย</span>';
+          regLiveBadge.innerHTML = '<span class="text-[#28AE60]">✓</span> <span>Multi-Sample HD (' + collectedSamples.length + ' เฟรม)</span>';
         }
 
-        state.capturedDescriptor = Array.from(detection.descriptor);
+        const centroidVec = buildMultiSampleCentroid(collectedSamples);
+        if (collectedSamples.length > 1 && centroidVec) {
+          state.capturedDescriptor = [centroidVec].concat(collectedSamples.map(roundDescriptorArray));
+        } else {
+          state.capturedDescriptor = roundDescriptorArray(primarySample);
+        }
         state.capturedImageBase64 = base64;
         state.regIsCapturing = false;
 
-        captureStatus.textContent = (isAuto ? '⚡ ถ่ายภาพอัตโนมัติสำเร็จ! ' : '✓ ถ่ายภาพสำเร็จ ') + 'ตรวจพบใบหน้าและสกัด Vector 128 มิติเรียบร้อย';
-        captureStatus.className = 'text-xs text-[#1E824C] mt-2 font-bold text-center';
+        // ตรวจสอบความใกล้เคียงกับโปรไฟล์ที่มีอยู่ในระบบ (แจ้งเตือนกรณีลงทะเบียนซ้ำ หรือเป็นพี่น้อง/เครือญาติ)
+        let closestExistingName = '';
+        let closestExistingDist = 999;
+        const probeVec = centroidVec || primarySample;
+        if (state.compiledProfiles && state.compiledProfiles.length > 0) {
+          for (let i = 0; i < state.compiledProfiles.length; i++) {
+            const entry = state.compiledProfiles[i];
+            for (let v = 0; v < entry.vectors.length; v++) {
+              const m = computeEuclideanAndCosine(probeVec, entry.vectors[v]);
+              if (m.distance < closestExistingDist) {
+                closestExistingDist = m.distance;
+                closestExistingName = entry.name;
+              }
+            }
+          }
+        }
+
+        const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
+        if (closestExistingName && closestExistingDist <= activeThreshold) {
+          captureStatus.textContent = '⚠️ โครงหน้าใกล้เคียงกับ "คุณ ' + closestExistingName + '" (ระยะห่าง ' + closestExistingDist.toFixed(3) + ') — หากเป็นคนเดิมแนะนำลบโปรไฟล์เก่าก่อน หากเป็นพี่น้อง/ญาติสามารถกดบันทึกได้เลย';
+          captureStatus.className = 'text-xs text-[#9C6214] mt-2 font-bold text-center';
+        } else if (closestExistingName && closestExistingDist < 0.48) {
+          captureStatus.textContent = '✓ สกัดอัตลักษณ์ HD (' + collectedSamples.length + ' เฟรม) สำเร็จ! (ตรวจพบโครงหน้าคล้ายคุณ ' + closestExistingName + ' ระยะ ' + closestExistingDist.toFixed(3) + ' ระบบแยกแยะอัตโนมัติพร้อมทำงาน)';
+          captureStatus.className = 'text-xs text-[#1E824C] mt-2 font-bold text-center';
+        } else {
+          captureStatus.textContent = (isAuto ? '⚡ ถ่ายภาพอัตโนมัติสำเร็จ! ' : '✓ ถ่ายภาพสำเร็จ ') + 'สกัดอัตลักษณ์ความละเอียดสูง (' + collectedSamples.length + ' เฟรม · 128 มิติ) เรียบร้อย';
+          captureStatus.className = 'text-xs text-[#1E824C] mt-2 font-bold text-center';
+        }
+
         document.getElementById('saveProfileBtn').disabled = false;
 
         showToast((isAuto ? '⚡ ถ่ายภาพอัตโนมัติเรียบร้อย' : '📸 ถ่ายภาพใบหน้าสำเร็จ') + ' กรุณากรอกชื่อแล้วกดบันทึก', 'success');
@@ -6047,6 +6597,10 @@
           ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF9E7] text-[#9A7D0A] border border-[#FAD7A0] text-[10px] font-extrabold shadow-xs">⭐ VIP</span>'
           : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] text-[10px] font-extrabold shadow-xs">💼 พนักงาน</span>';
 
+        var isMultiSample = Array.isArray(p.descriptors) && p.descriptors.length > 1 && Array.isArray(p.descriptors[0]);
+        var hdBadge = isMultiSample
+          ? '<span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#EBF5FB] text-[#1F618D] border border-[#AED6F1] text-[9px] font-extrabold" title="ลงทะเบียนความแม่นยำสูงแบบหลายเฟรม (' + p.descriptors.length + ' เวกเตอร์)">🎯 HD</span>'
+          : '';
         var switchTypeTarget = isVip ? 'employee' : 'vip';
         var switchBtn = isAdmin
           ? '<button type="button" onclick="toggleProfileType(\'' + p.id + '\', \'' + switchTypeTarget + '\')" class="text-[10px] font-bold text-[#6E6B62] hover:text-[#1F1E1B] px-2 py-0.5 rounded-lg bg-[#F7F5EE] hover:bg-[#EAE6DA] border border-[#DDD7C5] transition shadow-xs cursor-pointer" title="สลับเป็น ' + (isVip ? 'พนักงาน' : 'VIP') + '">🔄 ' + (isVip ? 'เป็นพนักงาน' : 'เป็น VIP') + '</button>'
@@ -6075,6 +6629,7 @@
                 '<div class="flex items-center gap-1.5 flex-wrap">' +
                   '<h4 class="font-extrabold text-[#1F1E1B] text-base truncate">' + safeName + '</h4>' +
                   typeBadge +
+                  hdBadge +
                 '</div>' +
                 '<div class="flex items-center gap-2">' +
                   '<span class="text-[11px] text-[#6E6B62] font-medium">' + (p.createdAt || '-') + '</span>' +
@@ -7617,6 +8172,14 @@
     window.startCameraBroadcastLoop = startCameraBroadcastLoop;
     window.stopCameraBroadcastLoop = stopCameraBroadcastLoop;
     window.publishCameraFrameNow = publishCameraFrameNow;
+    window.onFaceThresholdSliderInput = onFaceThresholdSliderInput;
+    window.applyFaceThresholdPreset = applyFaceThresholdPreset;
+    window.syncFaceThresholdUI = syncFaceThresholdUI;
+    window.matchFaceWithPrecision = matchFaceWithPrecision;
+    window.checkScannerFaceQuality = checkScannerFaceQuality;
+    window.extractDescriptorVectors = extractDescriptorVectors;
+    window.computeEuclideanAndCosine = computeEuclideanAndCosine;
+    window.buildMultiSampleCentroid = buildMultiSampleCentroid;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)

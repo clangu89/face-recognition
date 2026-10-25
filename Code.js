@@ -1064,7 +1064,8 @@ function getSystemSettings() {
       bellChimeEnabled: true,
       voiceCategoryConfigs: null,
       workStartTime: "08:30",
-      workEndTime: "17:30"
+      workEndTime: "17:30",
+      faceMatchThreshold: 0.41
     };
 
     if (data && data.length > 1) {
@@ -1095,6 +1096,11 @@ function getSystemSettings() {
           settings.workStartTime = normalizeTimeHHMM_(val) || "08:30";
         } else if (key === "WORK_END_TIME" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.workEndTime = normalizeTimeHHMM_(val) || "17:30";
+        } else if (key === "FACE_MATCH_THRESHOLD" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var parsedThr = parseFloat(String(val).trim());
+          if (!isNaN(parsedThr) && parsedThr >= 0.30 && parsedThr <= 0.55) {
+            settings.faceMatchThreshold = Math.round(parsedThr * 1000) / 1000;
+          }
         }
         if (key === "GREETING_VIP_TEMPLATE") {
           settings._hasExplicitVip = true;
@@ -1120,7 +1126,8 @@ function getSystemSettings() {
         bellChimeEnabled: true,
         voiceCategoryConfigs: null,
         workStartTime: "08:30",
-        workEndTime: "17:30"
+        workEndTime: "17:30",
+        faceMatchThreshold: 0.41
       }
     };
   }
@@ -1200,6 +1207,16 @@ function saveSystemSettings(payload) {
         desc: "เวลาเลิกงานพนักงาน (HH:mm)",
         isText: true
       };
+    }
+    if (payload.faceMatchThreshold !== undefined) {
+      var thrNum = parseFloat(String(payload.faceMatchThreshold));
+      if (!isNaN(thrNum) && thrNum >= 0.30 && thrNum <= 0.55) {
+        updateMap["FACE_MATCH_THRESHOLD"] = {
+          value: String(Math.round(thrNum * 1000) / 1000),
+          desc: "เกณฑ์ระยะห่างความแม่นยำใบหน้า (ยิ่งต่ำยิ่งเข้มงวด แนะนำ 0.41 สำหรับแยกพี่น้อง/แม่ลูก)",
+          isText: true
+        };
+      }
     }
 
     // อัปเดตแถวที่มีอยู่เดิม
