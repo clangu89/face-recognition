@@ -1924,11 +1924,11 @@
 
             <!-- Distance Presets (4 Buttons) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <button type="button" id="distBtn_far" onclick="setDetectionDistanceMode('far', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
-                🌐 ระยะไกล<br><span class="text-[10px] font-normal text-[#6E6B62]">~2.5 - 3.5 ม. (8%)</span>
+              <button type="button" id="distBtn_far" onclick="setDetectionDistanceMode('far', true)" class="py-2.5 px-2 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center shadow-xs">
+                🌐 ระยะไกล (แนะนำ)<br><span class="text-[10px] font-normal text-[#2D6A4F]">~2.5 - 3.5 ม. (8%)</span>
               </button>
-              <button type="button" id="distBtn_medium" onclick="setDetectionDistanceMode('medium', true)" class="py-2.5 px-2 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center shadow-xs">
-                ⚖️ ปานกลาง (แนะนำ)<br><span class="text-[10px] font-normal text-[#2D6A4F]">~1.2 - 1.8 ม. (14%)</span>
+              <button type="button" id="distBtn_medium" onclick="setDetectionDistanceMode('medium', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                ⚖️ ระยะปานกลาง<br><span class="text-[10px] font-normal text-[#6E6B62]">~1.2 - 1.8 ม. (14%)</span>
               </button>
               <button type="button" id="distBtn_near" onclick="setDetectionDistanceMode('near', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
                 🎯 ระยะใกล้<br><span class="text-[10px] font-normal text-[#6E6B62]">~0.8 - 1.2 ม. (20%)</span>
@@ -1942,9 +1942,9 @@
             <div class="space-y-1 pt-1 border-t border-[#DCD6C4]/50">
               <div class="flex items-center justify-between text-[11px] font-bold text-[#1F1E1B]">
                 <span>🎚️ ปรับขนาดใบหน้าขั้นต่ำละเอียด (Face Ratio):</span>
-                <span id="settingDetectionDistanceRatioText" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C]">14% ของจอ (~1.5 เมตร)</span>
+                <span id="settingDetectionDistanceRatioText" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C]">8% ของจอ (~2.5 - 3.5 เมตร)</span>
               </div>
-              <input type="range" id="settingDetectionDistanceSlider" min="0.06" max="0.32" step="0.01" value="0.14" oninput="onDetectionDistanceSliderInput(this.value, true)" class="w-full accent-[#28AE60] cursor-pointer">
+              <input type="range" id="settingDetectionDistanceSlider" min="0.06" max="0.32" step="0.01" value="0.08" oninput="onDetectionDistanceSliderInput(this.value, true)" class="w-full accent-[#28AE60] cursor-pointer">
               <div class="flex justify-between text-[10px] font-semibold text-[#6E6B62]">
                 <span>ไกลมาก (6% / ~3.5 ม.)</span>
                 <span>ปานกลาง (14% / ~1.5 ม.)</span>
@@ -2291,19 +2291,19 @@
     const DEFAULT_FACE_MATCH_THRESHOLD = 0.41; // ค่าแนะนำสำหรับแยกแยะพี่น้อง / แม่ลูก ในโครงหน้าเอเชีย
     const MIN_FACE_MATCH_MARGIN = 0.038; // ระยะห่างขั้นต่ำระหว่างคนอันดับ 1 และอันดับ 2 ป้องกันทักสลับพี่น้อง
     const REQUIRED_FACE_CONFIRM_FRAMES = 2; // จำนวนเฟรมต่อเนื่องขั้นต่ำสำหรับ Standard Path (Fast-Path ยืนยันใน 1 เฟรม)
-    const FAST_PATH_DISTANCE_THRESHOLD = 0.28; // ระยะห่างความมั่นใจสูง ยืนยันด่วนทันทีใน 1 เฟรม
+    const FAST_PATH_DISTANCE_THRESHOLD = 0.33; // ระยะห่างความมั่นใจสูง ยืนยันด่วนทันทีใน 1 เฟรม
     const DEFAULT_DETECTION_SPEED_MODE = 'balanced'; // 'turbo' (224), 'balanced' (320), 'precision' (416)
     const DEFAULT_DETECTION_ENGINE = 'tiny'; // 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
     const DEFAULT_SSD_MIN_CONFIDENCE = 0.50; // เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (0.30 - 0.70)
 
     const DETECTION_DISTANCE_PRESETS = {
-      'far':    { id: 'far',    name: '🌐 ระยะไกล (~2.5-3.5 ม.)',   ratio: 0.08, approxMeters: '2.5 - 3.5 ม.', label: 'ระยะไกล' },
-      'medium': { id: 'medium', name: '⚖️ ระยะปานกลาง (~1.2-1.8 ม.)', ratio: 0.14, approxMeters: '1.2 - 1.8 ม.', label: 'ระยะปานกลาง (แนะนำ)' },
+      'far':    { id: 'far',    name: '🌐 ระยะไกล (~2.5-3.5 ม.)',   ratio: 0.08, approxMeters: '2.5 - 3.5 ม.', label: 'ระยะไกล (แนะนำ)' },
+      'medium': { id: 'medium', name: '⚖️ ระยะปานกลาง (~1.2-1.8 ม.)', ratio: 0.14, approxMeters: '1.2 - 1.8 ม.', label: 'ระยะปานกลาง' },
       'near':   { id: 'near',   name: '🎯 ระยะใกล้ (~0.8-1.2 ม.)',   ratio: 0.20, approxMeters: '0.8 - 1.2 ม.', label: 'ระยะใกล้' },
       'close':  { id: 'close',  name: '🔒 ระยะประชิด (< 0.7 ม.)',    ratio: 0.28, approxMeters: '< 0.7 ม.',     label: 'ระยะประชิดมาก' }
     };
-    const DEFAULT_DETECTION_DISTANCE_MODE = 'medium';
-    const DEFAULT_DETECTION_DISTANCE_RATIO = 0.14;
+    const DEFAULT_DETECTION_DISTANCE_MODE = 'far';
+    const DEFAULT_DETECTION_DISTANCE_RATIO = 0.08;
 
     const state = {
       currentUser: null,
@@ -5870,13 +5870,13 @@
       }
       const box = detection.detection.box;
       const score = Number(detection.detection.score || 0);
-      const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.14;
-      const minBoxWidth = Math.max(45, Math.round((frameWidth || 640) * configuredRatio));
+      const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.08;
+      const minBoxWidth = Math.max(36, Math.round((frameWidth || 640) * configuredRatio));
 
-      if (score < 0.25) {
+      if (score < 0.18) {
         return { ok: false, reason: 'ภาพใบหน้าไม่ชัด', code: 'low_score' };
       }
-      if (box.width < minBoxWidth || box.height < Math.round(minBoxWidth * 0.88)) {
+      if (box.width < 36 || box.height < 32 || box.width < minBoxWidth || box.height < Math.round(minBoxWidth * 0.85)) {
         return { ok: false, reason: 'ขยับเข้าใกล้กล้องอีกนิด', code: 'too_far' };
       }
 
@@ -5898,18 +5898,18 @@
           const noseTip = nosePts[Math.min(3, nosePts.length - 1)];
 
           const eyeSpanX = Math.abs(rightEye.x - leftEye.x);
-          if (eyeSpanX < 14) {
+          if (eyeSpanX < 10) {
             return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'side_pose' };
           }
 
           const rollDeg = Math.abs(Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI));
-          if (rollDeg > 35) {
+          if (rollDeg > 42) {
             return { ok: false, reason: 'กรุณาตั้งศีรษะให้ตรง', code: 'head_tilt' };
           }
 
           const minEyeX = Math.min(leftEye.x, rightEye.x);
           const noseRatio = eyeSpanX > 0 ? (noseTip.x - minEyeX) / eyeSpanX : 0.5;
-          if (noseRatio < 0.15 || noseRatio > 0.85) {
+          if (noseRatio < 0.10 || noseRatio > 0.90) {
             return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'yaw_turn' };
           }
 
@@ -6540,18 +6540,18 @@
       const engine = state.detectionEngine || 'tiny';
       if (engine === 'ssd' && state.ssdModelLoaded && faceapi.SsdMobilenetv1Options) {
         return new faceapi.SsdMobilenetv1Options({
-          minConfidence: Number(state.ssdMinConfidence) || 0.40,
+          minConfidence: Number(state.ssdMinConfidence) || 0.32,
           maxResults: 10
         });
       }
       if (!faceapi.TinyFaceDetectorOptions) return null;
       const mode = state.detectionSpeedMode || 'balanced';
       if (mode === 'turbo') {
-        return new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.26 });
+        return new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.20 });
       } else if (mode === 'precision') {
-        return new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.36 });
+        return new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.28 });
       }
-      return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.30 });
+      return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.22 });
     }
 
     function updateScannerPerformanceBadge(fps, latency) {
@@ -6560,7 +6560,7 @@
       const isSsd = (state.detectionEngine === 'ssd' && state.ssdModelLoaded);
       let engineText = '';
       if (isSsd) {
-        const confStr = Number(state.ssdMinConfidence || 0.40).toFixed(2);
+        const confStr = Number(state.ssdMinConfidence || 0.32).toFixed(2);
         engineText = '🎯 ' + fps + ' FPS (' + latency + 'ms) · SSD (' + confStr + ')';
       } else {
         const mode = state.detectionSpeedMode || 'balanced';
@@ -6648,8 +6648,8 @@
 
               if (resizedDetections.length > 0) {
                 // คำนวณขนาดใบหน้าขั้นต่ำตามระยะที่ตั้งไว้ (Face Distance Threshold)
-                const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.14;
-                const minRequiredBoxWidth = Math.max(45, Math.round(displaySize.width * configuredRatio));
+                const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.08;
+                const minRequiredBoxWidth = Math.max(36, Math.round(displaySize.width * configuredRatio));
 
                 const inRangeDetections = [];
                 const outOfRangeDetections = [];
@@ -6980,8 +6980,8 @@
       state.unknownTracker.lastSeen = now;
       state.unknownTracker.confirmCount = (state.unknownTracker.confirmCount || 0) + 1;
 
-      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 4 เฟรม เพื่อป้องกันช่วงที่กล้องเพิ่งปรับโฟกัสหรือหันหน้าเข้าหากล้อง
-      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 4) {
+      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 2 เฟรม เพื่อความรวดเร็วและป้องกันการกระพริบหลุดเฟรม
+      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 2) {
         state.unknownTracker.hasGreeted = true;
         enqueueGreetingTask({
           id: 'greet_unknown_' + Date.now(),

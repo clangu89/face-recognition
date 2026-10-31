@@ -237,8 +237,8 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
       settingsSheet.appendRow(["DETECTION_ENGINE", "tiny", "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)", nowStr]);
       settingsSheet.appendRow(["SSD_MIN_CONFIDENCE", "0.50", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)", nowStr]);
-      settingsSheet.appendRow(["DETECTION_DISTANCE_MODE", "medium", "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)", nowStr]);
-      settingsSheet.appendRow(["DETECTION_DISTANCE_RATIO", "0.14", "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_DISTANCE_MODE", "far", "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_DISTANCE_RATIO", "0.08", "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)", nowStr]);
     }
 
     // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
