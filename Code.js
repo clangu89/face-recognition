@@ -234,6 +234,7 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["BELL_CHIME_SOUND", "dingdong", "รูปแบบเสียงกระดิ่งเตือน (dingdong/melody3/single_ding/marimba/crystal/digital)", nowStr]);
       settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
     }
 
     // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
@@ -1162,7 +1163,8 @@ function getSystemSettings() {
       voiceCategoryConfigs: null,
       workStartTime: "08:30",
       workEndTime: "17:30",
-      faceMatchThreshold: 0.41
+      faceMatchThreshold: 0.41,
+      detectionSpeedMode: "balanced"
     };
 
     if (data && data.length > 1) {
@@ -1200,6 +1202,11 @@ function getSystemSettings() {
           if (!isNaN(parsedThr) && parsedThr >= 0.30 && parsedThr <= 0.55) {
             settings.faceMatchThreshold = Math.round(parsedThr * 1000) / 1000;
           }
+        } else if (key === "DETECTION_SPEED_MODE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var smVal = String(val).trim().toLowerCase();
+          if (smVal === "turbo" || smVal === "precision" || smVal === "balanced") {
+            settings.detectionSpeedMode = smVal;
+          }
         }
         if (key === "GREETING_VIP_TEMPLATE") {
           settings._hasExplicitVip = true;
@@ -1227,7 +1234,8 @@ function getSystemSettings() {
         voiceCategoryConfigs: null,
         workStartTime: "08:30",
         workEndTime: "17:30",
-        faceMatchThreshold: 0.41
+        faceMatchThreshold: 0.41,
+        detectionSpeedMode: "balanced"
       }
     };
   }
@@ -1321,6 +1329,15 @@ function saveSystemSettings(payload) {
           value: String(Math.round(thrNum * 1000) / 1000),
           desc: "เกณฑ์ระยะห่างความแม่นยำใบหน้า (ยิ่งต่ำยิ่งเข้มงวด แนะนำ 0.41 สำหรับแยกพี่น้อง/แม่ลูก)",
           isText: true
+        };
+      }
+    }
+    if (payload.detectionSpeedMode !== undefined) {
+      var smMode = String(payload.detectionSpeedMode).trim().toLowerCase();
+      if (smMode === "turbo" || smMode === "precision" || smMode === "balanced") {
+        updateMap["DETECTION_SPEED_MODE"] = {
+          value: smMode,
+          desc: "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)"
         };
       }
     }
