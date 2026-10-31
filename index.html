@@ -38,6 +38,7 @@
 
   <!-- Preconnect to high-speed CDNs -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=Outfit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1855,32 +1856,63 @@
                   <p class="text-[11px] text-[#5C5950]">เลือกสถาปัตยกรรมโมเดล AI สำหรับตรวจจับใบหน้า สลับได้ทันทีขณะเปิดกล้อง</p>
                 </div>
               </div>
-              <span id="settingDetectionEngineBadge" class="px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs">
-                TinyFaceDetector (เร็วสูงสุด)
+              <span id="settingDetectionEngineBadge" class="px-3 py-1 rounded-full bg-[#E67E22] text-white text-xs font-extrabold shadow-xs">
+                MediaPipe BlazeFace (60 FPS จับคนเดินผ่าน)
               </span>
             </div>
 
-            <!-- Primary Engine Selector (Tiny vs SSD) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              <button type="button" id="engineBtn_tiny" onclick="setDetectionEngine('tiny', true)" class="py-2.5 px-3 rounded-xl bg-[#EAF7EF] border-2 border-[#28AE60] text-xs font-extrabold text-[#1E824C] transition cursor-pointer text-left shadow-xs">
-                <div class="flex items-center justify-between">
-                  <span class="flex items-center gap-1.5 font-extrabold">⚡ TinyFaceDetector</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#1E824C] border border-[#BEE6CE]">เร็วสูงสุด (~190 KB)</span>
+            <!-- Primary Engine Selector (BlazeFace vs Tiny vs SSD) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              <button type="button" id="engineBtn_blazeface" onclick="setDetectionEngine('blazeface', true)" class="py-2.5 px-3 rounded-xl bg-[#FEF6E6] border-2 border-[#E67E22] text-xs font-extrabold text-[#B95807] transition cursor-pointer text-left shadow-xs">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="flex items-center gap-1 font-extrabold">🚀 MediaPipe BlazeFace</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#E67E22] text-white font-bold">แนะนำ · 60 FPS</span>
                 </div>
-                <p class="text-[10px] font-normal text-[#5C5950] mt-1">เน้นเฟรมเรตสูง 30–45+ FPS กินสเปกน้อย แนะนำสำหรับ iPad / แท็บเล็ต / Kiosk</p>
+                <p class="text-[10px] font-normal text-[#5C5950] mt-1">จับคนเดินผ่านกล้องเฉยๆ มุมหันข้าง และภาพเดินเร็วได้ฉับไว (~230 KB GPU/WASM)</p>
+              </button>
+
+              <button type="button" id="engineBtn_tiny" onclick="setDetectionEngine('tiny', true)" class="py-2.5 px-3 rounded-xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] transition cursor-pointer text-left">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="flex items-center gap-1.5 font-extrabold">⚡ TinyFaceDetector</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#1E824C] border border-[#BEE6CE]">เบาพิเศษ (~190 KB)</span>
+                </div>
+                <p class="text-[10px] font-normal text-[#5C5950] mt-1">เน้นประหยัดพลังงาน 30–45+ FPS สำหรับอุปกรณ์สเปกทั่วไป / แท็บเล็ต</p>
               </button>
 
               <button type="button" id="engineBtn_ssd" onclick="setDetectionEngine('ssd', true)" class="py-2.5 px-3 rounded-xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] transition cursor-pointer text-left">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-1">
                   <span class="flex items-center gap-1.5 font-extrabold">🎯 SSD MobileNet V1</span>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#F4ECF7] text-[#6C3483] border border-[#D7BDE2]">แม่นยำสูง (~5.4 MB)</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#F4ECF7] text-[#6C3483] border border-[#D7BDE2]">Deep CNN (~5.4 MB)</span>
                 </div>
-                <p class="text-[10px] font-normal text-[#5C5950] mt-1">Deep CNN ตรวจจับมุมเอียง แสงน้อย และระยะไกลได้แม่นยำสูง (15–25 FPS)</p>
+                <p class="text-[10px] font-normal text-[#5C5950] mt-1">Deep CNN ตรวจจับแสงน้อยและระยะไกลได้ละเอียดสูง (15–25 FPS)</p>
               </button>
             </div>
 
+            <!-- Sub-Panel: Options for MediaPipe BlazeFace (Walk-By Ultra-Fast Presets) -->
+            <div id="engineSubPanel_blazeface" class="space-y-2 pt-1 border-t border-[#DCD6C4]/50">
+              <div class="flex flex-wrap items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold text-[#1F1E1B] flex items-center gap-1">
+                  <span>🚀 ความไวตรวจจับคนเดินผ่าน MediaPipe BlazeFace:</span>
+                </span>
+                <span id="blazeModelStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-bold">
+                  ● กำลังเตรียม GPU/WASM...
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" id="blazeConfBtn_018" onclick="setBlazeMinConfidence(0.18, true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#FEF6E6] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  ⚡ ไวสูงสุดพิเศษ (0.18)<br><span class="text-[10px] font-normal text-[#6E6B62]">เดินเร็วมาก / มุมเฉียงสุด</span>
+                </button>
+                <button type="button" id="blazeConfBtn_024" onclick="setBlazeMinConfidence(0.24, true)" class="py-2 px-2.5 rounded-xl bg-[#FEF6E6] border-2 border-[#E67E22] text-[11px] font-extrabold text-[#B95807] transition cursor-pointer text-center shadow-xs">
+                  🚀 เดินผ่านแนะนำ (0.24)<br><span class="text-[10px] font-normal text-[#B95807]">สมดุลไวสูง 60 FPS</span>
+                </button>
+                <button type="button" id="blazeConfBtn_035" onclick="setBlazeMinConfidence(0.35, true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#FEF6E6] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  ⚖️ มาตรฐาน (0.35)<br><span class="text-[10px] font-normal text-[#6E6B62]">ลดจับภาพสะท้อนด้านหลัง</span>
+                </button>
+              </div>
+            </div>
+
             <!-- Sub-Panel: Options for TinyFaceDetector (Resolution Presets) -->
-            <div id="engineSubPanel_tiny" class="space-y-2 pt-1 border-t border-[#DCD6C4]/50">
+            <div id="engineSubPanel_tiny" class="hidden space-y-2 pt-1 border-t border-[#DCD6C4]/50">
               <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold text-[#1F1E1B] flex items-center gap-1">
                   <span>📐 ขนาดอินพุต TinyFaceDetector (Input Size):</span>
@@ -2325,9 +2357,12 @@
     const REQUIRED_FACE_CONFIRM_FRAMES = 2; // จำนวนเฟรมต่อเนื่องขั้นต่ำสำหรับ Standard Path (Fast-Path ยืนยันใน 1 เฟรม)
     const FAST_PATH_DISTANCE_THRESHOLD = 0.33; // ระยะห่างความมั่นใจสูง ยืนยันด่วนทันทีใน 1 เฟรม
     const DEFAULT_DETECTION_SPEED_MODE = 'balanced'; // 'turbo' (224), 'balanced' (320), 'precision' (416)
-    const DEFAULT_DETECTION_ENGINE = 'tiny'; // 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
+    const DEFAULT_DETECTION_ENGINE = 'blazeface'; // 'blazeface' (MediaPipe 60FPS Walk-By), 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
+    const DEFAULT_BLAZE_MIN_CONFIDENCE = 0.24; // เกณฑ์ความไวตรวจจับคนเดินผ่าน MediaPipe BlazeFace (0.15 - 0.85)
     const DEFAULT_SSD_MIN_CONFIDENCE = 0.50; // เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (0.30 - 0.70)
     const DEFAULT_VISITOR_GREETING_ENABLED = true; // เปิด/ปิดเสียงพูดทักทายผู้มาติดต่อหลังเสียงกระดิ่งเตือน
+    const WALK_BY_VISITOR_GRACE_MS = 180; // หน่วงสั้นๆ 180ms (อยู่ในช่วงหางเสียงกระดิ่ง) เผื่อพนักงานกำลังหันหน้าเข้ากล้อง ก่อนทักทายผู้มาติดต่อทันที
+    const SPATIAL_TRACK_REUSE_MS = 650; // ระยะเวลาคงสถานะ IoU Lock สำหรับบุคคลที่ยืนยันชื่อแล้วขณะเดินผ่าน (60 FPS 0ms)
 
     const DETECTION_DISTANCE_PRESETS = {
       'far':    { id: 'far',    name: '🌐 ระยะไกล (~2.5-3.5 ม.)',   ratio: 0.08, approxMeters: '2.5 - 3.5 ม.', label: 'ระยะไกล (แนะนำ)' },
@@ -2358,6 +2393,12 @@
       faceMatchThreshold: DEFAULT_FACE_MATCH_THRESHOLD,
       detectionSpeedMode: DEFAULT_DETECTION_SPEED_MODE,
       detectionEngine: DEFAULT_DETECTION_ENGINE,
+      blazeModelLoaded: false,
+      blazeModelLoading: false,
+      blazeFaceDetector: null,
+      blazeDelegate: 'GPU',
+      blazeMinConfidence: DEFAULT_BLAZE_MIN_CONFIDENCE,
+      tinyLandmarkLoaded: false,
       ssdModelLoaded: false,
       ssdModelLoading: false,
       ssdMinConfidence: DEFAULT_SSD_MIN_CONFIDENCE,
@@ -2410,6 +2451,7 @@
       bellChimeEndTime: 0,
       trackedPersons: new Map(),
       unknownTracker: { lastSeen: 0, hasGreeted: false, confirmCount: 0 },
+      walkByTracker: { active: false, firstSeen: 0, lastSeen: 0, frameCount: 0, lastBox: null },
       EXIT_THRESHOLD_MS: 3000,
       capturedDescriptor: null,
       capturedImageBase64: null,
@@ -2874,8 +2916,12 @@
           state.detectionSpeedMode = savedSpeed;
         }
         const savedEngine = localStorage.getItem('face_app_detection_engine');
-        if (savedEngine === 'tiny' || savedEngine === 'ssd') {
+        if (savedEngine === 'blazeface' || savedEngine === 'tiny' || savedEngine === 'ssd') {
           state.detectionEngine = savedEngine;
+        }
+        const savedBlazeConf = parseFloat(localStorage.getItem('face_app_blaze_min_confidence'));
+        if (!isNaN(savedBlazeConf) && savedBlazeConf >= 0.15 && savedBlazeConf <= 0.85) {
+          state.blazeMinConfidence = Math.round(savedBlazeConf * 100) / 100;
         }
         const savedSsdConf = parseFloat(localStorage.getItem('face_app_ssd_min_confidence'));
         if (!isNaN(savedSsdConf) && savedSsdConf >= 0.20 && savedSsdConf <= 0.90) {
@@ -3531,10 +3577,21 @@
           }
           if (s.detectionEngine) {
             const eng = String(s.detectionEngine).trim().toLowerCase();
-            if (eng === 'tiny' || eng === 'ssd') {
+            if (eng === 'blazeface' || eng === 'tiny' || eng === 'ssd') {
               state.detectionEngine = eng;
               if (eng === 'ssd' && !state.ssdModelLoaded) {
                 loadSsdMobilenetModel();
+              } else if (eng === 'blazeface' && !state.blazeModelLoaded && typeof loadBlazeFaceModel === 'function') {
+                loadBlazeFaceModel();
+              }
+            }
+          }
+          if (s.blazeMinConfidence !== undefined && s.blazeMinConfidence !== null) {
+            const bc = parseFloat(String(s.blazeMinConfidence));
+            if (!isNaN(bc) && bc >= 0.15 && bc <= 0.85) {
+              state.blazeMinConfidence = Math.round(bc * 100) / 100;
+              if (state.blazeFaceDetector && typeof state.blazeFaceDetector.setOptions === 'function') {
+                try { state.blazeFaceDetector.setOptions({ minDetectionConfidence: state.blazeMinConfidence }); } catch(eOpt) {}
               }
             }
           }
@@ -3625,6 +3682,7 @@
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
         detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
         detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
+        blazeMinConfidence: state.blazeMinConfidence || DEFAULT_BLAZE_MIN_CONFIDENCE,
         ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE,
         detectionDistanceMode: state.detectionDistanceMode || DEFAULT_DETECTION_DISTANCE_MODE,
         detectionDistanceRatio: state.detectionDistanceRatio || DEFAULT_DETECTION_DISTANCE_RATIO
@@ -4254,7 +4312,7 @@
     }
 
     async function setDetectionEngine(engine, saveCloud) {
-      if (engine !== 'ssd' && engine !== 'tiny') engine = 'tiny';
+      if (engine !== 'blazeface' && engine !== 'ssd' && engine !== 'tiny') engine = 'blazeface';
       state.detectionEngine = engine;
       try {
         localStorage.setItem('face_app_detection_engine', engine);
@@ -4262,18 +4320,45 @@
 
       syncDetectionEngineUI();
 
-      if (engine === 'ssd') {
+      if (engine === 'blazeface') {
+        const loaded = await loadBlazeFaceModel();
+        if (loaded) {
+          logStatus('[AI] สลับใช้งานโมเดล AI: MediaPipe BlazeFace (60 FPS จับคนเดินผ่าน)');
+          showToast('สลับโมเดล AI เป็น MediaPipe BlazeFace (60 FPS จับคนเดินผ่าน)', 'success');
+        }
+      } else if (engine === 'ssd') {
         const loaded = await loadSsdMobilenetModel();
         if (loaded) {
           logStatus('[AI] สลับใช้งานโมเดล AI: SSD MobileNet V1 (แม่นยำสูง ~5.4 MB)');
           showToast('สลับโมเดล AI เป็น SSD MobileNet V1 (แม่นยำสูง)', 'success');
         }
       } else {
-        logStatus('[AI] สลับใช้งานโมเดล AI: TinyFaceDetector (เร็วสูงสุด ~190 KB)');
-        showToast('สลับโมเดล AI เป็น TinyFaceDetector (เร็วสูงสุด)', 'info');
+        logStatus('[AI] สลับใช้งานโมเดล AI: TinyFaceDetector (เบาพิเศษ ~190 KB)');
+        showToast('สลับโมเดล AI เป็น TinyFaceDetector (เบาพิเศษ)', 'info');
       }
 
       syncDetectionEngineUI();
+
+      if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend();
+      }
+    }
+
+    function setBlazeMinConfidence(conf, saveCloud) {
+      const num = parseFloat(conf);
+      if (isNaN(num) || num < 0.15 || num > 0.85) return;
+      state.blazeMinConfidence = Math.round(num * 100) / 100;
+      try {
+        localStorage.setItem('face_app_blaze_min_confidence', String(state.blazeMinConfidence));
+      } catch(e) {}
+      if (state.blazeFaceDetector && typeof state.blazeFaceDetector.setOptions === 'function') {
+        try {
+          state.blazeFaceDetector.setOptions({ minDetectionConfidence: state.blazeMinConfidence });
+        } catch (eOpt) {}
+      }
+      syncDetectionEngineUI();
+      logStatus('[AI] ปรับความไวตรวจจับคนเดินผ่าน BlazeFace เป็น: ' + state.blazeMinConfidence.toFixed(2));
+      showToast('ปรับความไว BlazeFace: ' + state.blazeMinConfidence.toFixed(2), 'info');
 
       if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
         saveSystemSettingsToBackend();
@@ -4297,24 +4382,34 @@
     }
 
     function syncDetectionEngineUI() {
-      const engine = state.detectionEngine || 'tiny';
+      const engine = state.detectionEngine || 'blazeface';
       const badge = document.getElementById('settingDetectionEngineBadge');
+      const btnBlaze = document.getElementById('engineBtn_blazeface');
       const btnTiny = document.getElementById('engineBtn_tiny');
       const btnSsd = document.getElementById('engineBtn_ssd');
+      const subBlaze = document.getElementById('engineSubPanel_blazeface');
       const subTiny = document.getElementById('engineSubPanel_tiny');
       const subSsd = document.getElementById('engineSubPanel_ssd');
+      const blazeStatus = document.getElementById('blazeModelStatusBadge');
       const ssdStatus = document.getElementById('ssdModelStatusBadge');
 
       if (badge) {
-        if (engine === 'ssd') {
+        if (engine === 'blazeface') {
+          badge.textContent = state.blazeModelLoaded ? 'MediaPipe BlazeFace (60 FPS จับคนเดินผ่าน)' : 'MediaPipe BlazeFace (เตรียมพร้อม...)';
+          badge.className = 'px-3 py-1 rounded-full bg-[#E67E22] text-white text-xs font-extrabold shadow-xs';
+        } else if (engine === 'ssd') {
           badge.textContent = state.ssdModelLoaded ? 'SSD MobileNet V1 (แม่นยำสูง)' : 'SSD MobileNet V1 (กำลังโหลด...)';
           badge.className = 'px-3 py-1 rounded-full bg-[#8E44AD] text-white text-xs font-extrabold shadow-xs';
         } else {
-          badge.textContent = 'TinyFaceDetector (เร็วสูงสุด)';
+          badge.textContent = 'TinyFaceDetector (เบาพิเศษ)';
           badge.className = 'px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs';
         }
       }
 
+      if (subBlaze) {
+        if (engine === 'blazeface') subBlaze.classList.remove('hidden');
+        else subBlaze.classList.add('hidden');
+      }
       if (subTiny) {
         if (engine === 'tiny') subTiny.classList.remove('hidden');
         else subTiny.classList.add('hidden');
@@ -4322,6 +4417,19 @@
       if (subSsd) {
         if (engine === 'ssd') subSsd.classList.remove('hidden');
         else subSsd.classList.add('hidden');
+      }
+
+      if (blazeStatus) {
+        if (state.blazeModelLoaded) {
+          blazeStatus.innerHTML = '<span class="text-[#28AE60]">●</span> พร้อมใช้งาน (' + (state.blazeDelegate || 'GPU') + ' 60FPS · ~230 KB)';
+          blazeStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold';
+        } else if (state.blazeModelLoading) {
+          blazeStatus.innerHTML = '<span class="text-[#D9822B] animate-pulse">●</span> กำลังโหลด GPU/WASM...';
+          blazeStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-bold';
+        } else {
+          blazeStatus.innerHTML = '<span class="text-[#8C877B]">○</span> โหลดอัตโนมัติ (~230 KB)';
+          blazeStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#6E6B62] border border-[#DCD6C4] font-bold';
+        }
       }
 
       if (ssdStatus) {
@@ -4337,17 +4445,36 @@
         }
       }
 
-      const applyStyle = (btn, active, activeBorder) => {
+      const applyStyle = (btn, active, activeBg, activeBorder, activeText) => {
         if (!btn) return;
         if (active) {
-          btn.className = 'py-2.5 px-3 rounded-xl bg-[#EAF7EF] border-2 border-[' + activeBorder + '] text-xs font-extrabold text-[#1E824C] transition cursor-pointer text-left shadow-xs';
+          btn.className = 'py-2.5 px-3 rounded-xl bg-[' + activeBg + '] border-2 border-[' + activeBorder + '] text-xs font-extrabold text-[' + activeText + '] transition cursor-pointer text-left shadow-xs';
         } else {
           btn.className = 'py-2.5 px-3 rounded-xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] transition cursor-pointer text-left';
         }
       };
 
-      applyStyle(btnTiny, engine === 'tiny', '#28AE60');
-      applyStyle(btnSsd, engine === 'ssd', '#8E44AD');
+      applyStyle(btnBlaze, engine === 'blazeface', '#FEF6E6', '#E67E22', '#B95807');
+      applyStyle(btnTiny, engine === 'tiny', '#EAF7EF', '#28AE60', '#1E824C');
+      applyStyle(btnSsd, engine === 'ssd', '#F4ECF7', '#8E44AD', '#6C3483');
+
+      // Sync BlazeFace Confidence Buttons
+      const curBlazeConf = Number(state.blazeMinConfidence) || DEFAULT_BLAZE_MIN_CONFIDENCE;
+      const blazeBtns = [
+        { id: 'blazeConfBtn_018', val: 0.18 },
+        { id: 'blazeConfBtn_024', val: 0.24 },
+        { id: 'blazeConfBtn_035', val: 0.35 }
+      ];
+      blazeBtns.forEach(item => {
+        const btn = document.getElementById(item.id);
+        if (!btn) return;
+        const isMatch = Math.abs(curBlazeConf - item.val) < 0.03;
+        if (isMatch) {
+          btn.className = 'py-2 px-2.5 rounded-xl bg-[#FEF6E6] border-2 border-[#E67E22] text-[11px] font-extrabold text-[#B95807] transition cursor-pointer text-center shadow-xs';
+        } else {
+          btn.className = 'py-2 px-2.5 rounded-xl bg-white hover:bg-[#FEF6E6] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center';
+        }
+      });
 
       // Sync SSD Confidence Buttons
       const curConf = Number(state.ssdMinConfidence) || 0.50;
@@ -4574,6 +4701,7 @@
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
         detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
         detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
+        blazeMinConfidence: state.blazeMinConfidence || DEFAULT_BLAZE_MIN_CONFIDENCE,
         ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE,
         detectionDistanceMode: state.detectionDistanceMode || DEFAULT_DETECTION_DISTANCE_MODE,
         detectionDistanceRatio: state.detectionDistanceRatio || DEFAULT_DETECTION_DISTANCE_RATIO
@@ -5274,6 +5402,18 @@
         return;
       }
 
+      // กรณีพนักงานเดินเข้าแบบเอียงข้างแล้วหันหน้าตรงกล้องทันในช่วงเสียงกระดิ่งเตือนยังไม่จบ ให้ยกระดับเป็นทักทายชื่อพนักงานทันที
+      if (task.type === 'known') {
+        state.speechQueue = state.speechQueue.filter(t => t.type !== 'unknown');
+        const isChimeStillActive = !!(state.bellChimeEndTime && state.bellChimeEndTime > Date.now());
+        if (state.currentSpeakingTask && state.currentSpeakingTask.type === 'unknown' && isChimeStillActive) {
+          stopActiveAudioPlayback(true);
+          state.isSpeakingQueue = false;
+          state.currentSpeakingTask = null;
+          task.withChime = false;
+        }
+      }
+
       state.speechQueue.push(task);
       const queuePos = state.speechQueue.length;
       if (state.isSpeakingQueue) {
@@ -5603,7 +5743,95 @@
       }
     });
 
-    // --- Face Models Loader (Ultra-fast from Edge CDN) ---
+    // --- Face Models Loader (Ultra-fast Parallel Edge CDN + MediaPipe BlazeFace GPU/WASM) ---
+    const MEDIAPIPE_VISION_ESM_URLS = [
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs',
+      'https://unpkg.com/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs'
+    ];
+    const MEDIAPIPE_WASM_URLS = [
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm',
+      'https://unpkg.com/@mediapipe/tasks-vision@0.10.14/wasm'
+    ];
+    const BLAZEFACE_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+    let _blazeLoadPromise = null;
+
+    async function loadBlazeFaceModel() {
+      if (state.blazeModelLoaded && state.blazeFaceDetector) {
+        if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+        return true;
+      }
+      if (_blazeLoadPromise) return _blazeLoadPromise;
+
+      state.blazeModelLoading = true;
+      if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+
+      _blazeLoadPromise = (async function() {
+        logStatus('[AI] กำลังเตรียมโมเดลความเร็วสูง MediaPipe BlazeFace (GPU/WASM ~230 KB)...');
+        const dynamicImport = new Function('u', 'return import(u)');
+
+        for (let i = 0; i < MEDIAPIPE_VISION_ESM_URLS.length; i++) {
+          const esmUrl = MEDIAPIPE_VISION_ESM_URLS[i];
+          const wasmUrl = MEDIAPIPE_WASM_URLS[i];
+          try {
+            const mpVision = await dynamicImport(esmUrl);
+            const FilesetResolver = mpVision.FilesetResolver;
+            const FaceDetector = mpVision.FaceDetector;
+            if (!FilesetResolver || !FaceDetector) {
+              throw new Error('MediaPipe FaceDetector exports unavailable');
+            }
+
+            const visionFileset = await FilesetResolver.forVisionTasks(wasmUrl);
+            const minConf = Number(state.blazeMinConfidence) || DEFAULT_BLAZE_MIN_CONFIDENCE;
+            let detector = null;
+            let activeDelegate = 'GPU';
+
+            try {
+              detector = await FaceDetector.createFromOptions(visionFileset, {
+                baseOptions: {
+                  modelAssetPath: BLAZEFACE_MODEL_URL,
+                  delegate: 'GPU'
+                },
+                runningMode: 'VIDEO',
+                minDetectionConfidence: minConf,
+                minSuppressionThreshold: 0.30
+              });
+            } catch (gpuErr) {
+              activeDelegate = 'CPU';
+              detector = await FaceDetector.createFromOptions(visionFileset, {
+                baseOptions: {
+                  modelAssetPath: BLAZEFACE_MODEL_URL,
+                  delegate: 'CPU'
+                },
+                runningMode: 'VIDEO',
+                minDetectionConfidence: minConf,
+                minSuppressionThreshold: 0.30
+              });
+            }
+
+            state.blazeFaceDetector = detector;
+            state.blazeDelegate = activeDelegate;
+            state.blazeModelLoaded = true;
+            state.blazeModelLoading = false;
+            logStatus('[OK] MediaPipe BlazeFace (' + activeDelegate + ' 60FPS) พร้อมจับใบหน้าคนเดินผ่านแล้ว');
+            if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+            return true;
+          } catch (cdnErr) {
+            logStatus('[WARN] MediaPipe CDN (' + i + ') ตอบสนองช้า/ไม่รองรับ: ' + (cdnErr ? cdnErr.message : cdnErr), true);
+          }
+        }
+
+        state.blazeModelLoaded = false;
+        state.blazeModelLoading = false;
+        logStatus('[WARN] อุปกรณ์ไม่รองรับ MediaPipe WASM — ใช้ TinyFaceDetector ความเร็วสูงทดแทนอัตโนมัติ', true);
+        if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+        return false;
+      })().finally(function() {
+        _blazeLoadPromise = null;
+      });
+
+      return _blazeLoadPromise;
+    }
+
     async function loadFaceModels() {
       const modelBadge = document.getElementById('modelStatusBadge');
       if (modelBadge) {
@@ -5611,21 +5839,31 @@
         modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-semibold whitespace-nowrap';
       }
 
-      logStatus('[AI] กำลังโหลดโมเดล AI น้ำหนักเบาจาก Edge CDN...');
+      logStatus('[AI] กำลังโหลดชุดโมเดล AI แบบขนานความเร็วสูงจาก Edge CDN...');
+
+      const shouldPreloadBlaze = ((state.detectionEngine || DEFAULT_DETECTION_ENGINE) === 'blazeface' && !state.blazeModelLoaded);
+      const blazeWarmup = shouldPreloadBlaze ? loadBlazeFaceModel().catch(function() { return false; }) : Promise.resolve(true);
 
       async function fetchModels(baseUrl) {
-        logStatus('[AI] โหลด TinyFaceDetector (190 KB)...');
-        await faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl);
-
-        logStatus('[AI] โหลด FaceLandmark (350 KB)...');
-        await faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl);
-
-        logStatus('[AI] โหลด FaceRecognitionNet...');
-        await faceapi.nets.faceRecognitionNet.loadFromUri(baseUrl);
+        logStatus('[AI] โหลด TinyFaceDetector + TinyLandmark (80 KB) + FaceLandmark + Recognition แบบขนาน...');
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl),
+          faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
+          faceapi.nets.faceRecognitionNet.loadFromUri(baseUrl),
+          (faceapi.nets.faceLandmark68TinyNet
+            ? faceapi.nets.faceLandmark68TinyNet.loadFromUri(baseUrl).then(function() {
+                state.tinyLandmarkLoaded = true;
+                logStatus('[OK] โหลด FaceLandmark68TinyNet (80 KB · เร็วขึ้น 4 เท่า) สำเร็จ');
+              }).catch(function() {})
+            : Promise.resolve())
+        ]);
       }
 
       try {
         await fetchModels(MODEL_URL);
+        if (shouldPreloadBlaze) {
+          await Promise.race([blazeWarmup, new Promise(function(r) { setTimeout(r, 1800); })]);
+        }
         state.modelsLoaded = true;
         if (modelBadge) {
           modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
@@ -5641,6 +5879,9 @@
         logStatus('[WARN] CDN หลักตอบสนองช้า กำลังลอง CDN สำรอง...', true);
         try {
           await fetchModels(MODEL_URL_BACKUP);
+          if (shouldPreloadBlaze) {
+            await Promise.race([blazeWarmup, new Promise(function(r) { setTimeout(r, 1800); })]);
+          }
           state.modelsLoaded = true;
           if (modelBadge) {
             modelBadge.innerHTML = '<span class="text-[#28AE60]">●</span> โมเดล AI พร้อมใช้งาน';
@@ -6169,9 +6410,9 @@
         
         var stream = null;
         try {
-          // แผน 1: ขอเปิดกล้องหน้าแบบกำหนดความละเอียดมาตรฐาน
+          // แผน 1: ขอเปิดกล้องหน้าความเร็วสูง 60 FPS เพื่อลดภาพเบลอขณะเดินผ่าน (High-FPS Anti-Motion-Blur)
           stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 60 } },
             audio: false
           });
         } catch (e1) {
@@ -6193,6 +6434,14 @@
         state.stream = stream;
         video.srcObject = state.stream;
         await video.play();
+
+        try {
+          const vTracks = state.stream && state.stream.getVideoTracks ? state.stream.getVideoTracks() : [];
+          if (vTracks.length > 0 && typeof vTracks[0].getSettings === 'function') {
+            const st = vTracks[0].getSettings() || {};
+            logStatus('[CAMERA] สัญญาณกล้องพร้อมทำงาน: ' + (st.width || video.videoWidth || 640) + 'x' + (st.height || video.videoHeight || 480) + (st.frameRate ? (' @ ' + Math.round(st.frameRate) + ' FPS') : ''));
+          }
+        } catch (eCamInfo) {}
 
         const regVideo = document.getElementById('regWebcamVideo');
         if (regVideo) {
@@ -6645,7 +6894,7 @@
 
     function getScannerDetectorOptions() {
       if (typeof faceapi === 'undefined') return null;
-      const engine = state.detectionEngine || 'tiny';
+      const engine = state.detectionEngine || 'blazeface';
       if (engine === 'ssd' && state.ssdModelLoaded && faceapi.SsdMobilenetv1Options) {
         return new faceapi.SsdMobilenetv1Options({
           minConfidence: Number(state.ssdMinConfidence) || 0.32,
@@ -6665,9 +6914,13 @@
     function updateScannerPerformanceBadge(fps, latency) {
       const badge = document.getElementById('scannerPerformanceBadge');
       if (!badge) return;
+      const isBlaze = (state.detectionEngine === 'blazeface' && state.blazeModelLoaded);
       const isSsd = (state.detectionEngine === 'ssd' && state.ssdModelLoaded);
       let engineText = '';
-      if (isSsd) {
+      if (isBlaze) {
+        const bConf = Number(state.blazeMinConfidence || DEFAULT_BLAZE_MIN_CONFIDENCE).toFixed(2);
+        engineText = '🚀 ' + fps + ' FPS (' + latency + 'ms) · BlazeFace (' + bConf + ')';
+      } else if (isSsd) {
         const confStr = Number(state.ssdMinConfidence || 0.32).toFixed(2);
         engineText = '🎯 ' + fps + ' FPS (' + latency + 'ms) · SSD (' + confStr + ')';
       } else {
@@ -6685,8 +6938,154 @@
       }
     }
 
+    // ตรวจสอบองศาหน้าตรงจาก 6 Keypoints ของ MediaPipe BlazeFace (0.01ms)
+    // ตามนโยบายความปลอดภัยสูงสุด: ทักชื่อพนักงานเฉพาะเมื่อหันหน้าเข้าหากล้อง หากเดินผ่านหันข้างให้ทักทายผู้มาติดต่อทันที
+    function checkBlazeFaceFrontalPose(mpDet, frameW, frameH) {
+      const bb = (mpDet && mpDet.boundingBox) ? mpDet.boundingBox : {};
+      const x = Math.max(0, Math.min(frameW - 1, Number(bb.originX || 0)));
+      const y = Math.max(0, Math.min(frameH - 1, Number(bb.originY || 0)));
+      const width = Math.max(1, Math.min(frameW - x, Number(bb.width || 0)));
+      const height = Math.max(1, Math.min(frameH - y, Number(bb.height || 0)));
+      const box = { x: x, y: y, width: width, height: height };
+      const score = (mpDet && mpDet.categories && mpDet.categories[0] && typeof mpDet.categories[0].score === 'number')
+        ? mpDet.categories[0].score
+        : 0.5;
+
+      if (score < 0.28) {
+        return { isFrontal: false, code: 'low_score', reason: 'เคลื่อนไหวเร็ว', box: box, score: score };
+      }
+      if (width < 36 || height < 32) {
+        return { isFrontal: false, code: 'too_far', reason: 'ระยะเดินผ่าน', box: box, score: score };
+      }
+
+      const kps = (mpDet && Array.isArray(mpDet.keypoints)) ? mpDet.keypoints : [];
+      if (kps.length >= 4) {
+        const toPxX = function(v) { return v <= 1.5 ? v * frameW : v; };
+        const toPxY = function(v) { return v <= 1.5 ? v * frameH : v; };
+        const p0 = { x: toPxX(kps[0].x), y: toPxY(kps[0].y) };
+        const p1 = { x: toPxX(kps[1].x), y: toPxY(kps[1].y) };
+        const nose = { x: toPxX(kps[2].x), y: toPxY(kps[2].y) };
+        const mouth = { x: toPxX(kps[3].x), y: toPxY(kps[3].y) };
+
+        const leftEye = p0.x <= p1.x ? p0 : p1;
+        const rightEye = p0.x <= p1.x ? p1 : p0;
+        const eyeSpanX = Math.abs(rightEye.x - leftEye.x);
+
+        if (eyeSpanX < Math.max(10, width * 0.16)) {
+          return { isFrontal: false, code: 'side_pose', reason: 'เดินผ่านมุมข้าง', box: box, score: score };
+        }
+
+        const rollDeg = Math.abs(Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI));
+        if (rollDeg > 40) {
+          return { isFrontal: false, code: 'head_tilt', reason: 'ศีรษะเอียงขณะเดิน', box: box, score: score };
+        }
+
+        const noseRatio = (nose.x - leftEye.x) / eyeSpanX;
+        if (noseRatio < 0.14 || noseRatio > 0.86) {
+          return { isFrontal: false, code: 'yaw_turn', reason: 'เดินผ่านไม่มองกล้อง', box: box, score: score };
+        }
+
+        const eyeMidY = (leftEye.y + rightEye.y) / 2;
+        const eyeToMouth = mouth.y - eyeMidY;
+        if (eyeToMouth < Math.max(8, height * 0.13)) {
+          return { isFrontal: false, code: 'pitch_angle', reason: 'มุมก้ม/เงยขณะเดิน', box: box, score: score };
+        }
+        const nosePitch = (nose.y - eyeMidY) / eyeToMouth;
+        if (nosePitch < 0.16 || nosePitch > 0.86) {
+          return { isFrontal: false, code: 'pitch_angle', reason: 'มุมก้ม/เงยขณะเดิน', box: box, score: score };
+        }
+      }
+
+      return { isFrontal: true, code: 'ok', reason: '', box: box, score: score };
+    }
+
+    // ติดตามกรอบใบหน้าบุคคลที่ยืนยันชื่อแล้วด้วย Spatial IoU + Centroid Lock (0ms ที่ 60 FPS)
+    function findSpatialTrackedMatch(box, now, totalFacesInRange) {
+      if (!box || !state.trackedPersons || state.trackedPersons.size === 0) return null;
+      let bestKey = null;
+      let bestData = null;
+      let bestScore = -1;
+
+      state.trackedPersons.forEach(function(tData, key) {
+        if (!tData || !tData.lastBox) return;
+        const sinceSeen = now - (tData.lastSeen || 0);
+        const sinceVerified = now - (tData.lastVerifiedAt || 0);
+        if (sinceSeen > 450 || sinceVerified > SPATIAL_TRACK_REUSE_MS) return;
+
+        const iou = computeBoxIoU(box, tData.lastBox);
+        const centerDist = computeBoxCenterDist(box, tData.lastBox);
+        const refWidth = Math.max(box.width, tData.lastBox.width, 40);
+
+        const isSingleFaceMatch = (totalFacesInRange === 1) && (iou >= 0.20 || centerDist <= refWidth * 0.85);
+        const isMultiFaceMatch = (totalFacesInRange > 1) && (iou >= 0.38 && centerDist <= refWidth * 0.45);
+
+        if (isSingleFaceMatch || isMultiFaceMatch) {
+          const score = iou + Math.max(0, 1 - (centerDist / refWidth));
+          if (score > bestScore) {
+            bestScore = score;
+            bestKey = key;
+            bestData = tData;
+          }
+        }
+      });
+
+      return bestKey ? { key: bestKey, data: bestData } : null;
+    }
+
     let _scannerRafId = null;
     let _lastDetectFrameErrorTime = 0;
+    let _lastBlazeVideoTimestamp = 0;
+    let _frameBufferCanvas = null;
+
+    function getReusableFrameCanvas(w, h) {
+      if (!_frameBufferCanvas) {
+        _frameBufferCanvas = document.createElement('canvas');
+      }
+      if (_frameBufferCanvas.width !== w || _frameBufferCanvas.height !== h) {
+        _frameBufferCanvas.width = w;
+        _frameBufferCanvas.height = h;
+      }
+      return _frameBufferCanvas;
+    }
+
+    function registerWalkByVisitorPresence(now, box, ctx) {
+      drawFaceBox(ctx, box, 'ผู้มาติดต่อ / ลูกค้าทั่วไป', 'walkby', 1.0, null);
+
+      if (!state.walkByTracker.active || (now - state.walkByTracker.lastSeen > 1200)) {
+        state.walkByTracker.active = true;
+        state.walkByTracker.firstSeen = now;
+        state.walkByTracker.frameCount = 1;
+      } else {
+        state.walkByTracker.frameCount += 1;
+      }
+      state.walkByTracker.lastSeen = now;
+      state.walkByTracker.lastBox = box;
+
+      if (state.unknownTracker.hasGreeted) {
+        state.unknownTracker.lastSeen = now;
+        return true;
+      }
+
+      if (state.trackedPersons.size === 0) {
+        const noRegisteredProfiles = !state.compiledProfiles || state.compiledProfiles.length === 0;
+        const graceElapsed = (now - state.walkByTracker.firstSeen) >= WALK_BY_VISITOR_GRACE_MS;
+        if (noRegisteredProfiles || graceElapsed) {
+          handleUnknownGreeting();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function flushPendingWalkByIfExited(now) {
+      if (state.walkByTracker && state.walkByTracker.active) {
+        if (!state.unknownTracker.hasGreeted && state.trackedPersons.size === 0 && (now - state.walkByTracker.lastSeen <= 1400)) {
+          logStatus('[WALK-BY] 🚶 ตรวจพบผู้เดินผ่านกล้องอย่างรวดเร็ว: ส่งเสียงทักทายผู้มาติดต่อทันที');
+          handleUnknownGreeting();
+        }
+        state.walkByTracker.active = false;
+      }
+    }
 
     async function startRecognitionLoop() {
       const video = document.getElementById('webcamVideo');
@@ -6710,6 +7109,8 @@
       let lastFpsTime = performance.now();
       let rollingLatency = 0;
       let isDetectingFrame = false;
+      let lastProcessedVideoTime = -1;
+      let lastProcessedWallTime = 0;
 
       async function detectFrame() {
         if (!state.cameraStarted || !state.isDetecting) {
@@ -6720,8 +7121,16 @@
 
         if (video.readyState >= 2 && state.modelsLoaded && state.currentTab === 'scanner') {
           if (!isDetectingFrame) {
-            isDetectingFrame = true;
             const frameStart = performance.now();
+            const curVideoTime = Number(video.currentTime || 0);
+            if (curVideoTime > 0 && curVideoTime === lastProcessedVideoTime && (frameStart - lastProcessedWallTime) < 40) {
+              _scannerRafId = requestAnimationFrame(detectFrame);
+              return;
+            }
+            lastProcessedVideoTime = curVideoTime;
+            lastProcessedWallTime = frameStart;
+            isDetectingFrame = true;
+            const now = Date.now();
 
             try {
               const curW = video.videoWidth || 640;
@@ -6736,151 +7145,243 @@
                 }
               }
 
-              const detectorOpts = getScannerDetectorOptions();
-              const now = Date.now();
-
-              // ตรวจจับใบหน้าพร้อมสกัดเวกเตอร์ในรอบเดียว (Single-Pass Guaranteed Detection)
-              const detections = await faceapi.detectAllFaces(video, detectorOpts)
-                .withFaceLandmarks()
-                .withFaceDescriptors();
-
-              const resizedDetections = faceapi.resizeResults(detections, displaySize);
               const ctx = canvas.getContext('2d');
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.08;
+              const minRequiredBoxWidth = Math.max(36, Math.round(displaySize.width * configuredRatio));
+              const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
 
               const detectedCurrentFrameKeys = new Set();
               const detectedCurrentFrameDisplayNames = new Set();
               const seenCandidateKeysThisFrame = new Set();
               let unknownDetectedThisFrame = false;
+              let walkByDetectedThisFrame = false;
               let pendingVerificationThisFrame = false;
 
-              if (resizedDetections.length > 0) {
-                // คำนวณขนาดใบหน้าขั้นต่ำตามระยะที่ตั้งไว้ (Face Distance Threshold)
-                const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.08;
-                const minRequiredBoxWidth = Math.max(36, Math.round(displaySize.width * configuredRatio));
+              const evaluateFrontalRecognitionResult = function(detection, drawBoxOverride) {
+                const box = drawBoxOverride || detection.detection.box;
 
-                const inRangeDetections = [];
-                const outOfRangeDetections = [];
+                // Layer 4: ตรวจสอบองศาหน้าตรงเข้มงวดสำหรับทักชื่อพนักงาน (หากเอียง/หันข้างให้ทักเป็นผู้มาติดต่อทันที ไม่เสี่ยงทักผิดชื่อ)
+                const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
+                if (!quality.ok) {
+                  walkByDetectedThisFrame = true;
+                  registerWalkByVisitorPresence(now, box, ctx);
+                  return;
+                }
 
-                resizedDetections.forEach(det => {
-                  const b = (det.detection && det.detection.box) ? det.detection.box : null;
-                  if (b && b.width >= minRequiredBoxWidth) {
-                    inRangeDetections.push(det);
+                // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
+                const matchRes = matchFaceWithPrecision(detection.descriptor);
+
+                if (matchRes.status === 'matched') {
+                  const pKey = matchRes.profileKey || ('name:' + matchRes.label);
+                  seenCandidateKeysThisFrame.add(pKey);
+
+                  if (state.trackedPersons.has(pKey)) {
+                    const tData = state.trackedPersons.get(pKey);
+                    tData.lastSeen = now;
+                    tData.lastBox = box;
+                    tData.lastVerifiedAt = now;
+                    tData.avgDistance = matchRes.distance;
+                    tData.confidencePct = matchRes.confidencePct;
+                    detectedCurrentFrameKeys.add(pKey);
+                    detectedCurrentFrameDisplayNames.add(matchRes.label);
+                    state.walkByTracker.active = false;
+                    drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
+                      profile: matchRes.profile,
+                      confidencePct: matchRes.confidencePct
+                    });
+                    handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
                   } else {
-                    outOfRangeDetections.push(det);
-                  }
-                });
-
-                // วาดกรอบ Visual Guide สำหรับใบหน้าที่ตรวจพบแต่ยังอยู่นอกระยะตรวจจับ
-                outOfRangeDetections.forEach(det => {
-                  const { box } = det.detection;
-                  drawFaceBox(ctx, box, 'อยู่นอกระยะตรวจจับ (ขยับเข้าใกล้)', 'out_of_range', 1.0, null);
-                });
-
-                if (inRangeDetections.length > 0) {
-                  triggerImmediateFacePresenceChime(now);
-                  const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
-
-                  inRangeDetections.forEach(detection => {
-                    const { box } = detection.detection;
-
-                    // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่
-                    const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
-                    if (!quality.ok) {
-                      pendingVerificationThisFrame = true;
-                      drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
-                      return;
+                    // Multi-Frame Consensus with Fast-Path for High Confidence
+                    let cand = state.candidateMatches.get(pKey);
+                    if (!cand || (now - cand.lastSeen > 1600)) {
+                      cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
+                      state.candidateMatches.set(pKey, cand);
+                    } else {
+                      cand.count += 1;
+                      cand.distances.push(matchRes.distance);
+                      if (cand.distances.length > 5) cand.distances.shift();
+                      cand.lastSeen = now;
                     }
 
-                    // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
-                    const matchRes = matchFaceWithPrecision(detection.descriptor);
+                    const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
+                    const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
+                    const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
 
-                    if (matchRes.status === 'matched') {
-                      const pKey = matchRes.profileKey || ('name:' + matchRes.label);
-                      seenCandidateKeysThisFrame.add(pKey);
+                    if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
+                      const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
+                      detectedCurrentFrameKeys.add(pKey);
+                      detectedCurrentFrameDisplayNames.add(matchRes.label);
+                      state.walkByTracker.active = false;
 
-                      // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
-                      if (state.trackedPersons.has(pKey)) {
-                        const tData = state.trackedPersons.get(pKey);
+                      const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
+                      tItem.lastSeen = now;
+                      tItem.lastBox = box;
+                      tItem.lastVerifiedAt = now;
+                      tItem.profile = matchRes.profile;
+                      tItem.avgDistance = avgDist;
+                      tItem.confidence = avgConf;
+                      tItem.confidencePct = Math.round(avgConf * 100);
+                      state.trackedPersons.set(pKey, tItem);
+
+                      drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
+                        profile: matchRes.profile,
+                        confidencePct: Math.round(avgConf * 100)
+                      });
+                      handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
+                    } else {
+                      pendingVerificationThisFrame = true;
+                      if (!state.walkByTracker.active) {
+                        state.walkByTracker.active = true;
+                        state.walkByTracker.firstSeen = now;
+                      }
+                      state.walkByTracker.lastSeen = now;
+                      const stepNum = Math.min(cand.count, requiredFrames);
+                      drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
+                    }
+                  }
+                } else if (matchRes.status === 'ambiguous') {
+                  pendingVerificationThisFrame = true;
+                  if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
+                  if (!state.walkByTracker.active) {
+                    state.walkByTracker.active = true;
+                    state.walkByTracker.firstSeen = now;
+                  }
+                  state.walkByTracker.lastSeen = now;
+                  drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
+                } else {
+                  unknownDetectedThisFrame = true;
+                  state.walkByTracker.active = false;
+                  drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
+                }
+              };
+
+              const useBlazeEngine = (state.detectionEngine === 'blazeface' && state.blazeModelLoaded && state.blazeFaceDetector);
+
+              if (useBlazeEngine) {
+                // === PATH A: MediaPipe BlazeFace Ultra-Fast 60 FPS Walk-By Pipeline ===
+                let mpTs = Math.floor(frameStart);
+                if (mpTs <= _lastBlazeVideoTimestamp) mpTs = _lastBlazeVideoTimestamp + 1;
+                _lastBlazeVideoTimestamp = mpTs;
+
+                const mpRes = state.blazeFaceDetector.detectForVideo(video, mpTs);
+                const mpDetections = (mpRes && Array.isArray(mpRes.detections)) ? mpRes.detections : [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (mpDetections.length > 0) {
+                  const inRangePoses = [];
+                  const outOfRangeBoxes = [];
+
+                  mpDetections.forEach(function(mpDet) {
+                    const poseInfo = checkBlazeFaceFrontalPose(mpDet, curW, curH);
+                    const b = poseInfo.box;
+                    const effectiveSpan = Math.max(b.width, Math.round(b.height * 0.88));
+                    if (effectiveSpan >= minRequiredBoxWidth) {
+                      inRangePoses.push(poseInfo);
+                    } else {
+                      outOfRangeBoxes.push(b);
+                    }
+                  });
+
+                  outOfRangeBoxes.forEach(function(b) {
+                    drawFaceBox(ctx, b, 'อยู่นอกระยะตรวจจับ (ขยับเข้าใกล้)', 'out_of_range', 1.0, null);
+                  });
+
+                  if (inRangePoses.length > 0) {
+                    triggerImmediateFacePresenceChime(now);
+                    const frontalToExtract = [];
+
+                    inRangePoses.forEach(function(poseInfo) {
+                      const box = poseInfo.box;
+
+                      // 1. Spatial IoU Lock (0ms สำหรับพนักงานที่ยืนยันชื่อแล้วกำลังเดินผ่านหน้าจอ)
+                      const spatialHit = findSpatialTrackedMatch(box, now, inRangePoses.length);
+                      if (spatialHit) {
+                        const tData = spatialHit.data;
+                        const label = (tData.profile && tData.profile.name) ? tData.profile.name : (tData.name || spatialHit.key);
                         tData.lastSeen = now;
                         tData.lastBox = box;
-                        tData.lastVerifiedAt = now;
-                        tData.avgDistance = matchRes.distance;
-                        tData.confidencePct = matchRes.confidencePct;
-                        detectedCurrentFrameKeys.add(pKey);
-                        detectedCurrentFrameDisplayNames.add(matchRes.label);
-                        drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
-                          profile: matchRes.profile,
-                          confidencePct: matchRes.confidencePct
+                        detectedCurrentFrameKeys.add(spatialHit.key);
+                        detectedCurrentFrameDisplayNames.add(label);
+                        state.walkByTracker.active = false;
+                        drawFaceBox(ctx, box, label, 'known', tData.avgDistance || 0.25, {
+                          profile: tData.profile,
+                          confidencePct: tData.confidencePct || 90
                         });
-                        handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
-                      } else {
-                        // Multi-Frame Consensus with Fast-Path for High Confidence
-                        let cand = state.candidateMatches.get(pKey);
-                        if (!cand || (now - cand.lastSeen > 1600)) {
-                          cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
-                          state.candidateMatches.set(pKey, cand);
-                        } else {
-                          cand.count += 1;
-                          cand.distances.push(matchRes.distance);
-                          if (cand.distances.length > 5) cand.distances.shift();
-                          cand.lastSeen = now;
-                        }
-
-                        const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
-                        const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
-                        const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
-
-                        if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
-                          const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
-                          detectedCurrentFrameKeys.add(pKey);
-                          detectedCurrentFrameDisplayNames.add(matchRes.label);
-
-                          // บันทึกตำแหน่งและข้อมูลการยืนยันลงใน trackedPersons
-                          const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
-                          tItem.lastSeen = now;
-                          tItem.lastBox = box;
-                          tItem.lastVerifiedAt = now;
-                          tItem.profile = matchRes.profile;
-                          tItem.avgDistance = avgDist;
-                          tItem.confidence = avgConf;
-                          tItem.confidencePct = Math.round(avgConf * 100);
-                          state.trackedPersons.set(pKey, tItem);
-
-                          drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
-                            profile: matchRes.profile,
-                            confidencePct: Math.round(avgConf * 100)
-                          });
-                          handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
-                        } else {
-                          pendingVerificationThisFrame = true;
-                          const stepNum = Math.min(cand.count, requiredFrames);
-                          drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
-                        }
+                        handlePersonGreeting(tData.profile || label, tData.confidence || 0.9, spatialHit.key);
+                        return;
                       }
-                    } else if (matchRes.status === 'ambiguous') {
-                      pendingVerificationThisFrame = true;
-                      if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
-                      drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
-                    } else {
-                      unknownDetectedThisFrame = true;
-                      drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
-                    }
-                  });
 
-                  // ล้าง Candidate ที่หลุดเฟรมหรือไม่ต่อเนื่อง (1,600ms)
-                  state.candidateMatches.forEach((candData, key) => {
-                    if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 1600)) {
-                      state.candidateMatches.delete(key);
-                    }
-                  });
+                      // 2. เดินผ่านแบบหันข้าง / ก้มหน้า / ไม่มองกล้อง -> ดังกระดิ่ง + ทักทายผู้มาติดต่อทันที (ไม่เสี่ยงทักชื่อพนักงานผิด)
+                      if (!poseInfo.isFrontal) {
+                        walkByDetectedThisFrame = true;
+                        registerWalkByVisitorPresence(now, box, ctx);
+                        return;
+                      }
 
-                  if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
-                    handleUnknownGreeting();
-                  } else if (!unknownDetectedThisFrame) {
+                      // 3. หน้าตรงแต่ไม่มีโปรไฟล์พนักงานลงทะเบียนไว้ -> ทักทายผู้มาติดต่อทันทีใน 0ms
+                      if (!state.compiledProfiles || state.compiledProfiles.length === 0) {
+                        unknownDetectedThisFrame = true;
+                        state.walkByTracker.active = false;
+                        drawFaceBox(ctx, box, 'Unknown', 'unknown', 1.0, null);
+                        return;
+                      }
+
+                      frontalToExtract.push(poseInfo);
+                    });
+
+                    // 4. สกัด Landmarks (Tiny 80KB เร็ว 4 เท่า) + 128-D Descriptor เฉพาะใบหน้าที่หันตรงเข้าหากล้องเท่านั้น
+                    if (frontalToExtract.length > 0 && typeof faceapi !== 'undefined' && faceapi.FaceDetection && faceapi.DetectAllFaceLandmarksTask) {
+                      const frameCanvas = getReusableFrameCanvas(curW, curH);
+                      frameCanvas.getContext('2d').drawImage(video, 0, 0, curW, curH);
+
+                      const wrappedInputs = frontalToExtract.map(function(p) {
+                        const b = p.box;
+                        const rx = Math.max(0, b.x - b.width * 0.04);
+                        const ry = Math.max(0, b.y - b.height * 0.12);
+                        const rw = Math.min(curW - rx, b.width * 1.08);
+                        const rh = Math.min(curH - ry, b.height * 1.16);
+                        return {
+                          detection: new faceapi.FaceDetection(
+                            p.score,
+                            new faceapi.Rect(rx / curW, ry / curH, rw / curW, rh / curH),
+                            { width: curW, height: curH }
+                          )
+                        };
+                      });
+
+                      const extracted = await new faceapi.DetectAllFaceLandmarksTask(
+                        Promise.resolve(wrappedInputs),
+                        frameCanvas,
+                        !!state.tinyLandmarkLoaded
+                      ).withFaceDescriptors();
+
+                      const resizedExtracted = faceapi.resizeResults(extracted, displaySize);
+                      for (let idx = 0; idx < resizedExtracted.length; idx++) {
+                        evaluateFrontalRecognitionResult(resizedExtracted[idx], frontalToExtract[idx].box);
+                      }
+                    }
+
+                    state.candidateMatches.forEach((candData, key) => {
+                      if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 1600)) {
+                        state.candidateMatches.delete(key);
+                      }
+                    });
+
+                    if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
+                      handleUnknownGreeting();
+                    } else if (!unknownDetectedThisFrame && !walkByDetectedThisFrame) {
+                      state.unknownTracker.confirmCount = 0;
+                    }
+                  } else {
+                    flushPendingWalkByIfExited(now);
+                    handleNoFacePresenceDetected(now);
                     state.unknownTracker.confirmCount = 0;
+                    state.candidateMatches.forEach((candData, key) => {
+                      if (now - candData.lastSeen > 1600) state.candidateMatches.delete(key);
+                    });
                   }
                 } else {
+                  flushPendingWalkByIfExited(now);
                   handleNoFacePresenceDetected(now);
                   state.unknownTracker.confirmCount = 0;
                   state.candidateMatches.forEach((candData, key) => {
@@ -6888,14 +7389,132 @@
                   });
                 }
               } else {
-                handleNoFacePresenceDetected(now);
-                state.unknownTracker.confirmCount = 0;
-                state.candidateMatches.forEach((candData, key) => {
-                  if (now - candData.lastSeen > 1600) state.candidateMatches.delete(key);
-                });
+                // === PATH B: TinyFaceDetector / SSD MobileNet V1 with Fast Empty-Frame Skip, TinyLandmarks & Walk-By Unlock ===
+                const detectorOpts = getScannerDetectorOptions();
+                let resizedDetections = [];
+
+                if (state.tinyLandmarkLoaded && faceapi.DetectAllFaceLandmarksTask) {
+                  const rawFaceBoxes = await faceapi.detectAllFaces(video, detectorOpts);
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                  if (rawFaceBoxes && rawFaceBoxes.length > 0) {
+                    const resizedRaw = faceapi.resizeResults(rawFaceBoxes, displaySize);
+                    const inRangeRaw = [];
+                    resizedRaw.forEach(function(fDet) {
+                      const b = fDet.box;
+                      const effectiveSpan = b ? Math.max(b.width, Math.round(b.height * 0.88)) : 0;
+                      if (b && effectiveSpan >= minRequiredBoxWidth) {
+                        inRangeRaw.push(fDet);
+                      } else if (b) {
+                        drawFaceBox(ctx, b, 'อยู่นอกระยะตรวจจับ (ขยับเข้าใกล้)', 'out_of_range', 1.0, null);
+                      }
+                    });
+
+                    if (inRangeRaw.length > 0) {
+                      triggerImmediateFacePresenceChime(now);
+                      const unverifiedRaw = [];
+
+                      inRangeRaw.forEach(function(fDet) {
+                        const spatialHit = findSpatialTrackedMatch(fDet.box, now, inRangeRaw.length);
+                        if (spatialHit) {
+                          const tData = spatialHit.data;
+                          const label = (tData.profile && tData.profile.name) ? tData.profile.name : (tData.name || spatialHit.key);
+                          tData.lastSeen = now;
+                          tData.lastBox = fDet.box;
+                          detectedCurrentFrameKeys.add(spatialHit.key);
+                          detectedCurrentFrameDisplayNames.add(label);
+                          state.walkByTracker.active = false;
+                          drawFaceBox(ctx, fDet.box, label, 'known', tData.avgDistance || 0.25, {
+                            profile: tData.profile,
+                            confidencePct: tData.confidencePct || 90
+                          });
+                          handlePersonGreeting(tData.profile || label, tData.confidence || 0.9, spatialHit.key);
+                        } else {
+                          unverifiedRaw.push({ detection: fDet });
+                        }
+                      });
+
+                      if (unverifiedRaw.length > 0) {
+                        const frameCanvas = getReusableFrameCanvas(curW, curH);
+                        frameCanvas.getContext('2d').drawImage(video, 0, 0, curW, curH);
+                        const fullDets = await new faceapi.DetectAllFaceLandmarksTask(
+                          Promise.resolve(unverifiedRaw),
+                          frameCanvas,
+                          true
+                        ).withFaceDescriptors();
+                        resizedDetections = faceapi.resizeResults(fullDets, displaySize);
+                      }
+                    } else {
+                      flushPendingWalkByIfExited(now);
+                      handleNoFacePresenceDetected(now);
+                      state.unknownTracker.confirmCount = 0;
+                    }
+                  } else {
+                    flushPendingWalkByIfExited(now);
+                    handleNoFacePresenceDetected(now);
+                    state.unknownTracker.confirmCount = 0;
+                  }
+                } else {
+                  // ตรวจจับใบหน้าพร้อมสกัดเวกเตอร์ในรอบเดียว (Single-Pass Guaranteed Detection)
+                  const detections = await faceapi.detectAllFaces(video, detectorOpts)
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+                  resizedDetections = faceapi.resizeResults(detections, displaySize);
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+
+                if (resizedDetections.length > 0) {
+                  const inRangeDetections = [];
+                  const outOfRangeDetections = [];
+
+                  resizedDetections.forEach(det => {
+                    const b = (det.detection && det.detection.box) ? det.detection.box : null;
+                    const effectiveSpan = b ? Math.max(b.width, Math.round(b.height * 0.88)) : 0;
+                    if (b && (b.width >= minRequiredBoxWidth || effectiveSpan >= minRequiredBoxWidth)) {
+                      inRangeDetections.push(det);
+                    } else {
+                      outOfRangeDetections.push(det);
+                    }
+                  });
+
+                  outOfRangeDetections.forEach(det => {
+                    const { box } = det.detection;
+                    drawFaceBox(ctx, box, 'อยู่นอกระยะตรวจจับ (ขยับเข้าใกล้)', 'out_of_range', 1.0, null);
+                  });
+
+                  if (inRangeDetections.length > 0) {
+                    triggerImmediateFacePresenceChime(now);
+                    inRangeDetections.forEach(detection => {
+                      evaluateFrontalRecognitionResult(detection, null);
+                    });
+
+                    state.candidateMatches.forEach((candData, key) => {
+                      if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 1600)) {
+                        state.candidateMatches.delete(key);
+                      }
+                    });
+
+                    if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
+                      handleUnknownGreeting();
+                    } else if (!unknownDetectedThisFrame && !walkByDetectedThisFrame) {
+                      state.unknownTracker.confirmCount = 0;
+                    }
+                  } else if (detectedCurrentFrameKeys.size === 0) {
+                    flushPendingWalkByIfExited(now);
+                    handleNoFacePresenceDetected(now);
+                    state.unknownTracker.confirmCount = 0;
+                    state.candidateMatches.forEach((candData, key) => {
+                      if (now - candData.lastSeen > 1600) state.candidateMatches.delete(key);
+                    });
+                  }
+                } else if (detectedCurrentFrameKeys.size === 0) {
+                  state.candidateMatches.forEach((candData, key) => {
+                    if (now - candData.lastSeen > 1600) state.candidateMatches.delete(key);
+                  });
+                }
               }
 
-              cleanupExitedPersons(now, detectedCurrentFrameKeys, unknownDetectedThisFrame || pendingVerificationThisFrame);
+              cleanupExitedPersons(now, detectedCurrentFrameKeys, unknownDetectedThisFrame || walkByDetectedThisFrame || pendingVerificationThisFrame);
             } catch (err) {
               console.error('[AI detectFrame Error]', err);
               if (now - _lastDetectFrameErrorTime > 3000) {
@@ -6939,6 +7558,8 @@
       let color = '#D9822B';
       if (isKnown) {
         color = isVip ? '#D4AC0D' : '#28AE60';
+      } else if (mode === 'walkby') {
+        color = '#E67E22';
       } else if (mode === 'verifying' || mode === 'ambiguous') {
         color = '#2E86C1';
       } else if (mode === 'low_quality') {
@@ -6969,6 +7590,8 @@
       if (isKnown) {
         const confSuffix = (meta && typeof meta.confidencePct === 'number' && meta.confidencePct > 0) ? (' · ' + meta.confidencePct + '%') : '';
         displayText = (isVip ? '⭐ VIP: ' : '💼 ') + 'คุณ ' + label + confSuffix;
+      } else if (mode === 'walkby') {
+        displayText = '🚶 ' + (label || 'ผู้มาติดต่อ / ลูกค้าทั่วไป');
       } else if (mode === 'verifying' || mode === 'ambiguous') {
         displayText = '🔍 ' + label;
       } else if (mode === 'low_quality') {
@@ -7135,14 +7758,16 @@
         }
       });
 
-      if (!unknownDetected && state.unknownTracker.hasGreeted && now - state.unknownTracker.lastSeen > state.EXIT_THRESHOLD_MS) {
+      const visitorExitThreshold = (typeof FACE_PRESENCE_EXIT_RESET_MS !== 'undefined') ? FACE_PRESENCE_EXIT_RESET_MS : state.EXIT_THRESHOLD_MS;
+      if (!unknownDetected && state.unknownTracker.hasGreeted && now - state.unknownTracker.lastSeen > visitorExitThreshold) {
         state.unknownTracker.hasGreeted = false;
         state.unknownTracker.lastSeen = 0;
         state.unknownTracker.confirmCount = 0;
+        if (state.walkByTracker) state.walkByTracker.active = false;
         logStatus('[EXIT] ผู้มาติดต่อเดินออกจากกล้องแล้ว (รีเซ็ตสถานะทักทาย)');
       }
 
-      if (detectedKeys.size === 0 && !unknownDetected && now - (state.lastFaceSeenTime || 0) > state.EXIT_THRESHOLD_MS) {
+      if (detectedKeys.size === 0 && !unknownDetected && now - (state.lastFaceSeenTime || 0) > visitorExitThreshold) {
         state.isFacePresenceInView = false;
       }
     }
@@ -9683,9 +10308,15 @@
     window.computeBoxIoU = computeBoxIoU;
     window.computeBoxCenterDist = computeBoxCenterDist;
     window.setDetectionEngine = setDetectionEngine;
+    window.setBlazeMinConfidence = setBlazeMinConfidence;
     window.setSsdMinConfidence = setSsdMinConfidence;
     window.syncDetectionEngineUI = syncDetectionEngineUI;
+    window.loadBlazeFaceModel = loadBlazeFaceModel;
     window.loadSsdMobilenetModel = loadSsdMobilenetModel;
+    window.checkBlazeFaceFrontalPose = checkBlazeFaceFrontalPose;
+    window.findSpatialTrackedMatch = findSpatialTrackedMatch;
+    window.registerWalkByVisitorPresence = registerWalkByVisitorPresence;
+    window.flushPendingWalkByIfExited = flushPendingWalkByIfExited;
     window.DETECTION_DISTANCE_PRESETS = DETECTION_DISTANCE_PRESETS;
     window.setDetectionDistanceMode = setDetectionDistanceMode;
     window.onDetectionDistanceSliderInput = onDetectionDistanceSliderInput;

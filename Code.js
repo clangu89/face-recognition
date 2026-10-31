@@ -235,7 +235,8 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
-      settingsSheet.appendRow(["DETECTION_ENGINE", "tiny", "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_ENGINE", "blazeface", "โมเดล AI ตรวจจับใบหน้า (blazeface: MediaPipe BlazeFace 60FPS / tiny: TinyFaceDetector / ssd: SSD MobileNet V1)", nowStr]);
+      settingsSheet.appendRow(["BLAZE_MIN_CONFIDENCE", "0.24", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล MediaPipe BlazeFace (0.15 - 0.85)", nowStr]);
       settingsSheet.appendRow(["SSD_MIN_CONFIDENCE", "0.50", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)", nowStr]);
       settingsSheet.appendRow(["DETECTION_DISTANCE_MODE", "far", "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)", nowStr]);
       settingsSheet.appendRow(["DETECTION_DISTANCE_RATIO", "0.08", "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)", nowStr]);
@@ -1171,10 +1172,11 @@ function getSystemSettings() {
       workEndTime: "17:30",
       faceMatchThreshold: 0.41,
       detectionSpeedMode: "balanced",
-      detectionEngine: "tiny",
+      detectionEngine: "blazeface",
+      blazeMinConfidence: 0.24,
       ssdMinConfidence: 0.50,
-      detectionDistanceMode: "medium",
-      detectionDistanceRatio: 0.14
+      detectionDistanceMode: "far",
+      detectionDistanceRatio: 0.08
     };
 
     if (data && data.length > 1) {
@@ -1221,8 +1223,13 @@ function getSystemSettings() {
           }
         } else if (key === "DETECTION_ENGINE" && val !== undefined && val !== null && String(val).trim() !== "") {
           var engVal = String(val).trim().toLowerCase();
-          if (engVal === "tiny" || engVal === "ssd") {
+          if (engVal === "blazeface" || engVal === "tiny" || engVal === "ssd") {
             settings.detectionEngine = engVal;
+          }
+        } else if (key === "BLAZE_MIN_CONFIDENCE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var bConfVal = parseFloat(String(val).trim());
+          if (!isNaN(bConfVal) && bConfVal >= 0.15 && bConfVal <= 0.85) {
+            settings.blazeMinConfidence = Math.round(bConfVal * 100) / 100;
           }
         } else if (key === "SSD_MIN_CONFIDENCE" && val !== undefined && val !== null && String(val).trim() !== "") {
           var confVal = parseFloat(String(val).trim());
@@ -1384,10 +1391,19 @@ function saveSystemSettings(payload) {
     }
     if (payload.detectionEngine !== undefined) {
       var engMode = String(payload.detectionEngine).trim().toLowerCase();
-      if (engMode === "tiny" || engMode === "ssd") {
+      if (engMode === "blazeface" || engMode === "tiny" || engMode === "ssd") {
         updateMap["DETECTION_ENGINE"] = {
           value: engMode,
-          desc: "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)"
+          desc: "โมเดล AI ตรวจจับใบหน้า (blazeface: MediaPipe BlazeFace 60FPS / tiny: TinyFaceDetector / ssd: SSD MobileNet V1)"
+        };
+      }
+    }
+    if (payload.blazeMinConfidence !== undefined) {
+      var bConf = parseFloat(payload.blazeMinConfidence);
+      if (!isNaN(bConf) && bConf >= 0.15 && bConf <= 0.85) {
+        updateMap["BLAZE_MIN_CONFIDENCE"] = {
+          value: String(Math.round(bConf * 100) / 100),
+          desc: "เกณฑ์ความมั่นใจขั้นต่ำโมเดล MediaPipe BlazeFace (0.15 - 0.85)"
         };
       }
     }
