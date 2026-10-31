@@ -1907,6 +1907,52 @@
             </div>
           </div>
 
+          <!-- Detection Distance Setting Card -->
+          <div class="glass-card p-4 rounded-2xl border border-[#DCD6C4] bg-[#F7F5EE]/70 space-y-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base">📏</span>
+                <div>
+                  <h4 class="text-xs font-extrabold text-[#1F1E1B]">ระยะตรวจจับใบหน้าจากกล้อง (Detection Distance)</h4>
+                  <p class="text-[11px] text-[#5C5950]">จำกัดระยะที่ระบบจะเริ่มสแกนและส่งเสียงกระดิ่ง เพื่อป้องกันคนเดินผ่านด้านหลังไกลๆ รบกวน</p>
+                </div>
+              </div>
+              <span id="settingDetectionDistanceBadge" class="px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs">
+                ⚖️ ระยะปานกลาง (~1.2 - 1.8 ม.)
+              </span>
+            </div>
+
+            <!-- Distance Presets (4 Buttons) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <button type="button" id="distBtn_far" onclick="setDetectionDistanceMode('far', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                🌐 ระยะไกล<br><span class="text-[10px] font-normal text-[#6E6B62]">~2.5 - 3.5 ม. (8%)</span>
+              </button>
+              <button type="button" id="distBtn_medium" onclick="setDetectionDistanceMode('medium', true)" class="py-2.5 px-2 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center shadow-xs">
+                ⚖️ ปานกลาง (แนะนำ)<br><span class="text-[10px] font-normal text-[#2D6A4F]">~1.2 - 1.8 ม. (14%)</span>
+              </button>
+              <button type="button" id="distBtn_near" onclick="setDetectionDistanceMode('near', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                🎯 ระยะใกล้<br><span class="text-[10px] font-normal text-[#6E6B62]">~0.8 - 1.2 ม. (20%)</span>
+              </button>
+              <button type="button" id="distBtn_close" onclick="setDetectionDistanceMode('close', true)" class="py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                🔒 ประชิดมาก<br><span class="text-[10px] font-normal text-[#6E6B62]">&lt; 0.7 ม. (28%)</span>
+              </button>
+            </div>
+
+            <!-- Fine-tuning Slider -->
+            <div class="space-y-1 pt-1 border-t border-[#DCD6C4]/50">
+              <div class="flex items-center justify-between text-[11px] font-bold text-[#1F1E1B]">
+                <span>🎚️ ปรับขนาดใบหน้าขั้นต่ำละเอียด (Face Ratio):</span>
+                <span id="settingDetectionDistanceRatioText" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C]">14% ของจอ (~1.5 เมตร)</span>
+              </div>
+              <input type="range" id="settingDetectionDistanceSlider" min="0.06" max="0.32" step="0.01" value="0.14" oninput="onDetectionDistanceSliderInput(this.value, true)" class="w-full accent-[#28AE60] cursor-pointer">
+              <div class="flex justify-between text-[10px] font-semibold text-[#6E6B62]">
+                <span>ไกลมาก (6% / ~3.5 ม.)</span>
+                <span>ปานกลาง (14% / ~1.5 ม.)</span>
+                <span>ประชิด (32% / ~0.6 ม.)</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Admin Remote Force Reload (Ctrl+F5) Control Card -->
           <div id="adminGlobalReloadCard" class="glass-card p-4 rounded-2xl border-2 border-[#E74C3C]/40 bg-[#FDECEB]/30 space-y-3">
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -2250,6 +2296,15 @@
     const DEFAULT_DETECTION_ENGINE = 'tiny'; // 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
     const DEFAULT_SSD_MIN_CONFIDENCE = 0.50; // เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (0.30 - 0.70)
 
+    const DETECTION_DISTANCE_PRESETS = {
+      'far':    { id: 'far',    name: '🌐 ระยะไกล (~2.5-3.5 ม.)',   ratio: 0.08, approxMeters: '2.5 - 3.5 ม.', label: 'ระยะไกล' },
+      'medium': { id: 'medium', name: '⚖️ ระยะปานกลาง (~1.2-1.8 ม.)', ratio: 0.14, approxMeters: '1.2 - 1.8 ม.', label: 'ระยะปานกลาง (แนะนำ)' },
+      'near':   { id: 'near',   name: '🎯 ระยะใกล้ (~0.8-1.2 ม.)',   ratio: 0.20, approxMeters: '0.8 - 1.2 ม.', label: 'ระยะใกล้' },
+      'close':  { id: 'close',  name: '🔒 ระยะประชิด (< 0.7 ม.)',    ratio: 0.28, approxMeters: '< 0.7 ม.',     label: 'ระยะประชิดมาก' }
+    };
+    const DEFAULT_DETECTION_DISTANCE_MODE = 'medium';
+    const DEFAULT_DETECTION_DISTANCE_RATIO = 0.14;
+
     const state = {
       currentUser: null,
       systemUsers: [],
@@ -2273,6 +2328,8 @@
       ssdModelLoaded: false,
       ssdModelLoading: false,
       ssdMinConfidence: DEFAULT_SSD_MIN_CONFIDENCE,
+      detectionDistanceMode: DEFAULT_DETECTION_DISTANCE_MODE,
+      detectionDistanceRatio: DEFAULT_DETECTION_DISTANCE_RATIO,
       detectionFps: 0,
       detectionLatencyMs: 0,
       candidateMatches: new Map(),
@@ -2781,6 +2838,14 @@
         const savedSsdConf = parseFloat(localStorage.getItem('face_app_ssd_min_confidence'));
         if (!isNaN(savedSsdConf) && savedSsdConf >= 0.20 && savedSsdConf <= 0.90) {
           state.ssdMinConfidence = Math.round(savedSsdConf * 100) / 100;
+        }
+        const savedDistanceMode = localStorage.getItem('face_app_detection_distance_mode');
+        if (savedDistanceMode && (DETECTION_DISTANCE_PRESETS[savedDistanceMode] || savedDistanceMode === 'custom')) {
+          state.detectionDistanceMode = savedDistanceMode;
+        }
+        const savedDistanceRatio = parseFloat(localStorage.getItem('face_app_detection_distance_ratio'));
+        if (!isNaN(savedDistanceRatio) && savedDistanceRatio >= 0.05 && savedDistanceRatio <= 0.40) {
+          state.detectionDistanceRatio = Math.round(savedDistanceRatio * 1000) / 1000;
         }
       } catch (e) {}
     }
@@ -3410,6 +3475,19 @@
               state.ssdMinConfidence = Math.round(sc * 100) / 100;
             }
           }
+          if (s.detectionDistanceMode) {
+            const dm = String(s.detectionDistanceMode).trim().toLowerCase();
+            if (DETECTION_DISTANCE_PRESETS[dm] || dm === 'custom') {
+              state.detectionDistanceMode = dm;
+            }
+          }
+          if (s.detectionDistanceRatio !== undefined && s.detectionDistanceRatio !== null) {
+            const dr = parseFloat(String(s.detectionDistanceRatio));
+            if (!isNaN(dr) && dr >= 0.05 && dr <= 0.40) {
+              state.detectionDistanceRatio = Math.round(dr * 1000) / 1000;
+            }
+          }
+          if (typeof syncDetectionDistanceUI === 'function') syncDetectionDistanceUI();
           if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
           const startInput = document.getElementById('settingWorkStartTime');
           if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
@@ -3477,7 +3555,9 @@
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
         detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
         detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
-        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE
+        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE,
+        detectionDistanceMode: state.detectionDistanceMode || DEFAULT_DETECTION_DISTANCE_MODE,
+        detectionDistanceRatio: state.detectionDistanceRatio || DEFAULT_DETECTION_DISTANCE_RATIO
       };
 
       const finishSave = function(success, msg) {
@@ -4220,6 +4300,108 @@
       syncDetectionSpeedUI();
     }
 
+    function getApproximateDistanceMeters(ratio) {
+      const r = Number(ratio) || 0.14;
+      // Pinhole camera focal distance model approximation at ~65 deg H-FOV:
+      // D_meters ≈ (0.15 * 500) / (640 * r) ≈ 0.21 / r
+      const d = 0.21 / Math.max(0.04, r);
+      if (d >= 2.5) return '~' + d.toFixed(1) + ' - ' + (d + 0.8).toFixed(1) + ' ม.';
+      if (d >= 1.0) return '~' + (d - 0.2).toFixed(1) + ' - ' + (d + 0.3).toFixed(1) + ' ม.';
+      return '< ' + (d + 0.2).toFixed(1) + ' ม.';
+    }
+
+    function syncDetectionDistanceUI() {
+      const mode = state.detectionDistanceMode || DEFAULT_DETECTION_DISTANCE_MODE;
+      const ratio = Number(state.detectionDistanceRatio) || DEFAULT_DETECTION_DISTANCE_RATIO;
+      const pct = Math.round(ratio * 100);
+
+      const badge = document.getElementById('settingDetectionDistanceBadge');
+      const ratioText = document.getElementById('settingDetectionDistanceRatioText');
+      const slider = document.getElementById('settingDetectionDistanceSlider');
+
+      const presetInfo = (typeof DETECTION_DISTANCE_PRESETS !== 'undefined' && DETECTION_DISTANCE_PRESETS[mode])
+        ? DETECTION_DISTANCE_PRESETS[mode]
+        : (typeof DETECTION_DISTANCE_PRESETS !== 'undefined' ? DETECTION_DISTANCE_PRESETS['medium'] : { name: 'ระยะปานกลาง (~1.2 - 1.8 ม.)' });
+
+      if (badge) {
+        badge.textContent = (mode === 'custom') ? ('🎚️ กำหนดเอง (' + pct + '% / ' + getApproximateDistanceMeters(ratio) + ')') : presetInfo.name;
+        badge.className = 'px-3 py-1 rounded-full text-white text-xs font-extrabold shadow-xs ' + 
+          (mode === 'close' ? 'bg-[#D9822B]' : (mode === 'near' ? 'bg-[#2E86C1]' : (mode === 'far' ? 'bg-[#8E44AD]' : 'bg-[#28AE60]')));
+      }
+
+      if (ratioText) {
+        ratioText.textContent = pct + '% ของจอ (' + getApproximateDistanceMeters(ratio) + ')';
+      }
+
+      if (slider && Math.abs(parseFloat(slider.value) - ratio) > 0.005) {
+        slider.value = ratio.toFixed(2);
+      }
+
+      // Update preset buttons style
+      ['far', 'medium', 'near', 'close'].forEach(pId => {
+        const btn = document.getElementById('distBtn_' + pId);
+        if (!btn) return;
+        const isActive = (mode === pId);
+        if (isActive) {
+          btn.className = 'py-2.5 px-2 rounded-xl bg-[#EAF7EF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center shadow-xs';
+        } else {
+          btn.className = 'py-2.5 px-2 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center';
+        }
+      });
+    }
+
+    function setDetectionDistanceMode(mode, saveCloud) {
+      const preset = (typeof DETECTION_DISTANCE_PRESETS !== 'undefined' && DETECTION_DISTANCE_PRESETS[mode])
+        ? DETECTION_DISTANCE_PRESETS[mode]
+        : DETECTION_DISTANCE_PRESETS['medium'];
+      state.detectionDistanceMode = preset.id;
+      state.detectionDistanceRatio = preset.ratio;
+
+      try {
+        localStorage.setItem('face_app_detection_distance_mode', state.detectionDistanceMode);
+        localStorage.setItem('face_app_detection_distance_ratio', String(state.detectionDistanceRatio));
+      } catch(e) {}
+
+      syncDetectionDistanceUI();
+      logStatus('[AI] ปรับระยะตรวจจับใบหน้าเป็น: ' + preset.name);
+      showToast('ปรับระยะตรวจจับ: ' + preset.name, 'info');
+
+      if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend();
+      }
+    }
+
+    function onDetectionDistanceSliderInput(val, saveCloud) {
+      const ratio = parseFloat(val);
+      if (isNaN(ratio) || ratio < 0.05 || ratio > 0.40) return;
+      state.detectionDistanceRatio = Math.round(ratio * 100) / 100;
+
+      // Match closest preset
+      let closestMode = 'medium';
+      let minDiff = 999;
+      if (typeof DETECTION_DISTANCE_PRESETS !== 'undefined') {
+        Object.keys(DETECTION_DISTANCE_PRESETS).forEach(pId => {
+          const diff = Math.abs(DETECTION_DISTANCE_PRESETS[pId].ratio - state.detectionDistanceRatio);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestMode = pId;
+          }
+        });
+      }
+      state.detectionDistanceMode = (minDiff <= 0.022) ? closestMode : 'custom';
+
+      try {
+        localStorage.setItem('face_app_detection_distance_mode', state.detectionDistanceMode);
+        localStorage.setItem('face_app_detection_distance_ratio', String(state.detectionDistanceRatio));
+      } catch(e) {}
+
+      syncDetectionDistanceUI();
+
+      if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend();
+      }
+    }
+
     function openSystemSettingsModal() {
       const modal = document.getElementById('systemSettingsModal');
       if (!modal) return;
@@ -4230,6 +4412,7 @@
       syncFaceThresholdUI();
       syncDetectionSpeedUI();
       syncDetectionEngineUI();
+      syncDetectionDistanceUI();
 
       // ตรวจสอบสิทธิ์ Admin และอัปเดตสถานะการ์ดสั่ง Force Reload
       const reloadCard = document.getElementById('adminGlobalReloadCard');
@@ -4320,7 +4503,9 @@
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
         detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
         detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
-        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE
+        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE,
+        detectionDistanceMode: state.detectionDistanceMode || DEFAULT_DETECTION_DISTANCE_MODE,
+        detectionDistanceRatio: state.detectionDistanceRatio || DEFAULT_DETECTION_DISTANCE_RATIO
       };
 
       const finish = function(success, err) {
@@ -5685,12 +5870,13 @@
       }
       const box = detection.detection.box;
       const score = Number(detection.detection.score || 0);
-      const minBoxWidth = Math.max(64, Math.round((frameWidth || 640) * 0.10));
+      const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.14;
+      const minBoxWidth = Math.max(45, Math.round((frameWidth || 640) * configuredRatio));
 
       if (score < 0.25) {
         return { ok: false, reason: 'ภาพใบหน้าไม่ชัด', code: 'low_score' };
       }
-      if (box.width < 50 || box.height < 45) {
+      if (box.width < minBoxWidth || box.height < Math.round(minBoxWidth * 0.88)) {
         return { ok: false, reason: 'ขยับเข้าใกล้กล้องอีกนิด', code: 'too_far' };
       }
 
@@ -6461,107 +6647,137 @@
               let pendingVerificationThisFrame = false;
 
               if (resizedDetections.length > 0) {
-                triggerImmediateFacePresenceChime(now);
-                const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
+                // คำนวณขนาดใบหน้าขั้นต่ำตามระยะที่ตั้งไว้ (Face Distance Threshold)
+                const configuredRatio = (typeof state !== 'undefined' && Number(state.detectionDistanceRatio)) ? Number(state.detectionDistanceRatio) : 0.14;
+                const minRequiredBoxWidth = Math.max(45, Math.round(displaySize.width * configuredRatio));
 
-                resizedDetections.forEach(detection => {
-                  const { box } = detection.detection;
+                const inRangeDetections = [];
+                const outOfRangeDetections = [];
 
-                  // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่
-                  const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
-                  if (!quality.ok) {
-                    pendingVerificationThisFrame = true;
-                    drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
-                    return;
+                resizedDetections.forEach(det => {
+                  const b = (det.detection && det.detection.box) ? det.detection.box : null;
+                  if (b && b.width >= minRequiredBoxWidth) {
+                    inRangeDetections.push(det);
+                  } else {
+                    outOfRangeDetections.push(det);
                   }
+                });
 
-                  // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
-                  const matchRes = matchFaceWithPrecision(detection.descriptor);
+                // วาดกรอบ Visual Guide สำหรับใบหน้าที่ตรวจพบแต่ยังอยู่นอกระยะตรวจจับ
+                outOfRangeDetections.forEach(det => {
+                  const { box } = det.detection;
+                  drawFaceBox(ctx, box, 'อยู่นอกระยะตรวจจับ (ขยับเข้าใกล้)', 'out_of_range', 1.0, null);
+                });
 
-                  if (matchRes.status === 'matched') {
-                    const pKey = matchRes.profileKey || ('name:' + matchRes.label);
-                    seenCandidateKeysThisFrame.add(pKey);
+                if (inRangeDetections.length > 0) {
+                  triggerImmediateFacePresenceChime(now);
+                  const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
 
-                    // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
-                    if (state.trackedPersons.has(pKey)) {
-                      const tData = state.trackedPersons.get(pKey);
-                      tData.lastSeen = now;
-                      tData.lastBox = box;
-                      tData.lastVerifiedAt = now;
-                      tData.avgDistance = matchRes.distance;
-                      tData.confidencePct = matchRes.confidencePct;
-                      detectedCurrentFrameKeys.add(pKey);
-                      detectedCurrentFrameDisplayNames.add(matchRes.label);
-                      drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
-                        profile: matchRes.profile,
-                        confidencePct: matchRes.confidencePct
-                      });
-                      handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
-                    } else {
-                      // Multi-Frame Consensus with Fast-Path for High Confidence
-                      let cand = state.candidateMatches.get(pKey);
-                      if (!cand || (now - cand.lastSeen > 1600)) {
-                        cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
-                        state.candidateMatches.set(pKey, cand);
-                      } else {
-                        cand.count += 1;
-                        cand.distances.push(matchRes.distance);
-                        if (cand.distances.length > 5) cand.distances.shift();
-                        cand.lastSeen = now;
-                      }
+                  inRangeDetections.forEach(detection => {
+                    const { box } = detection.detection;
 
-                      const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
-                      const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
-                      const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
+                    // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่
+                    const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
+                    if (!quality.ok) {
+                      pendingVerificationThisFrame = true;
+                      drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
+                      return;
+                    }
 
-                      if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
-                        const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
+                    // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
+                    const matchRes = matchFaceWithPrecision(detection.descriptor);
+
+                    if (matchRes.status === 'matched') {
+                      const pKey = matchRes.profileKey || ('name:' + matchRes.label);
+                      seenCandidateKeysThisFrame.add(pKey);
+
+                      // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
+                      if (state.trackedPersons.has(pKey)) {
+                        const tData = state.trackedPersons.get(pKey);
+                        tData.lastSeen = now;
+                        tData.lastBox = box;
+                        tData.lastVerifiedAt = now;
+                        tData.avgDistance = matchRes.distance;
+                        tData.confidencePct = matchRes.confidencePct;
                         detectedCurrentFrameKeys.add(pKey);
                         detectedCurrentFrameDisplayNames.add(matchRes.label);
-
-                        // บันทึกตำแหน่งและข้อมูลการยืนยันลงใน trackedPersons
-                        const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
-                        tItem.lastSeen = now;
-                        tItem.lastBox = box;
-                        tItem.lastVerifiedAt = now;
-                        tItem.profile = matchRes.profile;
-                        tItem.avgDistance = avgDist;
-                        tItem.confidence = avgConf;
-                        tItem.confidencePct = Math.round(avgConf * 100);
-                        state.trackedPersons.set(pKey, tItem);
-
-                        drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
+                        drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
                           profile: matchRes.profile,
-                          confidencePct: Math.round(avgConf * 100)
+                          confidencePct: matchRes.confidencePct
                         });
-                        handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
+                        handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
                       } else {
-                        pendingVerificationThisFrame = true;
-                        const stepNum = Math.min(cand.count, requiredFrames);
-                        drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
+                        // Multi-Frame Consensus with Fast-Path for High Confidence
+                        let cand = state.candidateMatches.get(pKey);
+                        if (!cand || (now - cand.lastSeen > 1600)) {
+                          cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
+                          state.candidateMatches.set(pKey, cand);
+                        } else {
+                          cand.count += 1;
+                          cand.distances.push(matchRes.distance);
+                          if (cand.distances.length > 5) cand.distances.shift();
+                          cand.lastSeen = now;
+                        }
+
+                        const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
+                        const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
+                        const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
+
+                        if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
+                          const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
+                          detectedCurrentFrameKeys.add(pKey);
+                          detectedCurrentFrameDisplayNames.add(matchRes.label);
+
+                          // บันทึกตำแหน่งและข้อมูลการยืนยันลงใน trackedPersons
+                          const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
+                          tItem.lastSeen = now;
+                          tItem.lastBox = box;
+                          tItem.lastVerifiedAt = now;
+                          tItem.profile = matchRes.profile;
+                          tItem.avgDistance = avgDist;
+                          tItem.confidence = avgConf;
+                          tItem.confidencePct = Math.round(avgConf * 100);
+                          state.trackedPersons.set(pKey, tItem);
+
+                          drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
+                            profile: matchRes.profile,
+                            confidencePct: Math.round(avgConf * 100)
+                          });
+                          handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
+                        } else {
+                          pendingVerificationThisFrame = true;
+                          const stepNum = Math.min(cand.count, requiredFrames);
+                          drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
+                        }
                       }
+                    } else if (matchRes.status === 'ambiguous') {
+                      pendingVerificationThisFrame = true;
+                      if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
+                      drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
+                    } else {
+                      unknownDetectedThisFrame = true;
+                      drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
                     }
-                  } else if (matchRes.status === 'ambiguous') {
-                    pendingVerificationThisFrame = true;
-                    if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
-                    drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
-                  } else {
-                    unknownDetectedThisFrame = true;
-                    drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
-                  }
-                });
+                  });
 
-                // ล้าง Candidate ที่หลุดเฟรมหรือไม่ต่อเนื่อง (1,600ms)
-                state.candidateMatches.forEach((candData, key) => {
-                  if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 1600)) {
-                    state.candidateMatches.delete(key);
-                  }
-                });
+                  // ล้าง Candidate ที่หลุดเฟรมหรือไม่ต่อเนื่อง (1,600ms)
+                  state.candidateMatches.forEach((candData, key) => {
+                    if (!seenCandidateKeysThisFrame.has(key) && (now - candData.lastSeen > 1600)) {
+                      state.candidateMatches.delete(key);
+                    }
+                  });
 
-                if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
-                  handleUnknownGreeting();
-                } else if (!unknownDetectedThisFrame) {
+                  if (unknownDetectedThisFrame && detectedCurrentFrameKeys.size === 0 && !pendingVerificationThisFrame) {
+                    handleUnknownGreeting();
+                  } else if (!unknownDetectedThisFrame) {
+                    state.unknownTracker.confirmCount = 0;
+                  }
+                } else {
+                  handleNoFacePresenceDetected(now);
                   state.unknownTracker.confirmCount = 0;
+                  state.candidateMatches.forEach((candData, key) => {
+                    if (now - candData.lastSeen > 1600) state.candidateMatches.delete(key);
+                  });
                 }
               } else {
                 handleNoFacePresenceDetected(now);
@@ -6619,10 +6835,18 @@
         color = '#2E86C1';
       } else if (mode === 'low_quality') {
         color = '#6E6B62';
+      } else if (mode === 'out_of_range') {
+        color = '#8C877B';
       }
 
       ctx.strokeStyle = color;
-      ctx.lineWidth = (mode === 'low_quality') ? 2.5 : 3.5;
+      ctx.lineWidth = (mode === 'low_quality' || mode === 'out_of_range') ? 2 : 3.5;
+
+      if (mode === 'out_of_range') {
+        ctx.setLineDash([5, 5]);
+      } else {
+        ctx.setLineDash([]);
+      }
 
       if (ctx.roundRect) {
         ctx.beginPath();
@@ -6631,6 +6855,7 @@
       } else {
         ctx.strokeRect(box.x, box.y, box.width, box.height);
       }
+      ctx.setLineDash([]);
 
       let displayText = 'ผู้มาติดต่อ / ลูกค้าทั่วไป';
       if (isKnown) {
@@ -6640,6 +6865,8 @@
         displayText = '🔍 ' + label;
       } else if (mode === 'low_quality') {
         displayText = '📷 ' + label;
+      } else if (mode === 'out_of_range') {
+        displayText = '📏 ' + label;
       }
 
       ctx.font = 'bold 14px "Plus Jakarta Sans", "Sarabun", sans-serif';
@@ -6648,7 +6875,7 @@
       const badgeHeight = 28;
       const badgeY = Math.max(4, box.y - 34);
 
-      ctx.fillStyle = color;
+      ctx.fillStyle = (mode === 'out_of_range') ? 'rgba(75, 70, 60, 0.88)' : color;
       if (ctx.roundRect) {
         ctx.beginPath();
         ctx.roundRect(box.x, badgeY, badgeWidth, badgeHeight, 14);
@@ -9345,6 +9572,11 @@
     window.setSsdMinConfidence = setSsdMinConfidence;
     window.syncDetectionEngineUI = syncDetectionEngineUI;
     window.loadSsdMobilenetModel = loadSsdMobilenetModel;
+    window.DETECTION_DISTANCE_PRESETS = DETECTION_DISTANCE_PRESETS;
+    window.setDetectionDistanceMode = setDetectionDistanceMode;
+    window.onDetectionDistanceSliderInput = onDetectionDistanceSliderInput;
+    window.syncDetectionDistanceUI = syncDetectionDistanceUI;
+    window.getApproximateDistanceMeters = getApproximateDistanceMeters;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
@@ -9373,6 +9605,7 @@
       loadProfileMessagesFromStorage();
       syncDetectionSpeedUI();
       syncDetectionEngineUI();
+      syncDetectionDistanceUI();
 
       // 2. ดึงข้อมูลโปรไฟล์จากแคชในเครื่องทันที 0ms และซิงค์ Google Sheets
       loadProfilesFromBackend();

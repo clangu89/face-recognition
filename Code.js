@@ -237,6 +237,8 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
       settingsSheet.appendRow(["DETECTION_ENGINE", "tiny", "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)", nowStr]);
       settingsSheet.appendRow(["SSD_MIN_CONFIDENCE", "0.50", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_DISTANCE_MODE", "medium", "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_DISTANCE_RATIO", "0.14", "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)", nowStr]);
     }
 
     // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
@@ -1168,7 +1170,9 @@ function getSystemSettings() {
       faceMatchThreshold: 0.41,
       detectionSpeedMode: "balanced",
       detectionEngine: "tiny",
-      ssdMinConfidence: 0.50
+      ssdMinConfidence: 0.50,
+      detectionDistanceMode: "medium",
+      detectionDistanceRatio: 0.14
     };
 
     if (data && data.length > 1) {
@@ -1220,6 +1224,16 @@ function getSystemSettings() {
           var confVal = parseFloat(String(val).trim());
           if (!isNaN(confVal) && confVal >= 0.20 && confVal <= 0.90) {
             settings.ssdMinConfidence = Math.round(confVal * 100) / 100;
+          }
+        } else if (key === "DETECTION_DISTANCE_MODE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var distMode = String(val).trim().toLowerCase();
+          if (distMode === "far" || distMode === "medium" || distMode === "near" || distMode === "close") {
+            settings.detectionDistanceMode = distMode;
+          }
+        } else if (key === "DETECTION_DISTANCE_RATIO" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var distRatio = parseFloat(String(val).trim());
+          if (!isNaN(distRatio) && distRatio >= 0.05 && distRatio <= 0.40) {
+            settings.detectionDistanceRatio = Math.round(distRatio * 1000) / 1000;
           }
         }
         if (key === "GREETING_VIP_TEMPLATE") {
@@ -1372,6 +1386,24 @@ function saveSystemSettings(payload) {
         updateMap["SSD_MIN_CONFIDENCE"] = {
           value: String(Math.round(sConf * 100) / 100),
           desc: "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)"
+        };
+      }
+    }
+    if (payload.detectionDistanceMode !== undefined) {
+      var dMode = String(payload.detectionDistanceMode).trim().toLowerCase();
+      if (dMode === "far" || dMode === "medium" || dMode === "near" || dMode === "close") {
+        updateMap["DETECTION_DISTANCE_MODE"] = {
+          value: dMode,
+          desc: "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)"
+        };
+      }
+    }
+    if (payload.detectionDistanceRatio !== undefined) {
+      var dRatio = parseFloat(payload.detectionDistanceRatio);
+      if (!isNaN(dRatio) && dRatio >= 0.05 && dRatio <= 0.40) {
+        updateMap["DETECTION_DISTANCE_RATIO"] = {
+          value: String(Math.round(dRatio * 1000) / 1000),
+          desc: "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)"
         };
       }
     }
