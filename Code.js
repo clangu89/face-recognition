@@ -239,6 +239,7 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["SSD_MIN_CONFIDENCE", "0.50", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)", nowStr]);
       settingsSheet.appendRow(["DETECTION_DISTANCE_MODE", "far", "โหมดระยะตรวจจับใบหน้า AI (far/medium/near/close)", nowStr]);
       settingsSheet.appendRow(["DETECTION_DISTANCE_RATIO", "0.08", "สัดส่วนขนาดใบหน้าขั้นต่ำเทียบกับความกว้างจอ (0.06 - 0.35)", nowStr]);
+      settingsSheet.appendRow(["VISITOR_GREETING_ENABLED", "true", "เปิด/ปิดเสียงทักทายผู้มาติดต่อหลังเสียงกระดิ่ง (true/false)", nowStr]);
     }
 
     // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
@@ -1161,6 +1162,7 @@ function getSystemSettings() {
       vipGreetingTemplate: "สวัสดี{particle}คุณ {name}",
       knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
       unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
+      visitorGreetingEnabled: true,
       voiceParticle: "ค่ะ",
       bellChimeEnabled: true,
       bellChimeSound: "dingdong",
@@ -1191,6 +1193,8 @@ function getSystemSettings() {
           }
         } else if (key === "GREETING_UNKNOWN_TEXT" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.unknownGreetingText = String(val).trim();
+        } else if (key === "VISITOR_GREETING_ENABLED" && val !== undefined && val !== null) {
+          settings.visitorGreetingEnabled = (String(val).trim().toLowerCase() !== "false");
         } else if (key === "VOICE_PARTICLE" && val !== undefined && val !== null && String(val).trim() !== "") {
           settings.voiceParticle = String(val).trim();
         } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
@@ -1256,6 +1260,7 @@ function getSystemSettings() {
         vipGreetingTemplate: "สวัสดี{particle}คุณ {name}",
         knownGreetingTemplate: "สวัสดี{particle}คุณ {name}",
         unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
+        visitorGreetingEnabled: true,
         voiceParticle: "ค่ะ",
         bellChimeEnabled: true,
         bellChimeSound: "dingdong",
@@ -1309,6 +1314,12 @@ function saveSystemSettings(payload) {
       updateMap["GREETING_UNKNOWN_TEXT"] = {
         value: String(payload.unknownGreetingText).trim(),
         desc: "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป"
+      };
+    }
+    if (payload.visitorGreetingEnabled !== undefined) {
+      updateMap["VISITOR_GREETING_ENABLED"] = {
+        value: (String(payload.visitorGreetingEnabled).trim().toLowerCase() === "true" || payload.visitorGreetingEnabled === true) ? "true" : "false",
+        desc: "เปิด/ปิดเสียงทักทายผู้มาติดต่อหลังเสียงกระดิ่ง (true/false)"
       };
     }
     if (payload.voiceParticle !== undefined) {

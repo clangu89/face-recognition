@@ -1305,6 +1305,23 @@
             </div>
           </div>
 
+          <!-- Visitor Greeting Setting Card -->
+          <div class="glass-card rounded-[28px] p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-extrabold text-[#1F1E1B] text-base flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#E67E22]"></span>
+                  เสียงทักทายผู้มาติดต่อ (Visitor Greeting)
+                </h3>
+                <p class="text-xs text-[#6E6B62] mt-1">ส่งเสียงพูดทักทายผู้มาติดต่อ/ลูกค้าทั่วไปทันทีหลังเสียงกระดิ่งเตือนเมื่อตรวจพบใบหน้า</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="visitorGreetingToggleCheckbox" onchange="toggleVisitorGreeting(this.checked)" class="sr-only peer" checked>
+                <div class="w-11 h-6 bg-[#DCD6C4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#E67E22]"></div>
+              </label>
+            </div>
+          </div>
+
         </div>
 
         <!-- Right Column: Custom Greeting Messages (3 Categories) & Audio Preview (6 Cols) -->
@@ -2284,7 +2301,8 @@
         voicePitch: 1.05,
         voiceParticle: 'ค่ะ',
         bellChimeEnabled: true,
-        bellChimeSound: DEFAULT_BELL_CHIME_SOUND
+        bellChimeSound: DEFAULT_BELL_CHIME_SOUND,
+        visitorGreetingEnabled: true
       };
     }
 
@@ -2295,6 +2313,7 @@
     const DEFAULT_DETECTION_SPEED_MODE = 'balanced'; // 'turbo' (224), 'balanced' (320), 'precision' (416)
     const DEFAULT_DETECTION_ENGINE = 'tiny'; // 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
     const DEFAULT_SSD_MIN_CONFIDENCE = 0.50; // เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (0.30 - 0.70)
+    const DEFAULT_VISITOR_GREETING_ENABLED = true; // เปิด/ปิดเสียงพูดทักทายผู้มาติดต่อหลังเสียงกระดิ่งเตือน
 
     const DETECTION_DISTANCE_PRESETS = {
       'far':    { id: 'far',    name: '🌐 ระยะไกล (~2.5-3.5 ม.)',   ratio: 0.08, approxMeters: '2.5 - 3.5 ม.', label: 'ระยะไกล (แนะนำ)' },
@@ -2372,6 +2391,9 @@
       audioCtx: null,
       bellChimeEnabled: true,
       bellChimeSound: DEFAULT_BELL_CHIME_SOUND,
+      visitorGreetingEnabled: DEFAULT_VISITOR_GREETING_ENABLED,
+      isBellChimeActive: false,
+      bellChimeEndTime: 0,
       trackedPersons: new Map(),
       unknownTracker: { lastSeen: 0, hasGreeted: false, confirmCount: 0 },
       EXIT_THRESHOLD_MS: 3000,
@@ -2782,8 +2804,14 @@
             state.knownGreetingTemplate = parsed.knownGreetingTemplate.trim();
             state.vipGreetingTemplate = state.knownGreetingTemplate;
           }
-          if (typeof parsed.unknownGreetingText === 'string' && parsed.unknownGreetingText.trim()) {
+          if (parsed.unknownGreetingText !== undefined && typeof parsed.unknownGreetingText === 'string') {
             state.unknownGreetingText = parsed.unknownGreetingText.trim();
+          }
+          if (parsed.visitorGreetingEnabled !== undefined) {
+            state.visitorGreetingEnabled = !!parsed.visitorGreetingEnabled;
+          } else {
+            const rawVis = localStorage.getItem('face_app_visitor_greeting_enabled');
+            state.visitorGreetingEnabled = (rawVis !== null) ? (rawVis === 'true') : DEFAULT_VISITOR_GREETING_ENABLED;
           }
           if (parsed.bellChimeEnabled !== undefined) {
             state.bellChimeEnabled = !!parsed.bellChimeEnabled;
@@ -2862,10 +2890,12 @@
           vipGreetingTemplate: state.vipGreetingTemplate,
           knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate,
           unknownGreetingText: state.unknownGreetingText,
+          visitorGreetingEnabled: state.visitorGreetingEnabled !== false,
           bellChimeEnabled: state.bellChimeEnabled,
           bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
           voiceCategoryConfigs: state.voiceCategoryConfigs
         }));
+        localStorage.setItem('face_app_visitor_greeting_enabled', String(state.visitorGreetingEnabled !== false));
       } catch (e) {}
     }
 
@@ -3148,6 +3178,11 @@
         bellCheckbox.checked = state.bellChimeEnabled !== false;
       }
 
+      const visitorCheckbox = document.getElementById('visitorGreetingToggleCheckbox');
+      if (visitorCheckbox) {
+        visitorCheckbox.checked = state.visitorGreetingEnabled !== false;
+      }
+
       const bellSelect = document.getElementById('bellChimeSoundSelect');
       const bellTag = document.getElementById('bellChimeCurrentTag');
       const curSound = state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND;
@@ -3159,6 +3194,22 @@
       }
 
       updateVoiceStatusBadge();
+    }
+
+    function toggleVisitorGreeting(enabled) {
+      unlockSpeechEngine();
+      state.visitorGreetingEnabled = !!enabled;
+      saveVoiceSettingsToStorage();
+      syncVoiceControlsUI();
+      if (state.visitorGreetingEnabled) {
+        showToast('เปิดเสียงทักทายผู้มาติดต่อแล้ว', 'info');
+      } else {
+        showToast('ปิดเสียงทักทายผู้มาติดต่อแล้ว', 'info');
+      }
+      logStatus('[VOICE] ' + (state.visitorGreetingEnabled ? 'เปิด' : 'ปิด') + 'เสียงทักทายผู้มาติดต่อ');
+      if (typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend(false);
+      }
     }
 
     function toggleBellChime(enabled) {
@@ -3410,6 +3461,10 @@
             state.unknownGreetingText = s.unknownGreetingText.trim();
             changed = true;
           }
+          if (s.visitorGreetingEnabled !== undefined) {
+            state.visitorGreetingEnabled = !!s.visitorGreetingEnabled;
+            changed = true;
+          }
           if (s.voiceParticle === 'ค่ะ' || s.voiceParticle === 'ครับ') {
             state.voiceParticle = s.voiceParticle;
             changed = true;
@@ -3546,6 +3601,7 @@
         vipGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_VIP_GREETING_TEMPLATE,
         knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
+        visitorGreetingEnabled: state.visitorGreetingEnabled !== false,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
         bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
@@ -4494,6 +4550,7 @@
         vipGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_VIP_GREETING_TEMPLATE,
         knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate || DEFAULT_KNOWN_GREETING_TEMPLATE,
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
+        visitorGreetingEnabled: state.visitorGreetingEnabled !== false,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
         bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
@@ -4766,15 +4823,25 @@
           : activeSound;
         logStatus('[BELL] 🔔 เล่นเสียงกระดิ่ง: ' + presetInfo);
 
+        state.isBellChimeActive = true;
+        state.bellChimeEndTime = Date.now() + leadTime;
+
         // After specified leadTime as bell chime resonates, proceed smoothly to speech
         if (typeof onComplete === 'function') {
           setTimeout(function() {
+            state.isBellChimeActive = false;
             if (!sequenceSessionId || sequenceSessionId === state.speechSessionId) {
               onComplete();
             }
           }, leadTime);
+        } else {
+          setTimeout(function() {
+            state.isBellChimeActive = false;
+          }, leadTime);
         }
       } catch (e) {
+        state.isBellChimeActive = false;
+        state.bellChimeEndTime = 0;
         logStatus('[WARN] Bell chime error: ' + (e ? e.message : e), true);
         if (typeof onComplete === 'function') onComplete();
       }
@@ -4813,10 +4880,10 @@
       }
     }
 
-    function stopActiveAudioPlayback() {
+    function stopActiveAudioPlayback(preserveChime) {
       state.speechSessionId = (state.speechSessionId || 0) + 1;
       clearTimeout(state.speechTimer);
-      if (state.activeAudioGain) {
+      if (!preserveChime && state.activeAudioGain) {
         try {
           if (state.audioCtx) {
             state.activeAudioGain.gain.setValueAtTime(0, state.audioCtx.currentTime);
@@ -5231,7 +5298,8 @@
         return;
       }
 
-      stopActiveAudioPlayback();
+      const isChimeStillResonating = (state.bellChimeEndTime && state.bellChimeEndTime > Date.now());
+      stopActiveAudioPlayback(isChimeStillResonating);
       const currentSessionId = state.speechSessionId;
 
       if (category) {
@@ -5279,6 +5347,16 @@
             restoreAndFinish();
           }
         }, currentSessionId, chimeSound);
+      } else if (isChimeStillResonating) {
+        // รอให้เสียงกระดิ่งเตือนทันทีที่กำลังดังก้องจบช่วงนำ แล้วเริ่มพูดต่อทันทีอย่างราบรื่น
+        const remainingChimeMs = Math.max(30, (state.bellChimeEndTime - Date.now()) + 30);
+        setTimeout(function() {
+          if (currentSessionId === state.speechSessionId) {
+            playNext();
+          } else {
+            restoreAndFinish();
+          }
+        }, remainingChimeMs);
       } else {
         playNext();
       }
@@ -6980,18 +7058,23 @@
       state.unknownTracker.lastSeen = now;
       state.unknownTracker.confirmCount = (state.unknownTracker.confirmCount || 0) + 1;
 
-      // รอให้ตรวจพบใบหน้าไม่รู้จักติดต่อกันอย่างน้อย 2 เฟรม เพื่อความรวดเร็วและป้องกันการกระพริบหลุดเฟรม
-      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 2) {
+      // ตรวจพบใบหน้าผู้มาติดต่อ: ส่งเสียงทักทายหลังเสียงกระดิ่งทันที
+      if (!state.unknownTracker.hasGreeted && state.unknownTracker.confirmCount >= 1) {
         state.unknownTracker.hasGreeted = true;
-        enqueueGreetingTask({
-          id: 'greet_unknown_' + Date.now(),
-          type: 'unknown',
-          category: 'unknown',
-          label: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
-          phrases: [buildGreetingMessage('unknown')],
-          withChime: (now - (state.lastFacePresenceChimeTime || 0) > 4000)
-        });
-        logStatus('[GREET] ตรวจพบผู้มาติดต่อ / ลูกค้าทั่วไป (บันทึกลงคิวทักทาย)');
+
+        if (state.visitorGreetingEnabled !== false) {
+          enqueueGreetingTask({
+            id: 'greet_unknown_' + now,
+            type: 'unknown',
+            category: 'unknown',
+            label: 'ผู้มาติดต่อ / ลูกค้าทั่วไป',
+            phrases: [buildGreetingMessage('unknown')],
+            withChime: false
+          });
+          logStatus('[GREET] ตรวจพบผู้มาติดต่อ: ส่งเสียงทักทายหลังเสียงกระดิ่งทันที');
+        } else {
+          logStatus('[GREET] ตรวจพบผู้มาติดต่อ: (ปิดเสียงทักทายผู้มาติดต่อ - มีเฉพาะเสียงกระดิ่งเตือน)');
+        }
         
         const scanPayload = {
           id: 'SCAN_' + now + '_' + Math.random().toString(36).substr(2, 4).toUpperCase(),
@@ -9471,6 +9554,7 @@
     window.updateVoiceSlider = updateVoiceSlider;
     window.resetVoiceSettings = resetVoiceSettings;
     window.toggleBellChime = toggleBellChime;
+    window.toggleVisitorGreeting = toggleVisitorGreeting;
     window.playBellChimePreview = playBellChimePreview;
     window.updateGreetingTemplate = updateGreetingTemplate;
     window.insertGreetingTag = insertGreetingTag;
