@@ -1826,31 +1826,84 @@
             </div>
           </div>
 
-          <!-- AI Face Detection & Recognition Speed Mode Card -->
-          <div class="glass-card p-4 rounded-2xl border border-[#DCD6C4] bg-[#F7F5EE]/70 space-y-3">
+          <!-- AI Face Detection Engine & Speed Mode Card -->
+          <div class="glass-card p-4 rounded-2xl border border-[#DCD6C4] bg-[#F7F5EE]/70 space-y-3.5">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex items-center gap-2">
-                <span class="text-base">⚡</span>
+                <span class="text-base">🧠</span>
                 <div>
-                  <h4 class="text-xs font-extrabold text-[#1F1E1B]">ความเร็วและประสิทธิภาพการตรวจจับ AI (Detection Speed Mode)</h4>
-                  <p class="text-[11px] text-[#5C5950]">ปรับขนาดอินพุตของโมเดล AI เพื่อให้ประมวลผลได้ลื่นไหล ตอบสนองไว ไม่หน่วงบนอุปกรณ์ทุกประเภท</p>
+                  <h4 class="text-xs font-extrabold text-[#1F1E1B]">โมเดล AI และความเร็วตรวจจับใบหน้า (Detection Engine & Speed)</h4>
+                  <p class="text-[11px] text-[#5C5950]">เลือกสถาปัตยกรรมโมเดล AI สำหรับตรวจจับใบหน้า สลับได้ทันทีขณะเปิดกล้อง</p>
                 </div>
               </div>
-              <span id="settingDetectionSpeedBadge" class="px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs">
-                320px (สมดุลความเร็ว - แนะนำ)
+              <span id="settingDetectionEngineBadge" class="px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs">
+                TinyFaceDetector (เร็วสูงสุด)
               </span>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" id="speedBtn_turbo" onclick="setDetectionSpeedMode('turbo', true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
-                🚀 เร็วสูงสุด (Turbo / 224px)<br><span class="text-[10px] font-normal text-[#6E6B62]">iPad / สเปกทั่วไป (30-45 FPS)</span>
+            <!-- Primary Engine Selector (Tiny vs SSD) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              <button type="button" id="engineBtn_tiny" onclick="setDetectionEngine('tiny', true)" class="py-2.5 px-3 rounded-xl bg-[#EAF7EF] border-2 border-[#28AE60] text-xs font-extrabold text-[#1E824C] transition cursor-pointer text-left shadow-xs">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-1.5 font-extrabold">⚡ TinyFaceDetector</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-[#1E824C] border border-[#BEE6CE]">เร็วสูงสุด (~190 KB)</span>
+                </div>
+                <p class="text-[10px] font-normal text-[#5C5950] mt-1">เน้นเฟรมเรตสูง 30–45+ FPS กินสเปกน้อย แนะนำสำหรับ iPad / แท็บเล็ต / Kiosk</p>
               </button>
-              <button type="button" id="speedBtn_balanced" onclick="setDetectionSpeedMode('balanced', true)" class="py-2 px-2.5 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center">
-                ⚖️ สมดุลแนะนำ (320px)<br><span class="text-[10px] font-normal text-[#2D6A4F]">ระยะ 0.5 - 2.0 เมตร</span>
+
+              <button type="button" id="engineBtn_ssd" onclick="setDetectionEngine('ssd', true)" class="py-2.5 px-3 rounded-xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] transition cursor-pointer text-left">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-1.5 font-extrabold">🎯 SSD MobileNet V1</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#F4ECF7] text-[#6C3483] border border-[#D7BDE2]">แม่นยำสูง (~5.4 MB)</span>
+                </div>
+                <p class="text-[10px] font-normal text-[#5C5950] mt-1">Deep CNN ตรวจจับมุมเอียง แสงน้อย และระยะไกลได้แม่นยำสูง (15–25 FPS)</p>
               </button>
-              <button type="button" id="speedBtn_precision" onclick="setDetectionSpeedMode('precision', true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
-                🎯 แม่นยำสูง (416px)<br><span class="text-[10px] font-normal text-[#6E6B62]">ระยะไกลเกิน 2.5 เมตร</span>
-              </button>
+            </div>
+
+            <!-- Sub-Panel: Options for TinyFaceDetector (Resolution Presets) -->
+            <div id="engineSubPanel_tiny" class="space-y-2 pt-1 border-t border-[#DCD6C4]/50">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-[#1F1E1B] flex items-center gap-1">
+                  <span>📐 ขนาดอินพุต TinyFaceDetector (Input Size):</span>
+                </span>
+                <span id="settingDetectionSpeedBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-bold">
+                  320px (สมดุล)
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" id="speedBtn_turbo" onclick="setDetectionSpeedMode('turbo', true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  🚀 เร็วสูงสุด (Turbo / 224px)<br><span class="text-[10px] font-normal text-[#6E6B62]">iPad / สเปกทั่วไป (30-45 FPS)</span>
+                </button>
+                <button type="button" id="speedBtn_balanced" onclick="setDetectionSpeedMode('balanced', true)" class="py-2 px-2.5 rounded-xl bg-[#EAF7EF] hover:bg-[#D5F0DF] border-2 border-[#28AE60] text-[11px] font-extrabold text-[#1E824C] transition cursor-pointer text-center">
+                  ⚖️ สมดุลแนะนำ (320px)<br><span class="text-[10px] font-normal text-[#2D6A4F]">ระยะ 0.5 - 2.0 เมตร</span>
+                </button>
+                <button type="button" id="speedBtn_precision" onclick="setDetectionSpeedMode('precision', true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#EAF7EF] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  🎯 ละเอียดสูง (416px)<br><span class="text-[10px] font-normal text-[#6E6B62]">ระยะไกลเกิน 2.5 เมตร</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sub-Panel: Options for SSD MobileNet V1 (Min Confidence Presets & Status) -->
+            <div id="engineSubPanel_ssd" class="hidden space-y-2 pt-1 border-t border-[#DCD6C4]/50">
+              <div class="flex flex-wrap items-center justify-between gap-1.5">
+                <span class="text-[11px] font-bold text-[#1F1E1B] flex items-center gap-1">
+                  <span>🎯 เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (Min Confidence):</span>
+                </span>
+                <span id="ssdModelStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#6E6B62] border border-[#DCD6C4] font-bold">
+                  ● ตรวจสอบสถานะ...
+                </span>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <button type="button" id="ssdConfBtn_040" onclick="setSsdMinConfidence(0.40, true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#F4ECF7] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  🟢 ผ่อนปรน (0.40)<br><span class="text-[10px] font-normal text-[#6E6B62]">จับไวในที่แสงน้อย / ไกล</span>
+                </button>
+                <button type="button" id="ssdConfBtn_050" onclick="setSsdMinConfidence(0.50, true)" class="py-2 px-2.5 rounded-xl bg-[#F4ECF7] hover:bg-[#E8DAEF] border-2 border-[#8E44AD] text-[11px] font-extrabold text-[#6C3483] transition cursor-pointer text-center">
+                  ⚖️ มาตรฐาน (0.50)<br><span class="text-[10px] font-normal text-[#6C3483]">สมดุลแม่นยำ (แนะนำ)</span>
+                </button>
+                <button type="button" id="ssdConfBtn_060" onclick="setSsdMinConfidence(0.60, true)" class="py-2 px-2.5 rounded-xl bg-white hover:bg-[#F4ECF7] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center">
+                  🔒 เข้มงวด (0.60)<br><span class="text-[10px] font-normal text-[#6E6B62]">ลดการจับวัตถุคล้ายหน้า</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2194,6 +2247,8 @@
     const REQUIRED_FACE_CONFIRM_FRAMES = 2; // จำนวนเฟรมต่อเนื่องขั้นต่ำสำหรับ Standard Path (Fast-Path ยืนยันใน 1 เฟรม)
     const FAST_PATH_DISTANCE_THRESHOLD = 0.28; // ระยะห่างความมั่นใจสูง ยืนยันด่วนทันทีใน 1 เฟรม
     const DEFAULT_DETECTION_SPEED_MODE = 'balanced'; // 'turbo' (224), 'balanced' (320), 'precision' (416)
+    const DEFAULT_DETECTION_ENGINE = 'tiny'; // 'tiny' (TinyFaceDetector), 'ssd' (SSD MobileNet V1)
+    const DEFAULT_SSD_MIN_CONFIDENCE = 0.50; // เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD (0.30 - 0.70)
 
     const state = {
       currentUser: null,
@@ -2214,6 +2269,10 @@
       faceMatcher: null,
       faceMatchThreshold: DEFAULT_FACE_MATCH_THRESHOLD,
       detectionSpeedMode: DEFAULT_DETECTION_SPEED_MODE,
+      detectionEngine: DEFAULT_DETECTION_ENGINE,
+      ssdModelLoaded: false,
+      ssdModelLoading: false,
+      ssdMinConfidence: DEFAULT_SSD_MIN_CONFIDENCE,
       detectionFps: 0,
       detectionLatencyMs: 0,
       candidateMatches: new Map(),
@@ -2714,6 +2773,14 @@
         const savedSpeed = localStorage.getItem('face_app_detection_speed_mode');
         if (savedSpeed === 'turbo' || savedSpeed === 'balanced' || savedSpeed === 'precision') {
           state.detectionSpeedMode = savedSpeed;
+        }
+        const savedEngine = localStorage.getItem('face_app_detection_engine');
+        if (savedEngine === 'tiny' || savedEngine === 'ssd') {
+          state.detectionEngine = savedEngine;
+        }
+        const savedSsdConf = parseFloat(localStorage.getItem('face_app_ssd_min_confidence'));
+        if (!isNaN(savedSsdConf) && savedSsdConf >= 0.20 && savedSsdConf <= 0.90) {
+          state.ssdMinConfidence = Math.round(savedSsdConf * 100) / 100;
         }
       } catch (e) {}
     }
@@ -3328,6 +3395,22 @@
               if (typeof syncDetectionSpeedUI === 'function') syncDetectionSpeedUI();
             }
           }
+          if (s.detectionEngine) {
+            const eng = String(s.detectionEngine).trim().toLowerCase();
+            if (eng === 'tiny' || eng === 'ssd') {
+              state.detectionEngine = eng;
+              if (eng === 'ssd' && !state.ssdModelLoaded) {
+                loadSsdMobilenetModel();
+              }
+            }
+          }
+          if (s.ssdMinConfidence !== undefined && s.ssdMinConfidence !== null) {
+            const sc = parseFloat(String(s.ssdMinConfidence));
+            if (!isNaN(sc) && sc >= 0.20 && sc <= 0.90) {
+              state.ssdMinConfidence = Math.round(sc * 100) / 100;
+            }
+          }
+          if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
           const startInput = document.getElementById('settingWorkStartTime');
           if (startInput) startInput.value = state.workStartTime || DEFAULT_WORK_START_TIME;
           const endInput = document.getElementById('settingWorkEndTime');
@@ -3392,7 +3475,9 @@
         workStartTime: state.workStartTime || DEFAULT_WORK_START_TIME,
         workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME,
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
-        detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE
+        detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
+        detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
+        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE
       };
 
       const finishSave = function(success, msg) {
@@ -4018,6 +4103,123 @@
       applyStyle(btnPrecision, mode === 'precision', '#8E44AD');
     }
 
+    async function setDetectionEngine(engine, saveCloud) {
+      if (engine !== 'ssd' && engine !== 'tiny') engine = 'tiny';
+      state.detectionEngine = engine;
+      try {
+        localStorage.setItem('face_app_detection_engine', engine);
+      } catch(e) {}
+
+      syncDetectionEngineUI();
+
+      if (engine === 'ssd') {
+        const loaded = await loadSsdMobilenetModel();
+        if (loaded) {
+          logStatus('[AI] สลับใช้งานโมเดล AI: SSD MobileNet V1 (แม่นยำสูง ~5.4 MB)');
+          showToast('สลับโมเดล AI เป็น SSD MobileNet V1 (แม่นยำสูง)', 'success');
+        }
+      } else {
+        logStatus('[AI] สลับใช้งานโมเดล AI: TinyFaceDetector (เร็วสูงสุด ~190 KB)');
+        showToast('สลับโมเดล AI เป็น TinyFaceDetector (เร็วสูงสุด)', 'info');
+      }
+
+      syncDetectionEngineUI();
+
+      if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend();
+      }
+    }
+
+    function setSsdMinConfidence(conf, saveCloud) {
+      const num = parseFloat(conf);
+      if (isNaN(num) || num < 0.20 || num > 0.90) return;
+      state.ssdMinConfidence = Math.round(num * 100) / 100;
+      try {
+        localStorage.setItem('face_app_ssd_min_confidence', String(state.ssdMinConfidence));
+      } catch(e) {}
+      syncDetectionEngineUI();
+      logStatus('[AI] ปรับเกณฑ์ความมั่นใจ SSD เป็น: ' + state.ssdMinConfidence.toFixed(2));
+      showToast('ปรับเกณฑ์ความมั่นใจ SSD: ' + state.ssdMinConfidence.toFixed(2), 'info');
+
+      if (saveCloud && typeof saveSystemSettingsToBackend === 'function') {
+        saveSystemSettingsToBackend();
+      }
+    }
+
+    function syncDetectionEngineUI() {
+      const engine = state.detectionEngine || 'tiny';
+      const badge = document.getElementById('settingDetectionEngineBadge');
+      const btnTiny = document.getElementById('engineBtn_tiny');
+      const btnSsd = document.getElementById('engineBtn_ssd');
+      const subTiny = document.getElementById('engineSubPanel_tiny');
+      const subSsd = document.getElementById('engineSubPanel_ssd');
+      const ssdStatus = document.getElementById('ssdModelStatusBadge');
+
+      if (badge) {
+        if (engine === 'ssd') {
+          badge.textContent = state.ssdModelLoaded ? 'SSD MobileNet V1 (แม่นยำสูง)' : 'SSD MobileNet V1 (กำลังโหลด...)';
+          badge.className = 'px-3 py-1 rounded-full bg-[#8E44AD] text-white text-xs font-extrabold shadow-xs';
+        } else {
+          badge.textContent = 'TinyFaceDetector (เร็วสูงสุด)';
+          badge.className = 'px-3 py-1 rounded-full bg-[#28AE60] text-white text-xs font-extrabold shadow-xs';
+        }
+      }
+
+      if (subTiny) {
+        if (engine === 'tiny') subTiny.classList.remove('hidden');
+        else subTiny.classList.add('hidden');
+      }
+      if (subSsd) {
+        if (engine === 'ssd') subSsd.classList.remove('hidden');
+        else subSsd.classList.add('hidden');
+      }
+
+      if (ssdStatus) {
+        if (state.ssdModelLoaded) {
+          ssdStatus.innerHTML = '<span class="text-[#28AE60]">●</span> พร้อมใช้งาน (~5.4 MB)';
+          ssdStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE] font-bold';
+        } else if (state.ssdModelLoading) {
+          ssdStatus.innerHTML = '<span class="text-[#D9822B] animate-pulse">●</span> กำลังดาวน์โหลด...';
+          ssdStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#FEF6E6] text-[#9C6214] border border-[#F5DFB0] font-bold';
+        } else {
+          ssdStatus.innerHTML = '<span class="text-[#8C877B]">○</span> โหลด On-Demand';
+          ssdStatus.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-[#F4F3EE] text-[#6E6B62] border border-[#DCD6C4] font-bold';
+        }
+      }
+
+      const applyStyle = (btn, active, activeBorder) => {
+        if (!btn) return;
+        if (active) {
+          btn.className = 'py-2.5 px-3 rounded-xl bg-[#EAF7EF] border-2 border-[' + activeBorder + '] text-xs font-extrabold text-[#1E824C] transition cursor-pointer text-left shadow-xs';
+        } else {
+          btn.className = 'py-2.5 px-3 rounded-xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] transition cursor-pointer text-left';
+        }
+      };
+
+      applyStyle(btnTiny, engine === 'tiny', '#28AE60');
+      applyStyle(btnSsd, engine === 'ssd', '#8E44AD');
+
+      // Sync SSD Confidence Buttons
+      const curConf = Number(state.ssdMinConfidence) || 0.50;
+      const confBtns = [
+        { id: 'ssdConfBtn_040', val: 0.40 },
+        { id: 'ssdConfBtn_050', val: 0.50 },
+        { id: 'ssdConfBtn_060', val: 0.60 }
+      ];
+      confBtns.forEach(item => {
+        const btn = document.getElementById(item.id);
+        if (!btn) return;
+        const isMatch = Math.abs(curConf - item.val) < 0.04;
+        if (isMatch) {
+          btn.className = 'py-2 px-2.5 rounded-xl bg-[#F4ECF7] border-2 border-[#8E44AD] text-[11px] font-extrabold text-[#6C3483] transition cursor-pointer text-center shadow-xs';
+        } else {
+          btn.className = 'py-2 px-2.5 rounded-xl bg-white hover:bg-[#F4ECF7] border border-[#DCD6C4] text-[11px] font-bold text-[#1F1E1B] transition cursor-pointer text-center';
+        }
+      });
+
+      syncDetectionSpeedUI();
+    }
+
     function openSystemSettingsModal() {
       const modal = document.getElementById('systemSettingsModal');
       if (!modal) return;
@@ -4027,6 +4229,7 @@
       if (endInput) endInput.value = normalizeTimeValue(state.workEndTime, DEFAULT_WORK_END_TIME);
       syncFaceThresholdUI();
       syncDetectionSpeedUI();
+      syncDetectionEngineUI();
 
       // ตรวจสอบสิทธิ์ Admin และอัปเดตสถานะการ์ดสั่ง Force Reload
       const reloadCard = document.getElementById('adminGlobalReloadCard');
@@ -4115,7 +4318,9 @@
         workStartTime: state.workStartTime,
         workEndTime: state.workEndTime,
         faceMatchThreshold: state.faceMatchThreshold || DEFAULT_FACE_MATCH_THRESHOLD,
-        detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE
+        detectionSpeedMode: state.detectionSpeedMode || DEFAULT_DETECTION_SPEED_MODE,
+        detectionEngine: state.detectionEngine || DEFAULT_DETECTION_ENGINE,
+        ssdMinConfidence: state.ssdMinConfidence || DEFAULT_SSD_MIN_CONFIDENCE
       };
 
       const finish = function(success, err) {
@@ -5135,6 +5340,10 @@
         }
         logStatus('[OK] โมเดล AI ทั้งหมดพร้อมทำงาน 100%');
         showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
+
+        if (state.detectionEngine === 'ssd' && !state.ssdModelLoaded) {
+          loadSsdMobilenetModel().catch(function() {});
+        }
       } catch (err) {
         logStatus('[WARN] CDN หลักตอบสนองช้า กำลังลอง CDN สำรอง...', true);
         try {
@@ -5146,12 +5355,60 @@
           }
           logStatus('[OK] โมเดล AI โหลดสำเร็จจาก CDN สำรอง');
           showToast('โมเดล AI พร้อมทำงานแล้ว', 'success');
+
+          if (state.detectionEngine === 'ssd' && !state.ssdModelLoaded) {
+            loadSsdMobilenetModel().catch(function() {});
+          }
         } catch (err2) {
           logStatus('[ERROR] ไม่สามารถโหลดโมเดล AI: ' + (err2 ? err2.message : err2), true);
           if (modelBadge) {
             modelBadge.innerHTML = '<span class="text-[#E5534B]">●</span> โหลดโมเดล AI ล้มเหลว';
             modelBadge.className = 'text-xs px-2.5 py-1 rounded-full bg-[#FDECEB] text-[#D94338] border border-[#F5C2C0] font-semibold whitespace-nowrap';
           }
+        }
+      }
+    }
+
+    async function loadSsdMobilenetModel() {
+      if (typeof faceapi === 'undefined') return false;
+      if (faceapi.nets.ssdMobilenetv1 && faceapi.nets.ssdMobilenetv1.isLoaded) {
+        state.ssdModelLoaded = true;
+        if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+        return true;
+      }
+      if (state.ssdModelLoading) return false;
+      state.ssdModelLoading = true;
+      if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+
+      logStatus('[AI] กำลังดาวน์โหลดโมเดล SSD MobileNet V1 (~5.4 MB)...');
+      showToast('กำลังดาวน์โหลดโมเดล SSD MobileNet V1 (~5.4 MB)...', 'info');
+
+      try {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        state.ssdModelLoaded = true;
+        state.ssdModelLoading = false;
+        logStatus('[OK] โมเดล SSD MobileNet V1 พร้อมใช้งาน 100%');
+        showToast('โมเดล SSD MobileNet V1 โหลดเสร็จสิ้นแล้ว', 'success');
+        if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+        return true;
+      } catch (e1) {
+        logStatus('[WARN] CDN หลักตอบสนองช้า กำลังลอง CDN สำรองสำหรับ SSD...', true);
+        try {
+          await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL_BACKUP);
+          state.ssdModelLoaded = true;
+          state.ssdModelLoading = false;
+          logStatus('[OK] โมเดล SSD MobileNet V1 โหลดสำเร็จจาก CDN สำรอง');
+          showToast('โมเดล SSD MobileNet V1 พร้อมใช้งานแล้ว', 'success');
+          if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+          return true;
+        } catch (e2) {
+          state.ssdModelLoaded = false;
+          state.ssdModelLoading = false;
+          logStatus('[ERROR] ไม่สามารถโหลดโมเดล SSD MobileNet V1: ' + (e2 ? e2.message : e2), true);
+          showToast('ดาวน์โหลดโมเดล SSD ไม่สำเร็จ จะสลับไปใช้ TinyFaceDetector แทน', 'error');
+          state.detectionEngine = 'tiny';
+          if (typeof syncDetectionEngineUI === 'function') syncDetectionEngineUI();
+          return false;
         }
       }
     }
@@ -6088,7 +6345,15 @@
     }
 
     function getScannerDetectorOptions() {
-      if (typeof faceapi === 'undefined' || !faceapi.TinyFaceDetectorOptions) return null;
+      if (typeof faceapi === 'undefined') return null;
+      const engine = state.detectionEngine || 'tiny';
+      if (engine === 'ssd' && state.ssdModelLoaded && faceapi.SsdMobilenetv1Options) {
+        return new faceapi.SsdMobilenetv1Options({
+          minConfidence: Number(state.ssdMinConfidence) || 0.50,
+          maxResults: 10
+        });
+      }
+      if (!faceapi.TinyFaceDetectorOptions) return null;
       const mode = state.detectionSpeedMode || 'balanced';
       if (mode === 'turbo') {
         return new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.42 });
@@ -6101,9 +6366,17 @@
     function updateScannerPerformanceBadge(fps, latency) {
       const badge = document.getElementById('scannerPerformanceBadge');
       if (!badge) return;
-      const mode = state.detectionSpeedMode || 'balanced';
-      const modeLabel = mode === 'turbo' ? 'Turbo (224)' : (mode === 'precision' ? 'HD (416)' : 'Fast (320)');
-      badge.textContent = '⚡ ' + fps + ' FPS (' + latency + 'ms) · ' + modeLabel;
+      const isSsd = (state.detectionEngine === 'ssd' && state.ssdModelLoaded);
+      let engineText = '';
+      if (isSsd) {
+        const confStr = Number(state.ssdMinConfidence || 0.50).toFixed(2);
+        engineText = '🎯 ' + fps + ' FPS (' + latency + 'ms) · SSD (' + confStr + ')';
+      } else {
+        const mode = state.detectionSpeedMode || 'balanced';
+        const modeLabel = mode === 'turbo' ? 'Turbo (224)' : (mode === 'precision' ? 'HD (416)' : 'Fast (320)');
+        engineText = '⚡ ' + fps + ' FPS (' + latency + 'ms) · Tiny (' + modeLabel + ')';
+      }
+      badge.textContent = engineText;
       if (fps >= 24) {
         badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] font-mono font-bold border border-[#BEE6CE] shadow-xs';
       } else if (fps >= 14) {
@@ -9093,6 +9366,10 @@
     window.updateScannerPerformanceBadge = updateScannerPerformanceBadge;
     window.computeBoxIoU = computeBoxIoU;
     window.computeBoxCenterDist = computeBoxCenterDist;
+    window.setDetectionEngine = setDetectionEngine;
+    window.setSsdMinConfidence = setSsdMinConfidence;
+    window.syncDetectionEngineUI = syncDetectionEngineUI;
+    window.loadSsdMobilenetModel = loadSsdMobilenetModel;
 
     // --- UNCONDITIONAL IMMEDIATE APPLICATION START ---
     // (Executes immediately without relying on DOMContentLoaded in iframe)
@@ -9117,9 +9394,10 @@
       // 1. ตรวจสอบระบบเสียงภาษาไทยทันที
       initSpeech();
 
-      // 1.5 โหลดกล่องข้อความประจำบุคคลจากแคช และซิงค์ UI โหมดสปีด AI
+      // 1.5 โหลดกล่องข้อความประจำบุคคลจากแคช และซิงค์ UI โหมดสปีด/เอนจิน AI
       loadProfileMessagesFromStorage();
       syncDetectionSpeedUI();
+      syncDetectionEngineUI();
 
       // 2. ดึงข้อมูลโปรไฟล์จากแคชในเครื่องทันที 0ms และซิงค์ Google Sheets
       loadProfilesFromBackend();

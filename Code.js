@@ -235,6 +235,8 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
+      settingsSheet.appendRow(["DETECTION_ENGINE", "tiny", "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)", nowStr]);
+      settingsSheet.appendRow(["SSD_MIN_CONFIDENCE", "0.50", "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)", nowStr]);
     }
 
     // 6. ตรวจสอบ Sheet บันทึกเวลาเข้า-ออกงาน (AttendanceLogs)
@@ -1164,7 +1166,9 @@ function getSystemSettings() {
       workStartTime: "08:30",
       workEndTime: "17:30",
       faceMatchThreshold: 0.41,
-      detectionSpeedMode: "balanced"
+      detectionSpeedMode: "balanced",
+      detectionEngine: "tiny",
+      ssdMinConfidence: 0.50
     };
 
     if (data && data.length > 1) {
@@ -1207,6 +1211,16 @@ function getSystemSettings() {
           if (smVal === "turbo" || smVal === "precision" || smVal === "balanced") {
             settings.detectionSpeedMode = smVal;
           }
+        } else if (key === "DETECTION_ENGINE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var engVal = String(val).trim().toLowerCase();
+          if (engVal === "tiny" || engVal === "ssd") {
+            settings.detectionEngine = engVal;
+          }
+        } else if (key === "SSD_MIN_CONFIDENCE" && val !== undefined && val !== null && String(val).trim() !== "") {
+          var confVal = parseFloat(String(val).trim());
+          if (!isNaN(confVal) && confVal >= 0.20 && confVal <= 0.90) {
+            settings.ssdMinConfidence = Math.round(confVal * 100) / 100;
+          }
         }
         if (key === "GREETING_VIP_TEMPLATE") {
           settings._hasExplicitVip = true;
@@ -1235,7 +1249,9 @@ function getSystemSettings() {
         workStartTime: "08:30",
         workEndTime: "17:30",
         faceMatchThreshold: 0.41,
-        detectionSpeedMode: "balanced"
+        detectionSpeedMode: "balanced",
+        detectionEngine: "tiny",
+        ssdMinConfidence: 0.50
       }
     };
   }
@@ -1338,6 +1354,24 @@ function saveSystemSettings(payload) {
         updateMap["DETECTION_SPEED_MODE"] = {
           value: smMode,
           desc: "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)"
+        };
+      }
+    }
+    if (payload.detectionEngine !== undefined) {
+      var engMode = String(payload.detectionEngine).trim().toLowerCase();
+      if (engMode === "tiny" || engMode === "ssd") {
+        updateMap["DETECTION_ENGINE"] = {
+          value: engMode,
+          desc: "โมเดล AI ตรวจจับใบหน้า (tiny: TinyFaceDetector / ssd: SSD MobileNet V1)"
+        };
+      }
+    }
+    if (payload.ssdMinConfidence !== undefined) {
+      var sConf = parseFloat(payload.ssdMinConfidence);
+      if (!isNaN(sConf) && sConf >= 0.20 && sConf <= 0.90) {
+        updateMap["SSD_MIN_CONFIDENCE"] = {
+          value: String(Math.round(sConf * 100) / 100),
+          desc: "เกณฑ์ความมั่นใจขั้นต่ำโมเดล SSD MobileNet V1 (0.30 - 0.70)"
         };
       }
     }
