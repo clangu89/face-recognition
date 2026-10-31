@@ -5687,10 +5687,10 @@
       const score = Number(detection.detection.score || 0);
       const minBoxWidth = Math.max(64, Math.round((frameWidth || 640) * 0.10));
 
-      if (score < 0.45) {
+      if (score < 0.25) {
         return { ok: false, reason: 'ภาพใบหน้าไม่ชัด', code: 'low_score' };
       }
-      if (box.width < minBoxWidth || box.height < minBoxWidth * 0.85) {
+      if (box.width < 50 || box.height < 45) {
         return { ok: false, reason: 'ขยับเข้าใกล้กล้องอีกนิด', code: 'too_far' };
       }
 
@@ -5711,18 +5711,19 @@
           const rightEye = avgPt(rightEyePts);
           const noseTip = nosePts[Math.min(3, nosePts.length - 1)];
 
-          const eyeSpanX = rightEye.x - leftEye.x;
-          if (eyeSpanX < 16) {
+          const eyeSpanX = Math.abs(rightEye.x - leftEye.x);
+          if (eyeSpanX < 14) {
             return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'side_pose' };
           }
 
-          const rollDeg = Math.abs(Math.atan2(rightEye.y - leftEye.y, eyeSpanX) * (180 / Math.PI));
-          if (rollDeg > 32) {
+          const rollDeg = Math.abs(Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI));
+          if (rollDeg > 35) {
             return { ok: false, reason: 'กรุณาตั้งศีรษะให้ตรง', code: 'head_tilt' };
           }
 
-          const noseRatio = (noseTip.x - leftEye.x) / eyeSpanX;
-          if (noseRatio < 0.20 || noseRatio > 0.80) {
+          const minEyeX = Math.min(leftEye.x, rightEye.x);
+          const noseRatio = eyeSpanX > 0 ? (noseTip.x - minEyeX) / eyeSpanX : 0.5;
+          if (noseRatio < 0.15 || noseRatio > 0.85) {
             return { ok: false, reason: 'กรุณาหันหน้าตรงกล้อง', code: 'yaw_turn' };
           }
 
@@ -5962,6 +5963,10 @@
 
     function stopCamera() {
       stopRegistrationGuideLoop();
+      if (typeof _scannerRafId !== 'undefined' && _scannerRafId) {
+        try { cancelAnimationFrame(_scannerRafId); } catch(e) {}
+        _scannerRafId = null;
+      }
       if (state.stream) {
         state.stream.getTracks().forEach(track => track.stop());
         state.stream = null;
@@ -6349,18 +6354,18 @@
       const engine = state.detectionEngine || 'tiny';
       if (engine === 'ssd' && state.ssdModelLoaded && faceapi.SsdMobilenetv1Options) {
         return new faceapi.SsdMobilenetv1Options({
-          minConfidence: Number(state.ssdMinConfidence) || 0.50,
+          minConfidence: Number(state.ssdMinConfidence) || 0.40,
           maxResults: 10
         });
       }
       if (!faceapi.TinyFaceDetectorOptions) return null;
       const mode = state.detectionSpeedMode || 'balanced';
       if (mode === 'turbo') {
-        return new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.42 });
+        return new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.26 });
       } else if (mode === 'precision') {
-        return new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.50 });
+        return new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.36 });
       }
-      return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.45 });
+      return new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.30 });
     }
 
     function updateScannerPerformanceBadge(fps, latency) {
@@ -6369,7 +6374,7 @@
       const isSsd = (state.detectionEngine === 'ssd' && state.ssdModelLoaded);
       let engineText = '';
       if (isSsd) {
-        const confStr = Number(state.ssdMinConfidence || 0.50).toFixed(2);
+        const confStr = Number(state.ssdMinConfidence || 0.40).toFixed(2);
         engineText = '🎯 ' + fps + ' FPS (' + latency + 'ms) · SSD (' + confStr + ')';
       } else {
         const mode = state.detectionSpeedMode || 'balanced';
@@ -6386,12 +6391,20 @@
       }
     }
 
-    async function startRecognitionLoop() {
-      if (state.isDetecting) return;
-      state.isDetecting = true;
+    let _scannerRafId = null;
+    let _lastDetectFrameErrorTime = 0;
 
+    async function startRecognitionLoop() {
       const video = document.getElementById('webcamVideo');
       const canvas = document.getElementById('overlayCanvas');
+      if (!video || !canvas) return;
+
+      if (_scannerRafId) {
+        try { cancelAnimationFrame(_scannerRafId); } catch(e) {}
+        _scannerRafId = null;
+      }
+      state.isDetecting = true;
+
       const displaySize = { width: video.videoWidth || 640, height: video.videoHeight || 480 };
       canvas.width = displaySize.width;
       canvas.height = displaySize.height;
@@ -6405,7 +6418,11 @@
       let isDetectingFrame = false;
 
       async function detectFrame() {
-        if (!state.cameraStarted || !state.isDetecting) return;
+        if (!state.cameraStarted || !state.isDetecting) {
+          isDetectingFrame = false;
+          _scannerRafId = null;
+          return;
+        }
 
         if (video.readyState >= 2 && state.modelsLoaded && state.currentTab === 'scanner') {
           if (!isDetectingFrame) {
@@ -6428,10 +6445,12 @@
               const detectorOpts = getScannerDetectorOptions();
               const now = Date.now();
 
-              // ตรวจจับกรอบใบหน้าเบื้องต้นด้วย TinyFaceDetector ทุกรอบ (~15-25ms)
-              const rawDetections = await faceapi.detectAllFaces(video, detectorOpts);
-              const resizedDetections = faceapi.resizeResults(rawDetections, displaySize);
+              // ตรวจจับใบหน้าพร้อมสกัดเวกเตอร์ในรอบเดียว (Single-Pass Guaranteed Detection)
+              const detections = await faceapi.detectAllFaces(video, detectorOpts)
+                .withFaceLandmarks()
+                .withFaceDescriptors();
 
+              const resizedDetections = faceapi.resizeResults(detections, displaySize);
               const ctx = canvas.getContext('2d');
               ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -6445,140 +6464,92 @@
                 triggerImmediateFacePresenceChime(now);
                 const activeThreshold = Number(state.faceMatchThreshold) || DEFAULT_FACE_MATCH_THRESHOLD;
 
-                // ตรวจสอบว่าใบหน้าใดตรงกับคนที่ทักทายไปแล้ว (Spatial IoU Tracking) เพื่อไม่ต้องรัน ResNet หนัก
-                let allMatchedTracked = true;
-                const facesNeedingFullRecognition = [];
+                resizedDetections.forEach(detection => {
+                  const { box } = detection.detection;
 
-                resizedDetections.forEach(det => {
-                  const box = det.box;
-                  let matchedTrackedKey = null;
-                  let matchedTrackedData = null;
-
-                  state.trackedPersons.forEach((tData, pKey) => {
-                    if (matchedTrackedKey) return;
-                    if (tData.lastBox) {
-                      const iou = computeBoxIoU(box, tData.lastBox);
-                      const centerDist = computeBoxCenterDist(box, tData.lastBox);
-                      if (iou >= 0.28 || centerDist <= Math.max(70, box.width * 0.45)) {
-                        matchedTrackedKey = pKey;
-                        matchedTrackedData = tData;
-                      }
-                    }
-                  });
-
-                  if (matchedTrackedKey && matchedTrackedData && (now - (matchedTrackedData.lastVerifiedAt || 0) < 1800)) {
-                    matchedTrackedData.lastSeen = now;
-                    matchedTrackedData.lastBox = box;
-                    detectedCurrentFrameKeys.add(matchedTrackedKey);
-                    const displayName = matchedTrackedData.profile ? (matchedTrackedData.profile.name || matchedTrackedKey) : matchedTrackedKey.replace(/^name:/, '');
-                    detectedCurrentFrameDisplayNames.add(displayName);
-
-                    drawFaceBox(ctx, box, displayName, 'known', matchedTrackedData.avgDistance || 0.22, {
-                      profile: matchedTrackedData.profile,
-                      confidencePct: matchedTrackedData.confidencePct || 95
-                    });
-                    handlePersonGreeting(matchedTrackedData.profile || displayName, matchedTrackedData.confidence || 0.95, matchedTrackedKey);
-                  } else {
-                    allMatchedTracked = false;
-                    facesNeedingFullRecognition.push(det);
+                  // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่
+                  const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
+                  if (!quality.ok) {
+                    pendingVerificationThisFrame = true;
+                    drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
+                    return;
                   }
-                });
 
-                // หากมีใบหน้าที่ยังไม่ได้ยืนยันตัวตน ให้รันโมเดลสกัดเวกเตอร์
-                if (!allMatchedTracked || facesNeedingFullRecognition.length > 0) {
-                  const fullDetections = await faceapi.detectAllFaces(video, detectorOpts)
-                    .withFaceLandmarks()
-                    .withFaceDescriptors();
+                  // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
+                  const matchRes = matchFaceWithPrecision(detection.descriptor);
 
-                  const resizedFullDetections = faceapi.resizeResults(fullDetections, displaySize);
+                  if (matchRes.status === 'matched') {
+                    const pKey = matchRes.profileKey || ('name:' + matchRes.label);
+                    seenCandidateKeysThisFrame.add(pKey);
 
-                  resizedFullDetections.forEach(detection => {
-                    const { box } = detection.detection;
+                    // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
+                    if (state.trackedPersons.has(pKey)) {
+                      const tData = state.trackedPersons.get(pKey);
+                      tData.lastSeen = now;
+                      tData.lastBox = box;
+                      tData.lastVerifiedAt = now;
+                      tData.avgDistance = matchRes.distance;
+                      tData.confidencePct = matchRes.confidencePct;
+                      detectedCurrentFrameKeys.add(pKey);
+                      detectedCurrentFrameDisplayNames.add(matchRes.label);
+                      drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
+                        profile: matchRes.profile,
+                        confidencePct: matchRes.confidencePct
+                      });
+                      handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
+                    } else {
+                      // Multi-Frame Consensus with Fast-Path for High Confidence
+                      let cand = state.candidateMatches.get(pKey);
+                      if (!cand || (now - cand.lastSeen > 1600)) {
+                        cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
+                        state.candidateMatches.set(pKey, cand);
+                      } else {
+                        cand.count += 1;
+                        cand.distances.push(matchRes.distance);
+                        if (cand.distances.length > 5) cand.distances.shift();
+                        cand.lastSeen = now;
+                      }
 
-                    // Layer 4: ตรวจสอบขนาดและองศาหน้าตรงก่อนจับคู่
-                    const quality = checkScannerFaceQuality(detection, displaySize.width, displaySize.height);
-                    if (!quality.ok) {
-                      pendingVerificationThisFrame = true;
-                      drawFaceBox(ctx, box, quality.reason || 'กรุณาหันหน้าตรงกล้อง', 'low_quality', 1.0, null);
-                      return;
-                    }
+                      const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
+                      const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
+                      const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
 
-                    // Layer 1 & 2: ตรวจสอบด้วย Euclidean + Cosine + Top-2 Margin Guard
-                    const matchRes = matchFaceWithPrecision(detection.descriptor);
-
-                    if (matchRes.status === 'matched') {
-                      const pKey = matchRes.profileKey || ('name:' + matchRes.label);
-                      seenCandidateKeysThisFrame.add(pKey);
-
-                      // หากยืนยันตัวตนและทักทายไปแล้วในรอบที่ยังยืนอยู่หน้ากล้อง ให้คงสถานะต่อเนื่องทันที
-                      if (state.trackedPersons.has(pKey)) {
-                        const tData = state.trackedPersons.get(pKey);
-                        tData.lastSeen = now;
-                        tData.lastBox = box;
-                        tData.lastVerifiedAt = now;
-                        tData.avgDistance = matchRes.distance;
-                        tData.confidencePct = matchRes.confidencePct;
+                      if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
+                        const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
                         detectedCurrentFrameKeys.add(pKey);
                         detectedCurrentFrameDisplayNames.add(matchRes.label);
-                        drawFaceBox(ctx, box, matchRes.label, 'known', matchRes.distance, {
+
+                        // บันทึกตำแหน่งและข้อมูลการยืนยันลงใน trackedPersons
+                        const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
+                        tItem.lastSeen = now;
+                        tItem.lastBox = box;
+                        tItem.lastVerifiedAt = now;
+                        tItem.profile = matchRes.profile;
+                        tItem.avgDistance = avgDist;
+                        tItem.confidence = avgConf;
+                        tItem.confidencePct = Math.round(avgConf * 100);
+                        state.trackedPersons.set(pKey, tItem);
+
+                        drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
                           profile: matchRes.profile,
-                          confidencePct: matchRes.confidencePct
+                          confidencePct: Math.round(avgConf * 100)
                         });
-                        handlePersonGreeting(matchRes.profile || matchRes.label, matchRes.confidence, pKey);
+                        handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
                       } else {
-                        // Multi-Frame Consensus with Fast-Path for High Confidence
-                        let cand = state.candidateMatches.get(pKey);
-                        if (!cand || (now - cand.lastSeen > 1600)) {
-                          cand = { count: 1, distances: [matchRes.distance], firstSeen: now, lastSeen: now };
-                          state.candidateMatches.set(pKey, cand);
-                        } else {
-                          cand.count += 1;
-                          cand.distances.push(matchRes.distance);
-                          if (cand.distances.length > 5) cand.distances.shift();
-                          cand.lastSeen = now;
-                        }
-
-                        const avgDist = cand.distances.reduce((a, b) => a + b, 0) / cand.distances.length;
-                        const isFastPath = (matchRes.distance <= FAST_PATH_DISTANCE_THRESHOLD && avgDist <= FAST_PATH_DISTANCE_THRESHOLD);
-                        const requiredFrames = isFastPath ? 1 : REQUIRED_FACE_CONFIRM_FRAMES;
-
-                        if (cand.count >= requiredFrames && avgDist <= activeThreshold) {
-                          const avgConf = Math.max(0, Math.min(0.99, 1 - (avgDist * 0.58)));
-                          detectedCurrentFrameKeys.add(pKey);
-                          detectedCurrentFrameDisplayNames.add(matchRes.label);
-
-                          // บันทึกตำแหน่งและข้อมูลการยืนยันลงใน trackedPersons
-                          const tItem = state.trackedPersons.get(pKey) || { firstSeen: now, hasGreeted: false };
-                          tItem.lastSeen = now;
-                          tItem.lastBox = box;
-                          tItem.lastVerifiedAt = now;
-                          tItem.profile = matchRes.profile;
-                          tItem.avgDistance = avgDist;
-                          tItem.confidence = avgConf;
-                          tItem.confidencePct = Math.round(avgConf * 100);
-                          state.trackedPersons.set(pKey, tItem);
-
-                          drawFaceBox(ctx, box, matchRes.label, 'known', avgDist, {
-                            profile: matchRes.profile,
-                            confidencePct: Math.round(avgConf * 100)
-                          });
-                          handlePersonGreeting(matchRes.profile || matchRes.label, avgConf, pKey);
-                        } else {
-                          pendingVerificationThisFrame = true;
-                          const stepNum = Math.min(cand.count, requiredFrames);
-                          drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
-                        }
+                        pendingVerificationThisFrame = true;
+                        const stepNum = Math.min(cand.count, requiredFrames);
+                        drawFaceBox(ctx, box, 'กำลังยืนยันตัวตน... (' + stepNum + '/' + requiredFrames + ')', 'verifying', matchRes.distance, null);
                       }
-                    } else if (matchRes.status === 'ambiguous') {
-                      pendingVerificationThisFrame = true;
-                      if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
-                      drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
-                    } else {
-                      unknownDetectedThisFrame = true;
-                      drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
                     }
-                  });
-                }
+                  } else if (matchRes.status === 'ambiguous') {
+                    pendingVerificationThisFrame = true;
+                    if (matchRes.profileKey) state.candidateMatches.delete(matchRes.profileKey);
+                    drawFaceBox(ctx, box, 'โครงหน้าคล้ายคลึงกัน กรุณามองตรงกล้อง...', 'ambiguous', matchRes.distance, null);
+                  } else {
+                    unknownDetectedThisFrame = true;
+                    drawFaceBox(ctx, box, 'Unknown', 'unknown', matchRes.distance, null);
+                  }
+                });
 
                 // ล้าง Candidate ที่หลุดเฟรมหรือไม่ต่อเนื่อง (1,600ms)
                 state.candidateMatches.forEach((candData, key) => {
@@ -6602,7 +6573,11 @@
 
               cleanupExitedPersons(now, detectedCurrentFrameKeys, unknownDetectedThisFrame || pendingVerificationThisFrame);
             } catch (err) {
-              console.error(err);
+              console.error('[AI detectFrame Error]', err);
+              if (now - _lastDetectFrameErrorTime > 3000) {
+                _lastDetectFrameErrorTime = now;
+                logStatus('[AI] ตรวจจับเฟรมขัดข้อง: ' + (err ? err.message : err), true);
+              }
             } finally {
               const frameEnd = performance.now();
               const latency = Math.round(frameEnd - frameStart);
@@ -6622,9 +6597,9 @@
             }
           }
         }
-        requestAnimationFrame(detectFrame);
+        _scannerRafId = requestAnimationFrame(detectFrame);
       }
-      requestAnimationFrame(detectFrame);
+      _scannerRafId = requestAnimationFrame(detectFrame);
     }
 
     function drawFaceBox(ctx, box, label, isKnownOrMode, distance, meta) {
