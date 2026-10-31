@@ -231,7 +231,7 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["GREETING_UNKNOWN_TEXT", "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}", "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป", nowStr]);
       settingsSheet.appendRow(["VOICE_PARTICLE", "ค่ะ", "คำลงท้ายเสียงพูดทักทาย (ค่ะ/ครับ)", nowStr]);
       settingsSheet.appendRow(["BELL_CHIME_ENABLED", "true", "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)", nowStr]);
-      settingsSheet.appendRow(["BELL_CHIME_SOUND", "dingdong", "รูปแบบเสียงกระดิ่งเตือน (dingdong/melody3/single_ding/marimba/crystal/digital)", nowStr]);
+      settingsSheet.appendRow(["BELL_CHIME_SOUND", "seven_eleven", "รูปแบบเสียงกระดิ่งเตือน (seven_eleven/seven_melody/dingdong/melody3/single_ding/marimba/crystal/digital)", nowStr]);
       settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["DETECTION_SPEED_MODE", "balanced", "โหมดความเร็วตรวจจับใบหน้า AI (turbo/balanced/precision)", nowStr]);
@@ -1165,7 +1165,7 @@ function getSystemSettings() {
       visitorGreetingEnabled: true,
       voiceParticle: "ค่ะ",
       bellChimeEnabled: true,
-      bellChimeSound: "dingdong",
+      bellChimeSound: "seven_eleven",
       voiceCategoryConfigs: null,
       workStartTime: "08:30",
       workEndTime: "17:30",
@@ -1336,8 +1336,8 @@ function saveSystemSettings(payload) {
     }
     if (payload.bellChimeSound !== undefined) {
       updateMap["BELL_CHIME_SOUND"] = {
-        value: String(payload.bellChimeSound).trim().toLowerCase() || "dingdong",
-        desc: "รูปแบบเสียงกระดิ่งเตือน (dingdong/melody3/single_ding/marimba/crystal/digital)"
+        value: String(payload.bellChimeSound).trim().toLowerCase() || "seven_eleven",
+        desc: "รูปแบบเสียงกระดิ่งเตือน (seven_eleven/seven_melody/dingdong/melody3/single_ding/marimba/crystal/digital)"
       };
     }
     if (payload.voiceCategoryConfigs !== undefined && payload.voiceCategoryConfigs !== null) {

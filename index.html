@@ -1290,6 +1290,8 @@
               </label>
               <div class="flex gap-2">
                 <select id="bellChimeSoundSelect" onchange="handleBellChimeSoundChange(this.value, true)" class="flex-1 px-4 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#28AE60] focus:bg-white transition cursor-pointer shadow-sm">
+                  <option value="seven_eleven">🏪 ติ๊งหน่อง เซเว่น (7-Eleven Classic - ติ๊ง-หน่อง ยอดนิยม)</option>
+                  <option value="seven_melody">🎶 เมโลดี้ เซเว่น (7-Eleven Melody - 4 จังหวะ สดใส ต้อนรับ)</option>
                   <option value="dingdong">🔔 ดิ่งด่อง คลาสสิก (Ding-Dong - สองจังหวะ นุ่มนวล อบอุ่น)</option>
                   <option value="melody3">🎶 ทริปเปิลเชล์ม (Triple Chime - สามจังหวะ ไล่เสียง ไพเราะ สดใส)</option>
                   <option value="single_ding">🛎️ กระดิ่งเคาน์เตอร์เดี่ยว (Single Bell - ติ๊ง กังวาน ใส ชัดเจน)</option>
@@ -2223,6 +2225,18 @@
     };
 
     const BELL_SOUND_PRESETS = {
+      'seven_eleven': {
+        id: 'seven_eleven',
+        name: 'ติ๊งหน่อง เซเว่น',
+        label: '🏪 ติ๊งหน่อง เซเว่น (7-Eleven Classic - ติ๊ง-หน่อง ยอดนิยม)',
+        desc: 'เสียงติ๊งหน่องคู่เอกลักษณ์ (G#5 -> E5) สไตล์ประตูอัตโนมัติเซเว่น สดใส คุ้นหู ชัดเจน'
+      },
+      'seven_melody': {
+        id: 'seven_melody',
+        name: 'เมโลดี้ เซเว่น',
+        label: '🎶 เมโลดี้ เซเว่น (7-Eleven Melody - 4 จังหวะ สดใส ต้อนรับ)',
+        desc: 'เมโลดี้ 4 จังหวะ (G5 -> E5 -> G5 -> C6) สไตล์เซเว่นเอเชีย ไพเราะ เป็นกันเอง'
+      },
       'dingdong': {
         id: 'dingdong',
         name: 'ดิ่งด่อง คลาสสิก',
@@ -2260,7 +2274,7 @@
         desc: 'ดิจิทัลสองจังหวะ กระชับ คล่องตัว ทันสมัย'
       }
     };
-    const DEFAULT_BELL_CHIME_SOUND = 'dingdong';
+    const DEFAULT_BELL_CHIME_SOUND = 'seven_eleven';
 
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
     const SYSTEM_SETTINGS_STORAGE_KEY = 'face_app_system_settings_v1';
@@ -4701,7 +4715,7 @@
         return;
       }
 
-      const activeSound = soundType || state.bellChimeSound || (typeof DEFAULT_BELL_CHIME_SOUND !== 'undefined' ? DEFAULT_BELL_CHIME_SOUND : 'dingdong');
+      const activeSound = soundType || state.bellChimeSound || (typeof DEFAULT_BELL_CHIME_SOUND !== 'undefined' ? DEFAULT_BELL_CHIME_SOUND : 'seven_eleven');
 
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -4772,6 +4786,22 @@
         let leadTime = 680;
 
         switch (activeSound) {
+          case 'seven_eleven':
+            // 🏪 7-Eleven Classic (G#5 830.61 Hz -> E5 659.25 Hz - ติ๊ง-หน่อง ยอดนิยม)
+            createTone(830.61, now, 0.48, { type: 'sine', gain: 0.82, harmonicRatio: 2.0, harmonicGain: 0.16, attackTime: 0.005 });
+            createTone(659.25, now + 0.19, 0.80, { type: 'sine', gain: 0.85, harmonicRatio: 2.0, harmonicGain: 0.18, attackTime: 0.005 });
+            leadTime = 650;
+            break;
+
+          case 'seven_melody':
+            // 🎶 7-Eleven 4-Tone Asian Melody (G5 -> E5 -> G5 -> C6)
+            createTone(783.99, now, 0.35, { type: 'sine', gain: 0.75, harmonicRatio: 2.0, harmonicGain: 0.15, attackTime: 0.005 });
+            createTone(659.25, now + 0.16, 0.35, { type: 'sine', gain: 0.75, harmonicRatio: 2.0, harmonicGain: 0.15, attackTime: 0.005 });
+            createTone(783.99, now + 0.32, 0.35, { type: 'sine', gain: 0.78, harmonicRatio: 2.0, harmonicGain: 0.15, attackTime: 0.005 });
+            createTone(1046.50, now + 0.48, 0.75, { type: 'sine', gain: 0.82, harmonicRatio: 2.0, harmonicGain: 0.18, attackTime: 0.005 });
+            leadTime = 840;
+            break;
+
           case 'melody3':
             // 🎶 Triple Chime (C5 -> E5 -> G5)
             createTone(523.25, now, 0.40, { gain: 0.65, harmonicRatio: 2.0, harmonicGain: 0.15 });
