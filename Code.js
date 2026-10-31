@@ -231,6 +231,7 @@ function initSheetAndFolder() {
       settingsSheet.appendRow(["GREETING_UNKNOWN_TEXT", "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}", "ข้อความทักทายลูกค้าหรือผู้มาติดต่อทั่วไป", nowStr]);
       settingsSheet.appendRow(["VOICE_PARTICLE", "ค่ะ", "คำลงท้ายเสียงพูดทักทาย (ค่ะ/ครับ)", nowStr]);
       settingsSheet.appendRow(["BELL_CHIME_ENABLED", "true", "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)", nowStr]);
+      settingsSheet.appendRow(["BELL_CHIME_SOUND", "dingdong", "รูปแบบเสียงกระดิ่งเตือน (dingdong/melody3/single_ding/marimba/crystal/digital)", nowStr]);
       settingsSheet.appendRow(["WORK_START_TIME", "08:30", "เวลาเริ่มเข้างานพนักงาน (HH:mm)", nowStr]);
       settingsSheet.appendRow(["WORK_END_TIME", "17:30", "เวลาเลิกงานพนักงาน (HH:mm)", nowStr]);
     }
@@ -1157,6 +1158,7 @@ function getSystemSettings() {
       unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
       voiceParticle: "ค่ะ",
       bellChimeEnabled: true,
+      bellChimeSound: "dingdong",
       voiceCategoryConfigs: null,
       workStartTime: "08:30",
       workEndTime: "17:30",
@@ -1183,6 +1185,8 @@ function getSystemSettings() {
           settings.voiceParticle = String(val).trim();
         } else if (key === "BELL_CHIME_ENABLED" && val !== undefined && val !== null) {
           settings.bellChimeEnabled = (String(val).trim().toLowerCase() === "true");
+        } else if (key === "BELL_CHIME_SOUND" && val !== undefined && val !== null && String(val).trim() !== "") {
+          settings.bellChimeSound = String(val).trim().toLowerCase();
         } else if (key === "VOICE_CATEGORY_CONFIGS" && val !== undefined && val !== null && String(val).trim() !== "") {
           try {
             settings.voiceCategoryConfigs = JSON.parse(String(val).trim());
@@ -1219,6 +1223,7 @@ function getSystemSettings() {
         unknownGreetingText: "สวัสดี{particle}คุณลูกค้า วันนี้รับอะไรดี{particle}",
         voiceParticle: "ค่ะ",
         bellChimeEnabled: true,
+        bellChimeSound: "dingdong",
         voiceCategoryConfigs: null,
         workStartTime: "08:30",
         workEndTime: "17:30",
@@ -1278,6 +1283,12 @@ function saveSystemSettings(payload) {
       updateMap["BELL_CHIME_ENABLED"] = {
         value: String(payload.bellChimeEnabled).trim().toLowerCase() === "true" ? "true" : "false",
         desc: "เปิด/ปิดเสียงกระดิ่งเตือนก่อนทักทาย (true/false)"
+      };
+    }
+    if (payload.bellChimeSound !== undefined) {
+      updateMap["BELL_CHIME_SOUND"] = {
+        value: String(payload.bellChimeSound).trim().toLowerCase() || "dingdong",
+        desc: "รูปแบบเสียงกระดิ่งเตือน (dingdong/melody3/single_ding/marimba/crystal/digital)"
       };
     }
     if (payload.voiceCategoryConfigs !== undefined && payload.voiceCategoryConfigs !== null) {

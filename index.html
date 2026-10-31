@@ -1273,7 +1273,7 @@
                   <span class="w-2.5 h-2.5 rounded-full bg-[#28AE60]"></span>
                   เสียงกระดิ่งเตือนก่อนทักทาย (Bell Chime)
                 </h3>
-                <p class="text-xs text-[#6E6B62] mt-1">เปิด/ปิดเสียงกระดิ่ง "ดิ่ง-ด่อง" ทันทีที่ตรวจพบใบหน้า และนำหน้าเสียงพูดทักทาย</p>
+                <p class="text-xs text-[#6E6B62] mt-1">เปิด/ปิด และเลือกรูปแบบเสียงกระดิ่งเตือนทันทีที่ตรวจพบใบหน้า และนำหน้าเสียงพูดทักทาย</p>
               </div>
               <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" id="bellChimeToggleCheckbox" onchange="toggleBellChime(this.checked)" class="sr-only peer" checked>
@@ -1281,12 +1281,26 @@
               </label>
             </div>
 
-            <div class="flex items-center justify-between pt-2 border-t border-[#EFECE2]">
-              <span class="text-xs text-[#5C5950] font-medium">ทดสอบฟังเสียงกระดิ่ง:</span>
-              <button type="button" onclick="playBellChimePreview()" class="px-3.5 py-1.5 rounded-full bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] shadow-sm flex items-center gap-1.5 transition cursor-pointer">
-                <span>🔔</span>
-                <span>ฟังเสียงกระดิ่ง</span>
-              </button>
+            <!-- Bell Sound Selector Section -->
+            <div id="bellChimeSoundSelectContainer" class="space-y-2 pt-2 border-t border-[#EFECE2]">
+              <label for="bellChimeSoundSelect" class="block text-xs font-bold text-[#5C5950] flex items-center justify-between">
+                <span>เลือกรูปแบบเสียงกระดิ่ง (Chime Tone)</span>
+                <span id="bellChimeCurrentTag" class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#EAF7EF] text-[#1E824C] border border-[#BEE6CE]">🔔 ดิ่งด่อง คลาสสิก</span>
+              </label>
+              <div class="flex gap-2">
+                <select id="bellChimeSoundSelect" onchange="handleBellChimeSoundChange(this.value, true)" class="flex-1 px-4 py-2.5 rounded-2xl bg-[#F7F5EE] border border-[#DCD6C4] text-[#1F1E1B] text-xs sm:text-sm font-bold focus:outline-none focus:border-[#28AE60] focus:bg-white transition cursor-pointer shadow-sm">
+                  <option value="dingdong">🔔 ดิ่งด่อง คลาสสิก (Ding-Dong - สองจังหวะ นุ่มนวล อบอุ่น)</option>
+                  <option value="melody3">🎶 ทริปเปิลเชล์ม (Triple Chime - สามจังหวะ ไล่เสียง ไพเราะ สดใส)</option>
+                  <option value="single_ding">🛎️ กระดิ่งเคาน์เตอร์เดี่ยว (Single Bell - ติ๊ง กังวาน ใส ชัดเจน)</option>
+                  <option value="marimba">🪵 มาริมบา อบอุ่น (Marimba - เสียงเคาะไม้ธรรมชาติ นุ่มหู ผ่อนคลาย)</option>
+                  <option value="crystal">✨ คริสตัลประกายแก้ว (Crystal Shimmer - ใส หรูหรา ทันสมัย พรีเมียม)</option>
+                  <option value="digital">📱 ดิจิทัลโมเดิร์น (Digital Beep - เสียงสังเคราะห์ดิจิทัล กระชับ คล่องตัว)</option>
+                </select>
+                <button type="button" onclick="playBellChimePreview()" class="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#F7F5EE] border border-[#DCD6C4] text-xs font-bold text-[#1F1E1B] shadow-sm flex items-center gap-1.5 transition cursor-pointer flex-shrink-0" title="กดฟังเสียงกระดิ่งที่เลือก">
+                  <span>🔔</span>
+                  <span class="hidden sm:inline">ทดลองฟัง</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2063,6 +2077,46 @@
       }
     };
 
+    const BELL_SOUND_PRESETS = {
+      'dingdong': {
+        id: 'dingdong',
+        name: 'ดิ่งด่อง คลาสสิก',
+        label: '🔔 ดิ่งด่อง คลาสสิก (Ding-Dong - สองจังหวะ นุ่มนวล อบอุ่น)',
+        desc: 'สองจังหวะ คลาสสิก นุ่มนวล อบอุ่น'
+      },
+      'melody3': {
+        id: 'melody3',
+        name: 'ทริปเปิลเชล์ม',
+        label: '🎶 ทริปเปิลเชล์ม (Triple Chime - สามจังหวะ ไล่เสียง ไพเราะ สดใส)',
+        desc: 'สามจังหวะ ไพเราะ สดใส อ่อนหวาน'
+      },
+      'single_ding': {
+        id: 'single_ding',
+        name: 'กระดิ่งเคาน์เตอร์เดี่ยว',
+        label: '🛎️ กระดิ่งเคาน์เตอร์เดี่ยว (Single Bell - ติ๊ง กังวาน ใส ชัดเจน)',
+        desc: 'กระดิ่งเคาน์เตอร์เดี่ยว ติ๊ง กังวาน ใส ชัดเจน'
+      },
+      'marimba': {
+        id: 'marimba',
+        name: 'มาริมบา อบอุ่น',
+        label: '🪵 มาริมบา อบอุ่น (Marimba - เสียงเคาะไม้ธรรมชาติ นุ่มหู ผ่อนคลาย)',
+        desc: 'เสียงเคาะไม้ธรรมชาติ นุ่มหู ผ่อนคลาย'
+      },
+      'crystal': {
+        id: 'crystal',
+        name: 'คริสตัลประกายแก้ว',
+        label: '✨ คริสตัลประกายแก้ว (Crystal Shimmer - ใส หรูหรา ทันสมัย พรีเมียม)',
+        desc: 'ประกายแก้วกังวาน หรูหรา ทันสมัย พรีเมียม'
+      },
+      'digital': {
+        id: 'digital',
+        name: 'ดิจิทัลโมเดิร์น',
+        label: '📱 ดิจิทัลโมเดิร์น (Digital Beep - เสียงสังเคราะห์ดิจิทัล กระชับ คล่องตัว)',
+        desc: 'ดิจิทัลสองจังหวะ กระชับ คล่องตัว ทันสมัย'
+      }
+    };
+    const DEFAULT_BELL_CHIME_SOUND = 'dingdong';
+
     const VOICE_SETTINGS_STORAGE_KEY = 'face_app_voice_settings_v2';
     const SYSTEM_SETTINGS_STORAGE_KEY = 'face_app_system_settings_v1';
     const DEFAULT_EMPLOYEE_GREETING_TEMPLATE = 'สวัสดี{particle}คุณ {name} วันนี้{datetime}';
@@ -2101,7 +2155,8 @@
         voiceRate: 0.95,
         voicePitch: 1.05,
         voiceParticle: 'ค่ะ',
-        bellChimeEnabled: true
+        bellChimeEnabled: true,
+        bellChimeSound: DEFAULT_BELL_CHIME_SOUND
       };
     }
 
@@ -2166,6 +2221,7 @@
       speechTimer: null,
       audioCtx: null,
       bellChimeEnabled: true,
+      bellChimeSound: DEFAULT_BELL_CHIME_SOUND,
       trackedPersons: new Map(),
       unknownTracker: { lastSeen: 0, hasGreeted: false, confirmCount: 0 },
       EXIT_THRESHOLD_MS: 3000,
@@ -2473,7 +2529,8 @@
           voiceRate: typeof state.voiceRate === 'number' ? state.voiceRate : 0.95,
           voicePitch: typeof state.voicePitch === 'number' ? state.voicePitch : 1.05,
           voiceParticle: state.voiceParticle || 'ค่ะ',
-          bellChimeEnabled: state.bellChimeEnabled !== false
+          bellChimeEnabled: state.bellChimeEnabled !== false,
+          bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND
         };
       }
       return state.voiceCategoryConfigs[cat];
@@ -2486,6 +2543,7 @@
       state.voicePitch = (typeof cfg.voicePitch === 'number' && !isNaN(cfg.voicePitch)) ? cfg.voicePitch : 1.05;
       state.voiceParticle = (cfg.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ';
       state.bellChimeEnabled = cfg.bellChimeEnabled !== false;
+      state.bellChimeSound = (cfg.bellChimeSound && BELL_SOUND_PRESETS[cfg.bellChimeSound]) ? cfg.bellChimeSound : (state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND);
       refreshThaiVoice();
     }
 
@@ -2497,6 +2555,7 @@
       cfg.voicePitch = (typeof state.voicePitch === 'number' && !isNaN(state.voicePitch)) ? state.voicePitch : 1.05;
       cfg.voiceParticle = (state.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ';
       cfg.bellChimeEnabled = state.bellChimeEnabled !== false;
+      cfg.bellChimeSound = (state.bellChimeSound && BELL_SOUND_PRESETS[state.bellChimeSound]) ? state.bellChimeSound : DEFAULT_BELL_CHIME_SOUND;
     }
 
     function getVoiceSummaryText(cfg) {
@@ -2508,7 +2567,10 @@
       } else if (sel.indexOf('device:') === 0) {
         shortName = '🎙️ ' + sel.replace('device:', '');
       }
-      return shortName + ' • ' + (cfg.voiceParticle || 'ค่ะ') + (cfg.bellChimeEnabled === false ? ' • ปิดกระดิ่ง' : '');
+      const soundKey = cfg.bellChimeSound || state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND;
+      const soundName = (BELL_SOUND_PRESETS[soundKey] && BELL_SOUND_PRESETS[soundKey].name) || 'ดิ่งด่อง';
+      const bellStatus = (cfg.bellChimeEnabled === false) ? ' • ปิดกระดิ่ง' : (' • 🔔 ' + soundName);
+      return shortName + ' • ' + (cfg.voiceParticle || 'ค่ะ') + bellStatus;
     }
 
     function switchVoiceSettingCategory(category, skipToast) {
@@ -2536,13 +2598,14 @@
           voiceRate: src.voiceRate,
           voicePitch: src.voicePitch,
           voiceParticle: src.voiceParticle,
-          bellChimeEnabled: src.bellChimeEnabled
+          bellChimeEnabled: src.bellChimeEnabled,
+          bellChimeSound: src.bellChimeSound || DEFAULT_BELL_CHIME_SOUND
         };
       });
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
-      showToast('คัดลอกโทนเสียงนี้ไปใช้กับทั้ง 3 ประเภทเรียบร้อยแล้ว', 'success');
-      logStatus('[VOICE] คัดลอกการตั้งค่าโทนเสียงไปใช้กับ พนักงาน, VIP และผู้มาติดต่อ');
+      showToast('คัดลอกโทนเสียงและเสียงกระดิ่งนี้ไปใช้กับทั้ง 3 ประเภทเรียบร้อยแล้ว', 'success');
+      logStatus('[VOICE] คัดลอกการตั้งค่าโทนเสียงและเสียงกระดิ่งไปใช้กับ พนักงาน, VIP และผู้มาติดต่อ');
     }
 
     function loadVoiceSettingsFromStorage() {
@@ -2577,6 +2640,11 @@
           } else {
             state.bellChimeEnabled = true;
           }
+          if (parsed.bellChimeSound && BELL_SOUND_PRESETS[parsed.bellChimeSound]) {
+            state.bellChimeSound = parsed.bellChimeSound;
+          } else {
+            state.bellChimeSound = DEFAULT_BELL_CHIME_SOUND;
+          }
           if (parsed.voiceCategoryConfigs && typeof parsed.voiceCategoryConfigs === 'object') {
             ['employee', 'vip', 'unknown'].forEach(function(cat) {
               if (parsed.voiceCategoryConfigs[cat] && typeof parsed.voiceCategoryConfigs[cat] === 'object') {
@@ -2586,7 +2654,8 @@
                   voiceRate: (typeof c.voiceRate === 'number' && !isNaN(c.voiceRate)) ? c.voiceRate : state.voiceRate,
                   voicePitch: (typeof c.voicePitch === 'number' && !isNaN(c.voicePitch)) ? c.voicePitch : state.voicePitch,
                   voiceParticle: (c.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ',
-                  bellChimeEnabled: c.bellChimeEnabled !== false
+                  bellChimeEnabled: c.bellChimeEnabled !== false,
+                  bellChimeSound: (c.bellChimeSound && BELL_SOUND_PRESETS[c.bellChimeSound]) ? c.bellChimeSound : state.bellChimeSound
                 };
               }
             });
@@ -2598,7 +2667,8 @@
                 voiceRate: state.voiceRate,
                 voicePitch: state.voicePitch,
                 voiceParticle: state.voiceParticle,
-                bellChimeEnabled: state.bellChimeEnabled
+                bellChimeEnabled: state.bellChimeEnabled,
+                bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND
               };
             });
           }
@@ -2620,6 +2690,7 @@
           knownGreetingTemplate: state.vipGreetingTemplate || state.knownGreetingTemplate,
           unknownGreetingText: state.unknownGreetingText,
           bellChimeEnabled: state.bellChimeEnabled,
+          bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
           voiceCategoryConfigs: state.voiceCategoryConfigs
         }));
       } catch (e) {}
@@ -2904,6 +2975,16 @@
         bellCheckbox.checked = state.bellChimeEnabled !== false;
       }
 
+      const bellSelect = document.getElementById('bellChimeSoundSelect');
+      const bellTag = document.getElementById('bellChimeCurrentTag');
+      const curSound = state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND;
+      if (bellSelect && bellSelect.value !== curSound) {
+        bellSelect.value = curSound;
+      }
+      if (bellTag && BELL_SOUND_PRESETS[curSound]) {
+        bellTag.textContent = BELL_SOUND_PRESETS[curSound].label.split('(')[0].trim();
+      }
+
       updateVoiceStatusBadge();
     }
 
@@ -2914,16 +2995,31 @@
       saveVoiceSettingsToStorage();
       syncVoiceControlsUI();
       if (state.bellChimeEnabled) {
-        showToast('เปิดเสียงกระดิ่งเตือนก่อนทักทายแล้ว', 'info');
+        showToast('เปิดเสียงกระดิ่งเตือนแล้ว', 'info');
         playBellChimePreview();
       } else {
-        showToast('ปิดเสียงกระดิ่งเตือนก่อนทักทายแล้ว', 'info');
+        showToast('ปิดเสียงกระดิ่งเตือนแล้ว', 'info');
       }
     }
 
-    function playBellChimePreview() {
+    function playBellChimePreview(soundKey) {
       unlockSpeechEngine();
-      playBellChime();
+      const sound = soundKey || state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND;
+      playBellChime(null, null, sound);
+    }
+
+    function handleBellChimeSoundChange(soundKey, playPreview) {
+      unlockSpeechEngine();
+      const sound = (soundKey && BELL_SOUND_PRESETS[soundKey]) ? soundKey : DEFAULT_BELL_CHIME_SOUND;
+      state.bellChimeSound = sound;
+      saveActiveStateToCategoryVoiceConfig(state.activeVoiceCategory || 'employee');
+      saveVoiceSettingsToStorage();
+      syncVoiceControlsUI();
+      if (playPreview !== false && state.soundEnabled && state.bellChimeEnabled !== false) {
+        playBellChimePreview(sound);
+      }
+      const label = (BELL_SOUND_PRESETS[sound] && BELL_SOUND_PRESETS[sound].name) || sound;
+      showToast('เลือกเสียงกระดิ่ง: ' + label, 'info');
     }
 
     function handleVoiceSelectionChange(selectionValue, playPreview) {
@@ -3149,6 +3245,10 @@
             state.bellChimeEnabled = !!s.bellChimeEnabled;
             changed = true;
           }
+          if (s.bellChimeSound && BELL_SOUND_PRESETS[s.bellChimeSound]) {
+            state.bellChimeSound = s.bellChimeSound;
+            changed = true;
+          }
           if (s.voiceCategoryConfigs && typeof s.voiceCategoryConfigs === 'object') {
             ['employee', 'vip', 'unknown'].forEach(function(cat) {
               if (s.voiceCategoryConfigs[cat] && typeof s.voiceCategoryConfigs[cat] === 'object') {
@@ -3158,7 +3258,8 @@
                   voiceRate: (typeof c.voiceRate === 'number' && !isNaN(c.voiceRate)) ? c.voiceRate : 0.95,
                   voicePitch: (typeof c.voicePitch === 'number' && !isNaN(c.voicePitch)) ? c.voicePitch : 1.05,
                   voiceParticle: (c.voiceParticle === 'ครับ') ? 'ครับ' : 'ค่ะ',
-                  bellChimeEnabled: c.bellChimeEnabled !== false
+                  bellChimeEnabled: c.bellChimeEnabled !== false,
+                  bellChimeSound: (c.bellChimeSound && BELL_SOUND_PRESETS[c.bellChimeSound]) ? c.bellChimeSound : state.bellChimeSound
                 };
               }
             });
@@ -3238,6 +3339,7 @@
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
+        bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
         voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime || DEFAULT_WORK_START_TIME,
         workEndTime: state.workEndTime || DEFAULT_WORK_END_TIME,
@@ -3907,6 +4009,7 @@
         unknownGreetingText: state.unknownGreetingText || DEFAULT_UNKNOWN_GREETING_TEXT,
         voiceParticle: state.voiceParticle || 'ค่ะ',
         bellChimeEnabled: state.bellChimeEnabled !== false,
+        bellChimeSound: state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND,
         voiceCategoryConfigs: state.voiceCategoryConfigs,
         workStartTime: state.workStartTime,
         workEndTime: state.workEndTime,
@@ -4042,12 +4145,14 @@
       }
     }
 
-    // Synthesize warm, crystal-clear 2-tone melodic bell chime ("Ding-Dong") via Web Audio API
-    function playBellChime(onComplete, sequenceSessionId) {
+    // Synthesize warm, crystal-clear bell chime presets via Web Audio API (6 presets)
+    function playBellChime(onComplete, sequenceSessionId, soundType) {
       if (!state.soundEnabled || state.bellChimeEnabled === false) {
         if (typeof onComplete === 'function') onComplete();
         return;
       }
+
+      const activeSound = soundType || state.bellChimeSound || (typeof DEFAULT_BELL_CHIME_SOUND !== 'undefined' ? DEFAULT_BELL_CHIME_SOUND : 'dingdong');
 
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -4069,15 +4174,27 @@
         masterGain.connect(ctx.destination);
         state.activeAudioGain = masterGain;
 
-        function createBellTone(freq, startTime, duration) {
-          // Fundamental Oscillator (Sine)
+        function createTone(freq, startTime, duration, options) {
+          const opt = options || {};
+          const waveType = opt.type || 'sine';
+          const peakGain = opt.gain !== undefined ? opt.gain : 0.75;
+          const harmonicRatio = opt.harmonicRatio !== undefined ? opt.harmonicRatio : 2.76;
+          const harmonicGain = opt.harmonicGain !== undefined ? opt.harmonicGain : 0.20;
+          const pitchDrop = opt.pitchDrop || 0;
+
+          // Fundamental Oscillator
           const osc1 = ctx.createOscillator();
           const gain1 = ctx.createGain();
-          osc1.type = 'sine';
-          osc1.frequency.setValueAtTime(freq, startTime);
+          osc1.type = waveType;
+          if (pitchDrop > 0) {
+            osc1.frequency.setValueAtTime(freq + pitchDrop, startTime);
+            osc1.frequency.exponentialRampToValueAtTime(freq, startTime + 0.035);
+          } else {
+            osc1.frequency.setValueAtTime(freq, startTime);
+          }
 
           gain1.gain.setValueAtTime(0.0001, startTime);
-          gain1.gain.exponentialRampToValueAtTime(0.75, startTime + 0.008);
+          gain1.gain.exponentialRampToValueAtTime(peakGain, startTime + (opt.attackTime || 0.008));
           gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
           osc1.connect(gain1);
@@ -4085,37 +4202,85 @@
           osc1.start(startTime);
           osc1.stop(startTime + duration + 0.05);
 
-          // Overtone Oscillator for metallic bell resonance (2.76x harmonic)
-          const osc2 = ctx.createOscillator();
-          const gain2 = ctx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(freq * 2.76, startTime);
+          // Harmonic Overtone
+          if (harmonicRatio > 0 && harmonicGain > 0) {
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(freq * harmonicRatio, startTime);
 
-          gain2.gain.setValueAtTime(0.0001, startTime);
-          gain2.gain.exponentialRampToValueAtTime(0.20, startTime + 0.005);
-          gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * 0.55));
+            gain2.gain.setValueAtTime(0.0001, startTime);
+            gain2.gain.exponentialRampToValueAtTime(harmonicGain, startTime + 0.005);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + (duration * (opt.harmonicDecayRatio || 0.55)));
 
-          osc2.connect(gain2);
-          gain2.connect(masterGain);
-          osc2.start(startTime);
-          osc2.stop(startTime + duration + 0.05);
+            osc2.connect(gain2);
+            gain2.connect(masterGain);
+            osc2.start(startTime);
+            osc2.stop(startTime + duration + 0.05);
+          }
         }
 
-        // Tone 1: High "Ding" (G5 - 784 Hz)
-        createBellTone(784, now, 0.55);
+        let leadTime = 680;
 
-        // Tone 2: Low "Dong" (E5 - 659.25 Hz) after 220ms
-        createBellTone(659.25, now + 0.22, 0.85);
+        switch (activeSound) {
+          case 'melody3':
+            // 🎶 Triple Chime (C5 -> E5 -> G5)
+            createTone(523.25, now, 0.40, { gain: 0.65, harmonicRatio: 2.0, harmonicGain: 0.15 });
+            createTone(659.25, now + 0.16, 0.40, { gain: 0.70, harmonicRatio: 2.0, harmonicGain: 0.15 });
+            createTone(783.99, now + 0.32, 0.75, { gain: 0.75, harmonicRatio: 2.76, harmonicGain: 0.18 });
+            leadTime = 760;
+            break;
 
-        logStatus('[BELL] 🔔 เล่นเสียงกระดิ่งเตือนก่อนทักทาย');
+          case 'single_ding':
+            // 🛎️ Single Desk Bell (C6 - 1046.5 Hz)
+            createTone(1046.5, now, 0.85, { gain: 0.80, harmonicRatio: 2.76, harmonicGain: 0.25, harmonicDecayRatio: 0.5 });
+            createTone(1046.5 * 5.4, now, 0.35, { gain: 0.10, harmonicRatio: 0, harmonicGain: 0 });
+            leadTime = 620;
+            break;
 
-        // After ~680ms (as Tone 2 gently rings out), proceed smoothly to speech
+          case 'marimba':
+            // 🪵 Marimba Warm (C5 -> G5) with organic mallet pitch-drop
+            createTone(523.25, now, 0.35, { type: 'sine', gain: 0.80, pitchDrop: 35, harmonicRatio: 3.0, harmonicGain: 0.08, attackTime: 0.004 });
+            createTone(783.99, now + 0.15, 0.55, { type: 'sine', gain: 0.75, pitchDrop: 45, harmonicRatio: 3.0, harmonicGain: 0.08, attackTime: 0.004 });
+            leadTime = 550;
+            break;
+
+          case 'crystal':
+            // ✨ Crystal Shimmer (F#5 -> A#5 -> D#6)
+            createTone(739.99, now, 0.45, { gain: 0.60, harmonicRatio: 3.0, harmonicGain: 0.22 });
+            createTone(932.33, now + 0.14, 0.45, { gain: 0.65, harmonicRatio: 3.0, harmonicGain: 0.22 });
+            createTone(1244.51, now + 0.28, 0.75, { gain: 0.75, harmonicRatio: 3.5, harmonicGain: 0.25 });
+            leadTime = 680;
+            break;
+
+          case 'digital':
+            // 📱 Digital Modern Beep (B5 -> E6)
+            createTone(987.77, now, 0.14, { type: 'sine', gain: 0.65, harmonicRatio: 2.0, harmonicGain: 0.10, attackTime: 0.003 });
+            createTone(1318.51, now + 0.10, 0.26, { type: 'sine', gain: 0.70, harmonicRatio: 2.0, harmonicGain: 0.12, attackTime: 0.003 });
+            leadTime = 460;
+            break;
+
+          case 'dingdong':
+          default:
+            // 🔔 Classic Ding-Dong (G5 -> E5)
+            createTone(784, now, 0.55, { gain: 0.75, harmonicRatio: 2.76, harmonicGain: 0.20 });
+            createTone(659.25, now + 0.22, 0.85, { gain: 0.75, harmonicRatio: 2.76, harmonicGain: 0.20 });
+            leadTime = 680;
+            break;
+        }
+
+        const presetInfo = (typeof BELL_SOUND_PRESETS !== 'undefined' && BELL_SOUND_PRESETS[activeSound])
+          ? BELL_SOUND_PRESETS[activeSound].name
+          : activeSound;
+        logStatus('[BELL] 🔔 เล่นเสียงกระดิ่ง: ' + presetInfo);
+
+        // After specified leadTime as bell chime resonates, proceed smoothly to speech
         if (typeof onComplete === 'function') {
           setTimeout(function() {
             if (!sequenceSessionId || sequenceSessionId === state.speechSessionId) {
               onComplete();
             }
-          }, 680);
+          }, leadTime);
         }
       } catch (e) {
         logStatus('[WARN] Bell chime error: ' + (e ? e.message : e), true);
@@ -4613,13 +4778,15 @@
       }
 
       if (withChime && state.bellChimeEnabled !== false) {
+        const catCfg = category ? getCategoryVoiceConfig(category) : null;
+        const chimeSound = (catCfg && catCfg.bellChimeSound) ? catCfg.bellChimeSound : (state.bellChimeSound || DEFAULT_BELL_CHIME_SOUND);
         playBellChime(function() {
           if (currentSessionId === state.speechSessionId) {
             playNext();
           } else {
             restoreAndFinish();
           }
-        }, currentSessionId);
+        }, currentSessionId, chimeSound);
       } else {
         playNext();
       }
@@ -8576,6 +8743,8 @@
     window.triggerImmediateFacePresenceChime = triggerImmediateFacePresenceChime;
     window.handleNoFacePresenceDetected = handleNoFacePresenceDetected;
     window.playBellChime = playBellChime;
+    window.BELL_SOUND_PRESETS = BELL_SOUND_PRESETS;
+    window.handleBellChimeSoundChange = handleBellChimeSoundChange;
     window.updateVoiceSlider = updateVoiceSlider;
     window.resetVoiceSettings = resetVoiceSettings;
     window.toggleBellChime = toggleBellChime;
